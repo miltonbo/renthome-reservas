@@ -102,7 +102,7 @@ function CalendarGrid({
 
   const formatSelected = (d: string) => {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    return new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
   };
 
   if (showClassic) {
@@ -326,7 +326,7 @@ function CalendarPopover({
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-[70] max-h-[calc(100vh-1rem)] overflow-y-auto rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] shadow-2xl shadow-black/50"
+      className="fixed isolate z-[70] max-h-[calc(100vh-1rem)] overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground opacity-100 shadow-[0_20px_60px_rgba(0,0,0,0.45)] ring-1 ring-black/10"
       style={{ top: pos.top, left: pos.left, width: pos.width }}
     >
       <CalendarGrid
@@ -356,7 +356,7 @@ export function DateSlider({
 
   const formatDate = (d: string) => {
     if (!d) return "Select";
-    return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    return new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
   };
 
   const dayCount = useCallback(() => {
