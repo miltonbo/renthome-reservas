@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Fragment, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { useI18n } from "@/lib/i18n/context";
@@ -1297,12 +1297,13 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
                   const thisYear = day.date.substring(0, 4);
                   const showYearDivider = thisYear !== prevYear;
                   return (
-                    <>{showYearDivider && (
-                      <tr key={`year-${thisYear}`} className="border-b border-[var(--line)]">
+                    <Fragment key={`${day.date}-${day.propertyId}-${i}`}>
+                    {showYearDivider && (
+                      <tr className="border-b border-[var(--line)]">
                         <td colSpan={10} className="px-4 py-2 text-xs font-semibold text-[var(--ink-3)] bg-[var(--bg-3)]">{thisYear}</td>
                       </tr>
                     )}
-                    <tr key={`${day.date}-${day.propertyId}-${i}`} className={`border-b border-[var(--line)]/50 ${isOverlap ? "bg-[var(--cleaning-cell-bg)]" : isCleanerConflict ? "bg-amber-500/10" : "hover:bg-[var(--bg-3)]"}`}>
+                    <tr className={`border-b border-[var(--line)]/50 ${isOverlap ? "bg-[var(--cleaning-cell-bg)]" : isCleanerConflict ? "bg-amber-500/10" : "hover:bg-[var(--bg-3)]"}`}>
                       <td className="px-4 py-2 text-sm text-[var(--ink)] whitespace-nowrap">
                         {formatDate(day.date)}
                         {isOverlap && <span className="ml-1.5 text-[10px] text-[var(--cleaning-fg)] font-medium">{t("cleaning.overlap")}</span>}
@@ -1352,7 +1353,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
                         </div>
                       </td>
                     </tr>
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
