@@ -847,11 +847,33 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
                   </div>
                 )}
 
-                {/* Last sync info */}
-                {link?.lastFetchedAt && (
-                  <p className="text-xs text-[var(--ink-4)]">
-                    {t("sync.lastSynced")} {new Date(link.lastFetchedAt).toLocaleString(c.dateLocale)}
-                  </p>
+                {/* Last sync info + property-scoped manual refresh */}
+                {isConnected && (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-[var(--ink-4)]">
+                      {link?.lastFetchedAt
+                        ? `${t("sync.lastSynced")} ${new Date(link.lastFetchedAt).toLocaleString(c.dateLocale)}`
+                        : `${t("sync.lastSynced")} —`}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleSync}
+                      disabled={syncing}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-3 text-xs font-medium text-[var(--ink-2)] hover:bg-[var(--bg-3)] disabled:cursor-wait disabled:opacity-50"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 11a8.1 8.1 0 00-15.5-2M4 4v5h5m-5 4a8.1 8.1 0 0015.5 2M20 20v-5h-5" />
+                      </svg>
+                      {syncing ? t("sync.syncing") : t("sync.syncNow")}
+                    </button>
+                  </div>
                 )}
 
                 {/* Feed error warning */}
