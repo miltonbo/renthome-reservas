@@ -181,8 +181,10 @@ export async function syncAllCalendars(opts?: {
         );
         const removedUIDs = removedEvents.map((e) => e.uid);
 
-        // Insert new events
-        for (const event of newEvents) {
+        // Upsert every event returned by the feed, not only unseen UIDs.
+        // Airbnb keeps the same UID when a host shortens or extends a stay,
+        // so skipping known UIDs leaves stale dates in the master calendar.
+        for (const event of futureEvents) {
           await prisma.calendarEvent.upsert({
             where: {
               propertyId_platform_uid: {

@@ -86,6 +86,52 @@ beforeEach(() => {
 });
 
 describe("calendar sync — durable linked reservation metadata", () => {
+  it("updates dates when the feed reuses an existing UID", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          ical([{ uid: "old-uid", start: "2099-08-19", end: "2099-08-23" }]),
+          { status: 200 },
+        ),
+      ),
+    );
+    mocks.calendarEventFindMany.mockResolvedValueOnce([
+      { ...oldEvent, endDate: "2099-08-28" },
+    ]);
+
+    const result = await syncAllCalendars({ propertyIds: [propertyId] });
+
+    expect(result).toMatchObject({
+      propertiesSynced: 1,
+      newEvents: 0,
+      removedEvents: 0,
+      errors: 0,
+    });
+    expect(mocks.calendarEventUpsert).toHaveBeenCalledWith({
+      where: {
+        propertyId_platform_uid: {
+          propertyId,
+          platform: "airbnb",
+          uid: "old-uid",
+        },
+      },
+      create: {
+        propertyId,
+        platform: "airbnb",
+        uid: "old-uid",
+        summary: "Reserved",
+        startDate: "2099-08-19",
+        endDate: "2099-08-23",
+      },
+      update: {
+        summary: "Reserved",
+        startDate: "2099-08-19",
+        endDate: "2099-08-23",
+      },
+    });
+  });
+
   it("migrates claims and extensions by exact source platform on UID reissue", async () => {
     vi.stubGlobal(
       "fetch",
