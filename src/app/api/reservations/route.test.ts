@@ -78,6 +78,29 @@ beforeEach(() => {
 });
 
 describe("POST /api/reservations — linked calendar source", () => {
+  it("stores RentHome prices, guarantee and parking for a direct reservation", async () => {
+    const response = await POST(
+      postRequest({
+        platform: "direct",
+        nightlyPrice: 300,
+        totalPrice: 1200,
+        guaranteeAmount: 250,
+        hasParking: true,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.reservationCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        platform: "direct",
+        nightlyPrice: 300,
+        totalPrice: 1200,
+        guaranteeAmount: 250,
+        hasParking: true,
+      }),
+    });
+  });
+
   it("normalizes and excludes only the exact property/platform/UID source", async () => {
     mocks.calendarEventFindFirst
       .mockResolvedValueOnce({

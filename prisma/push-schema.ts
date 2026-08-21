@@ -63,6 +63,10 @@ CREATE TABLE IF NOT EXISTS "Reservation" (
     "linkedEventUid" TEXT,
     "linkedEventPlatform" TEXT,
     "linkedEventRole" TEXT,
+    "nightlyPrice" REAL,
+    "totalPrice" REAL,
+    "guaranteeAmount" REAL,
+    "hasParking" INTEGER NOT NULL DEFAULT 0,
     "propertyId" INTEGER NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Reservation_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -249,6 +253,12 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     // chat WhatsApp / Telegram deeplinks on reservations that have no
     // passport guests yet (or only one).
     `ALTER TABLE "Reservation" ADD COLUMN "phone" TEXT`,
+    // RentHome manual-reservation commercial details. Monetary values are
+    // stored in bolivianos; null means the host did not enter an amount.
+    `ALTER TABLE "Reservation" ADD COLUMN "nightlyPrice" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "totalPrice" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "guaranteeAmount" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "hasParking" INTEGER NOT NULL DEFAULT 0`,
   ];
 
   // Feedback table — site-wide visitor feedback queue. New table, so we

@@ -83,7 +83,7 @@ function CalendarGrid({
     if (!checkIn || !checkOut) return 0;
     const d1 = new Date(checkIn);
     const d2 = new Date(checkOut);
-    return Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(0, Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
   };
 
   const formatSelected = (d: string) => {
@@ -149,7 +149,7 @@ function CalendarGrid({
             Out: {formatSelected(checkOut)}
           </button>
           {checkIn && checkOut && (
-            <span className="text-xs text-emerald-500">{dayCount()} days</span>
+            <span className="text-xs text-emerald-500">{dayCount()} nights</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ function CalendarGrid({
       </div>
 
       {/* Calendar grids */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 overflow-x-auto">
         {months.map((monthStart) => {
           const year = monthStart.getFullYear();
           const month = monthStart.getMonth();
@@ -182,7 +182,7 @@ function CalendarGrid({
           const monthLabel = monthStart.toLocaleDateString("en", { month: "long", year: "numeric" });
 
           return (
-            <div key={monthLabel} className="flex-1">
+            <div key={monthLabel} className="min-w-[210px] flex-1">
               <div className="mb-2 text-center text-xs font-medium text-[var(--ink)]">
                 {monthLabel}
               </div>
@@ -265,17 +265,32 @@ function CalendarPopover({
   onClose: () => void;
   bookedDates?: ReadonlySet<string>;
 }) {
-  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 480 });
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (anchorRef.current) {
+    const updatePosition = () => {
+      if (!anchorRef.current) return;
       const rect = anchorRef.current.getBoundingClientRect();
-      setPos({
-        top: Math.max(8, rect.top - 40),
-        left: rect.right + 8,
-      });
-    }
+      const width = Math.min(480, window.innerWidth - 16);
+      const left = Math.min(
+        Math.max(8, rect.right - width),
+        window.innerWidth - width - 8,
+      );
+      const estimatedHeight = 340;
+      const below = rect.bottom + 8;
+      const top = below + estimatedHeight <= window.innerHeight
+        ? below
+        : Math.max(8, rect.top - estimatedHeight - 8);
+      setPos({ top, left, width });
+    };
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
   }, [anchorRef]);
 
   // Close on outside click
@@ -297,8 +312,8 @@ function CalendarPopover({
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-50 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] shadow-2xl shadow-black/50"
-      style={{ top: pos.top, left: pos.left, width: 480 }}
+      className="fixed z-[70] max-h-[calc(100vh-1rem)] overflow-y-auto rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] shadow-2xl shadow-black/50"
+      style={{ top: pos.top, left: pos.left, width: pos.width }}
     >
       <CalendarGrid
         checkIn={checkIn}
@@ -333,7 +348,7 @@ export function DateSlider({
     if (!checkIn || !checkOut) return 0;
     const d1 = new Date(checkIn);
     const d2 = new Date(checkOut);
-    return Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(0, Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
   }, [checkIn, checkOut]);
 
   if (compact) {
@@ -363,7 +378,7 @@ export function DateSlider({
             </span>
           </div>
           {checkIn && checkOut && (
-            <span className="text-xs text-emerald-500">{dayCount()}d</span>
+            <span className="text-xs text-emerald-500">{dayCount()}n</span>
           )}
         </button>
         {open && (

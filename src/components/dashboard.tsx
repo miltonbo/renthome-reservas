@@ -541,6 +541,10 @@ interface DashboardProps {
     checkOut: string;
     platform: string;
     propertyId: number;
+    nightlyPrice?: number | null;
+    totalPrice?: number | null;
+    guaranteeAmount?: number | null;
+    hasParking?: boolean;
   }) => void;
   onAddProperty?: (name: string) => Promise<void> | void;
   /** Rename a property in place. Lets the host rename from the
@@ -572,9 +576,14 @@ export function Dashboard({
   const [formPropertyId, setFormPropertyId] = useState<number | "">(
     selectedProperty?.id || (properties.length > 0 ? properties[0].id : "")
   );
-  const [formPlatform, setFormPlatform] = useState("airbnb");
+  const [formPlatform, setFormPlatform] = useState("direct");
   const [formCheckIn, setFormCheckIn] = useState("");
   const [formCheckOut, setFormCheckOut] = useState("");
+  const [formNightlyPrice, setFormNightlyPrice] = useState("");
+  const [formTotalPrice, setFormTotalPrice] = useState("");
+  const [formGuarantee, setFormGuarantee] = useState("");
+  const [formHasParking, setFormHasParking] = useState(false);
+  const [priceSource, setPriceSource] = useState<"nightly" | "total">("nightly");
   const [allSyncedEvents, setAllSyncedEvents] = useState<Record<number, CalendarEvent[]>>({});
   const [allLinks, setAllLinks] = useState<Record<number, CalendarLink[]>>({});
   const [allOverrides, setAllOverrides] = useState<Record<number, DateOverride[]>>({});
@@ -980,6 +989,33 @@ export function Dashboard({
     return set;
   }, [formPropertyId, properties, allSyncedEvents]);
 
+  const formNightCount = useMemo(() => {
+    if (!formCheckIn || !formCheckOut || formCheckIn >= formCheckOut) return 0;
+    const start = new Date(`${formCheckIn}T12:00:00`);
+    const end = new Date(`${formCheckOut}T12:00:00`);
+    return Math.round((end.getTime() - start.getTime()) / 86_400_000);
+  }, [formCheckIn, formCheckOut]);
+
+  const moneyValue = (value: string): number | null => {
+    if (!value.trim()) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  };
+
+  const formatMoneyInput = (value: number) =>
+    Number(value.toFixed(2)).toString();
+
+  useEffect(() => {
+    if (formNightCount <= 0) return;
+    if (priceSource === "nightly") {
+      const nightly = moneyValue(formNightlyPrice);
+      setFormTotalPrice(nightly === null ? "" : formatMoneyInput(nightly * formNightCount));
+    } else {
+      const total = moneyValue(formTotalPrice);
+      setFormNightlyPrice(total === null ? "" : formatMoneyInput(total / formNightCount));
+    }
+  }, [formNightCount, formNightlyPrice, formTotalPrice, priceSource]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || !formCheckIn || !formCheckOut || !formPropertyId) return;
@@ -989,10 +1025,20 @@ export function Dashboard({
       checkOut: formCheckOut,
       platform: formPlatform,
       propertyId: Number(formPropertyId),
+      nightlyPrice: moneyValue(formNightlyPrice),
+      totalPrice: moneyValue(formTotalPrice),
+      guaranteeAmount: moneyValue(formGuarantee),
+      hasParking: formHasParking,
     });
     setFormName("");
     setFormCheckIn("");
     setFormCheckOut("");
+    setFormNightlyPrice("");
+    setFormTotalPrice("");
+    setFormGuarantee("");
+    setFormHasParking(false);
+    setPriceSource("nightly");
+    setFormPlatform("direct");
     setShowForm(false);
   };
 
@@ -1013,6 +1059,12 @@ export function Dashboard({
     setFormName("");
     setFormCheckIn("");
     setFormCheckOut("");
+    setFormNightlyPrice("");
+    setFormTotalPrice("");
+    setFormGuarantee("");
+    setFormHasParking(false);
+    setPriceSource("nightly");
+    setFormPlatform("direct");
     setShowForm(true);
   };
 
@@ -1764,7 +1816,7 @@ export function Dashboard({
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Nueva reserva">
-          <form onSubmit={handleSubmit} className="w-full max-w-lg rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
+          <form onSubmit={handleSubmit} className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--ink)]">Nueva reserva confirmada</h2>
@@ -1787,13 +1839,74 @@ export function Dashboard({
               <label>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Canal</span>
                 <select value={formPlatform} onChange={(e) => setFormPlatform(e.target.value)} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
-                  {formPlatformOptions.map((platform) => <option key={platform} value={platform}>{platformDisplayName(platform)}</option>)}
+                  {formPlatformOptions.map((platform) => (
+                    <option key={platform} value={platform}>
+                      {locale === "es" && platform === "direct" ? "Directo" : platformDisplayName(platform)}
+                    </option>
+                  ))}
                 </select>
               </label>
               <div>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Estadía</span>
                 <DateSlider checkIn={formCheckIn} checkOut={formCheckOut} onChangeCheckIn={setFormCheckIn} onChangeCheckOut={setFormCheckOut} bookedDates={bookedDates} compact />
               </div>
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Precio por noche</span>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">Bs</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={formNightlyPrice}
+                    onChange={(e) => { setPriceSource("nightly"); setFormNightlyPrice(e.target.value); }}
+                    className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]"
+                    placeholder="0"
+                  />
+                </div>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">
+                  Precio total {formNightCount > 0 && <span className="font-normal text-[var(--ink-4)]">· {formNightCount} {formNightCount === 1 ? "noche" : "noches"}</span>}
+                </span>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">Bs</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={formTotalPrice}
+                    onChange={(e) => { setPriceSource("total"); setFormTotalPrice(e.target.value); }}
+                    className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]"
+                    placeholder="0"
+                  />
+                </div>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Garantía</span>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">Bs</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={formGuarantee}
+                    onChange={(e) => setFormGuarantee(e.target.value)}
+                    className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]"
+                    placeholder="0"
+                  />
+                </div>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Parqueo</span>
+                <select value={formHasParking ? "yes" : "no"} onChange={(e) => setFormHasParking(e.target.value === "yes")} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+                  <option value="no">No</option>
+                  <option value="yes">Sí</option>
+                </select>
+              </label>
             </div>
 
             {formConflicts.length > 0 && (

@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
       linkedEventUid,
       linkedEventPlatform,
       linkedEventRole,
+      nightlyPrice,
+      totalPrice,
+      guaranteeAmount,
+      hasParking,
     } = await request.json();
     if (
       typeof name !== "string" ||
@@ -57,7 +61,14 @@ export async function POST(request: NextRequest) {
         typeof linkedEventPlatform !== "string") ||
       (linkedEventRole !== undefined &&
         linkedEventRole !== null &&
-        typeof linkedEventRole !== "string")
+        typeof linkedEventRole !== "string") ||
+      (nightlyPrice !== undefined && nightlyPrice !== null &&
+        (typeof nightlyPrice !== "number" || !Number.isFinite(nightlyPrice) || nightlyPrice < 0)) ||
+      (totalPrice !== undefined && totalPrice !== null &&
+        (typeof totalPrice !== "number" || !Number.isFinite(totalPrice) || totalPrice < 0)) ||
+      (guaranteeAmount !== undefined && guaranteeAmount !== null &&
+        (typeof guaranteeAmount !== "number" || !Number.isFinite(guaranteeAmount) || guaranteeAmount < 0)) ||
+      (hasParking !== undefined && typeof hasParking !== "boolean")
     ) {
       return NextResponse.json({ error: "Invalid reservation data" }, { status: 400 });
     }
@@ -262,6 +273,10 @@ export async function POST(request: NextRequest) {
         linkedEventUid: sourceIdentity?.uid || null,
         linkedEventPlatform: sourceIdentity?.platform || null,
         linkedEventRole: sourceRole,
+        ...(nightlyPrice !== undefined ? { nightlyPrice } : {}),
+        ...(totalPrice !== undefined ? { totalPrice } : {}),
+        ...(guaranteeAmount !== undefined ? { guaranteeAmount } : {}),
+        ...(hasParking !== undefined ? { hasParking } : {}),
         propertyId,
       },
     });
@@ -306,6 +321,10 @@ export async function POST(request: NextRequest) {
       platform: reservation.platform,
       linkedEventPlatform: reservation.linkedEventPlatform,
       linkedEventRole: reservation.linkedEventRole,
+      nightlyPrice: reservation.nightlyPrice,
+      totalPrice: reservation.totalPrice,
+      guaranteeAmount: reservation.guaranteeAmount,
+      hasParking: reservation.hasParking,
     });
     return NextResponse.json(reservation);
   } catch (err) {

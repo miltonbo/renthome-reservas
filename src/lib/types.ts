@@ -51,6 +51,11 @@ export interface Reservation {
    *  personal-chat WhatsApp / Telegram quick-buttons even on bookings
    *  with no passport guests. */
   phone?: string | null;
+  /** Commercial details for a confirmed physical stay. Amounts are Bs. */
+  nightlyPrice?: number | null;
+  totalPrice?: number | null;
+  guaranteeAmount?: number | null;
+  hasParking?: boolean;
   propertyId: number;
   createdAt: string;
   guests?: Guest[];

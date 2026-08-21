@@ -162,6 +162,10 @@ function AppContent({
     checkOut: string;
     platform: string;
     propertyId: number;
+    nightlyPrice?: number | null;
+    totalPrice?: number | null;
+    guaranteeAmount?: number | null;
+    hasParking?: boolean;
   }) => {
     const res = await fetch("/api/reservations", {
       method: "POST",

@@ -301,6 +301,10 @@ model Reservation {
   // booking) and use it to deeplink straight into a personal WhatsApp /
   // Telegram chat. Stored in the same loose E.164 shape Guest.phone uses.
   phone           String?
+  nightlyPrice    Float?
+  totalPrice      Float?
+  guaranteeAmount Float?
+  hasParking      Boolean  @default(false)
   propertyId      Int
   property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   guests          Guest[]
