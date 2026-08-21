@@ -368,7 +368,7 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
   const handleSave = async (platform: string, url: string) => {
     if (!url.trim()) return;
     const link = getLink(platform);
-    await fetch("/api/calendar/links", {
+    const saveRes = await fetch("/api/calendar/links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -379,6 +379,17 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
         bufferAfter: link?.bufferAfter ?? 0,
       }),
     });
+    // A newly connected feed is not useful until its first import. Trigger it
+    // immediately for this property so the master calendar is populated as
+    // soon as the host returns to the dashboard; later updates remain covered
+    // by the scheduled sync job.
+    if (saveRes.ok) {
+      await fetch("/api/calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId }),
+      });
+    }
     setEditingPlatform(null);
     await fetchData();
   };
@@ -428,7 +439,11 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await fetch("/api/calendar/sync", { method: "POST" });
+      await fetch("/api/calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId }),
+      });
       await fetchData();
     } finally {
       setSyncing(false);
