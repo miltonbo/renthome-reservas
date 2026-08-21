@@ -223,6 +223,7 @@ function platformColor(slug: string): string {
 
 export interface CalendarEvent {
   id: number;
+  propertyId?: number;
   platform: string;
   uid?: string;
   summary: string;
@@ -574,32 +575,43 @@ export function Dashboard({
   const [assignmentsFetched, setAssignmentsFetched] = useState(false);
   const [cleanerConflictDates, setCleanerConflictDates] = useState<string[]>([]);
 
-  // Fetch synced events, links, and overrides for all properties (for cleaning schedule)
+  // Fetch all calendar data in three account-scoped requests. The previous
+  // per-property fan-out made 69 simultaneous requests for RentHome's 23
+  // units (and twice that under React Strict Mode), which could exhaust the
+  // development server and leave the master calendar partially populated.
   const fetchAllCalendarData = useCallback(async () => {
     if (selectedProperty || properties.length === 0) return;
     setLoadingCalendarData(true);
     try {
-      const results = await Promise.all(
-        properties.map(async (p) => {
-          const [syncRes, linksRes, ovRes] = await Promise.all([
-            fetch(`/api/calendar/sync?propertyId=${p.id}&limit=200`).then(r => r.json()),
-            fetch(`/api/calendar/links?propertyId=${p.id}`).then(r => r.json()),
-            fetch(`/api/date-overrides?propertyId=${p.id}`).then(r => r.json()),
-          ]);
-          return { id: p.id, events: syncRes.events || [], links: linksRes || [], overrides: ovRes || [] };
-        })
-      ).catch(() => []);
+      const [syncRes, linksRes, overridesRes] = await Promise.all([
+        fetch("/api/calendar/sync?limit=200"),
+        fetch("/api/calendar/links"),
+        fetch("/api/date-overrides"),
+      ]);
+      if (!syncRes.ok || !linksRes.ok || !overridesRes.ok) {
+        throw new Error("Unable to load master calendar data");
+      }
+      const syncData = await syncRes.json();
+      const linksData: CalendarLink[] = await linksRes.json();
+      const overridesData: DateOverride[] = await overridesRes.json();
       const evMap: Record<number, CalendarEvent[]> = {};
       const lnMap: Record<number, CalendarLink[]> = {};
       const ovMap: Record<number, DateOverride[]> = {};
-      for (const r of results) {
-        evMap[r.id] = r.events;
-        lnMap[r.id] = r.links;
-        ovMap[r.id] = r.overrides;
+      for (const property of properties) {
+        evMap[property.id] = [];
+        lnMap[property.id] = [];
+        ovMap[property.id] = [];
       }
+      for (const event of (syncData.events || []) as CalendarEvent[]) {
+        if (event.propertyId != null) (evMap[event.propertyId] ||= []).push(event);
+      }
+      for (const link of linksData) (lnMap[link.propertyId] ||= []).push(link);
+      for (const override of overridesData) (ovMap[override.propertyId] ||= []).push(override);
       setAllSyncedEvents(evMap);
       setAllLinks(lnMap);
       setAllOverrides(ovMap);
+    } catch (error) {
+      console.error("Master calendar load failed", error);
     } finally {
       setLoadingCalendarData(false);
     }

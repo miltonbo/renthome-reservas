@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-import { canManageProperty, canReadProperty } from "@/lib/ownership";
+import { canManageProperty, canReadProperty, listAccessiblePropertyIds } from "@/lib/ownership";
 
 // GET /api/date-overrides?propertyId=1
 export async function GET(request: NextRequest) {
@@ -13,10 +13,12 @@ export async function GET(request: NextRequest) {
     const propertyId = request.nextUrl.searchParams.get("propertyId");
 
     if (!propertyId) {
-      return NextResponse.json(
-        { error: "propertyId is required" },
-        { status: 400 }
-      );
+      const accessibleIds = await listAccessiblePropertyIds(session.userId, session.role);
+      const overrides = await prisma.dateOverride.findMany({
+        where: { propertyId: { in: accessibleIds } },
+        orderBy: [{ propertyId: "asc" }, { date: "asc" }],
+      });
+      return NextResponse.json(overrides);
     }
 
     const numId = Number(propertyId);
