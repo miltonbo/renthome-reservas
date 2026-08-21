@@ -81,8 +81,10 @@ function CalendarGrid({
       if (checkIn && dateStr < checkIn) {
         onChangeCheckIn(dateStr);
         onChangeCheckOut(checkIn);
+        onDone?.();
       } else {
         onChangeCheckOut(dateStr);
+        if (checkIn && dateStr > checkIn) onDone?.();
       }
       setSelecting("in");
     }
