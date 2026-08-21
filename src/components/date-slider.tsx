@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "@/lib/i18n/context";
+import type { Locale } from "@/lib/i18n/translations";
 
 interface DateSliderProps {
   checkIn: string;
@@ -25,6 +27,17 @@ function toDateStr(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function nightCountLabel(count: number, locale: Locale): string {
+  const labels: Record<Locale, [string, string]> = {
+    en: ["night", "nights"],
+    es: ["noche", "noches"],
+    ru: ["ночь", "ночей"],
+    de: ["Nacht", "Nächte"],
+    fr: ["nuit", "nuits"],
+  };
+  return `${count} ${count === 1 ? labels[locale][0] : labels[locale][1]}`;
+}
+
 function CalendarGrid({
   checkIn,
   checkOut,
@@ -40,6 +53,7 @@ function CalendarGrid({
   onDone?: () => void;
   bookedDates?: ReadonlySet<string>;
 }) {
+  const { locale } = useI18n();
   const [selecting, setSelecting] = useState<"in" | "out">(
     !checkIn ? "in" : !checkOut ? "out" : "in"
   );
@@ -149,7 +163,7 @@ function CalendarGrid({
             Out: {formatSelected(checkOut)}
           </button>
           {checkIn && checkOut && (
-            <span className="text-xs text-emerald-500">{dayCount()} nights</span>
+            <span className="text-xs text-emerald-500">{nightCountLabel(dayCount(), locale)}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -336,6 +350,7 @@ export function DateSlider({
   compact = false,
   bookedDates,
 }: DateSliderProps) {
+  const { locale } = useI18n();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -378,7 +393,7 @@ export function DateSlider({
             </span>
           </div>
           {checkIn && checkOut && (
-            <span className="text-xs text-emerald-500">{dayCount()}n</span>
+            <span className="text-xs text-emerald-500">{nightCountLabel(dayCount(), locale)}</span>
           )}
         </button>
         {open && (
