@@ -545,7 +545,7 @@ interface DashboardProps {
     totalPrice?: number | null;
     guaranteeAmount?: number | null;
     hasParking?: boolean;
-  }) => void;
+  }) => Promise<{ ok: boolean; error?: string }>;
   onAddProperty?: (name: string) => Promise<void> | void;
   /** Rename a property in place. Lets the host rename from the
    *  dashboard header without opening Sync settings. Optional so
@@ -583,6 +583,8 @@ export function Dashboard({
   const [formTotalPrice, setFormTotalPrice] = useState("");
   const [formGuarantee, setFormGuarantee] = useState("");
   const [formHasParking, setFormHasParking] = useState(false);
+  const [savingReservation, setSavingReservation] = useState(false);
+  const [reservationSaveError, setReservationSaveError] = useState("");
   const [priceSource, setPriceSource] = useState<"nightly" | "total">("nightly");
   const [allSyncedEvents, setAllSyncedEvents] = useState<Record<number, CalendarEvent[]>>({});
   const [allLinks, setAllLinks] = useState<Record<number, CalendarLink[]>>({});
@@ -1016,10 +1018,12 @@ export function Dashboard({
     }
   }, [formNightCount, formNightlyPrice, formTotalPrice, priceSource]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim() || !formCheckIn || !formCheckOut || !formPropertyId) return;
-    onAddReservation({
+    if (!formName.trim() || !formCheckIn || !formCheckOut || !formPropertyId || savingReservation) return;
+    setSavingReservation(true);
+    setReservationSaveError("");
+    const result = await onAddReservation({
       name: formName.trim(),
       checkIn: formCheckIn,
       checkOut: formCheckOut,
@@ -1029,7 +1033,12 @@ export function Dashboard({
       totalPrice: moneyValue(formTotalPrice),
       guaranteeAmount: moneyValue(formGuarantee),
       hasParking: formHasParking,
-    });
+    }).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }));
+    setSavingReservation(false);
+    if (!result.ok) {
+      setReservationSaveError(result.error || "No se pudo guardar la reserva.");
+      return;
+    }
     setFormName("");
     setFormCheckIn("");
     setFormCheckOut("");
@@ -1065,6 +1074,7 @@ export function Dashboard({
     setFormHasParking(false);
     setPriceSource("nightly");
     setFormPlatform("direct");
+    setReservationSaveError("");
     setShowForm(true);
   };
 
@@ -1915,9 +1925,15 @@ export function Dashboard({
               </div>
             )}
 
+            {reservationSaveError && (
+              <div role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300">
+                {reservationSaveError}
+              </div>
+            )}
+
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]">Cancelar</button>
-              <button type="submit" disabled={!formName.trim() || !formCheckIn || !formCheckOut || formCheckIn >= formCheckOut || formConflicts.length > 0} className="rounded-lg bg-[var(--brand-orange)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--m-accent-2)] disabled:cursor-not-allowed disabled:opacity-45">Guardar reserva</button>
+              <button type="button" disabled={savingReservation} onClick={() => setShowForm(false)} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)] disabled:opacity-45">Cancelar</button>
+              <button type="submit" disabled={savingReservation || !formName.trim() || !formCheckIn || !formCheckOut || formCheckIn >= formCheckOut || formConflicts.length > 0} className="rounded-lg bg-[var(--brand-orange)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--m-accent-2)] disabled:cursor-not-allowed disabled:opacity-45">{savingReservation ? "Guardando…" : "Guardar reserva"}</button>
             </div>
           </form>
         </div>

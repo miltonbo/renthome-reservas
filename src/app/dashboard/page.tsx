@@ -20,7 +20,7 @@ import { SyncAlertsBanner } from "@/components/sync-alerts-banner";
 import { AnnouncementBanner } from "@/components/announcement-banner";
 import { SupportFooter } from "@/components/support-footer";
 import { CleanerApp } from "@/components/cleaner-app";
-import type { Property, Guest } from "@/lib/types";
+import type { Property, Guest, Reservation } from "@/lib/types";
 
 function CleanerShell({
   user,
@@ -172,7 +172,31 @@ function AppContent({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (res.ok) await fetchProperties();
+    if (res.ok) {
+      const created = await res.json() as Reservation;
+      setProperties((current) => current.map((property) =>
+        property.id === created.propertyId
+          ? {
+              ...property,
+              reservations: [...property.reservations, created].sort(
+                (a, b) => a.checkIn.localeCompare(b.checkIn),
+              ),
+            }
+          : property,
+      ));
+      await fetchProperties({ background: true });
+      return { ok: true };
+    }
+    const body = await res.json().catch(() => ({} as { error?: string }));
+    const errors: Record<string, string> = {
+      "Overlapping reservation exists": "Ya existe una reserva para esas fechas.",
+      "Overlapping booking from another platform": "Esas fechas ya están ocupadas por una reserva importada.",
+      "checkOut must be after checkIn": "La fecha de salida debe ser posterior a la fecha de entrada.",
+    };
+    return {
+      ok: false,
+      error: errors[body?.error || ""] || body?.error || `No se pudo guardar la reserva (${res.status}).`,
+    };
   };
 
   const handleUpdateReservation = async (
