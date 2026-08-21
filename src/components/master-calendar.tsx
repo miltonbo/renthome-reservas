@@ -25,7 +25,10 @@ interface MasterCalendarProps {
   onCreateReservation: (propertyId: number) => void;
 }
 
-const DAY_WIDTH = 54;
+// Compact enough that a booking four weeks out is genuinely visible on a
+// 1920px dashboard without horizontal scrolling (1309 exposed this edge
+// case), while retaining enough width for readable day headers and bars.
+const DAY_WIDTH = 48;
 // Six weeks keeps near-future OTA bookings visible on first load. The earlier
 // 24-day window made successfully imported reservations look missing when
 // their arrival fell just beyond the viewport (for example, 16 September
