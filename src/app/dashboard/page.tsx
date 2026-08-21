@@ -101,7 +101,7 @@ function AppContent({
   // out and back in. Refetch on tab focus + poll every 60 s while
   // visible — cheap, and matches the calendar's own live-refresh so
   // both surfaces stay in sync.
-  useLiveRefresh(() => fetchProperties());
+  useLiveRefresh(() => fetchProperties({ background: true }));
 
   useEffect(() => {
     if (selectedReservationId) {
@@ -111,8 +111,9 @@ function AppContent({
     }
   }, [selectedReservationId]);
 
-  const fetchProperties = async () => {
-    setLoadingProperties(true);
+  const fetchProperties = async (options?: { background?: boolean }) => {
+    const showLoading = !options?.background;
+    if (showLoading) setLoadingProperties(true);
     try {
       const res = await fetch("/api/properties");
       const data = await res.json();
@@ -120,13 +121,15 @@ function AppContent({
         setProperties(data);
       } else {
         console.error("Properties API returned non-array:", data);
-        setProperties([]);
+        if (!options?.background) setProperties([]);
       }
     } catch (err) {
       console.error("Failed to fetch properties:", err);
-      setProperties([]);
+      // A transient background-refresh failure must not erase the current
+      // dashboard (or collapse its scroll position). Keep the last good data.
+      if (!options?.background) setProperties([]);
     } finally {
-      setLoadingProperties(false);
+      if (showLoading) setLoadingProperties(false);
     }
   };
 

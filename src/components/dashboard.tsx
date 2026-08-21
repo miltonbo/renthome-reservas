@@ -607,7 +607,6 @@ export function Dashboard({
   // development server and leave the master calendar partially populated.
   const fetchAllCalendarData = useCallback(async () => {
     if (selectedProperty || properties.length === 0) return;
-    setLoadingCalendarData(true);
     try {
       const [syncRes, linksRes, overridesRes] = await Promise.all([
         fetch("/api/calendar/sync?limit=200"),

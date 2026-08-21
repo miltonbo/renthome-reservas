@@ -29,11 +29,11 @@ interface MasterCalendarProps {
 // 1920px dashboard without horizontal scrolling (1309 exposed this edge
 // case), while retaining enough width for readable day headers and bars.
 const DAY_WIDTH = 48;
-// Airbnb lets the bar enter the check-out day slightly: the apartment is
-// occupied until 11:00, even though that date may accept a later check-in.
-// Keep this visual only; reservation dates and overlap calculations remain
-// half-open [check-in, check-out).
-const CHECKOUT_SPILL_PX = 12;
+// Position the bar inside its arrival/departure dates using RentHome's real
+// times. Consecutive stays therefore leave a small, truthful 11:00–14:00 gap
+// instead of visually merging into one reservation.
+const CHECKIN_OFFSET_PX = Math.round(DAY_WIDTH * 14 / 24);
+const CHECKOUT_OFFSET_PX = Math.round(DAY_WIDTH * 11 / 24);
 // Six weeks keeps near-future OTA bookings visible on first load. The earlier
 // 24-day window made successfully imported reservations look missing when
 // their arrival fell just beyond the viewport (for example, 16 September
@@ -267,12 +267,11 @@ export function MasterCalendar({
                     {visibleStays.map((stay, stayIndex) => {
                       const clippedStart = stay.start < windowStart ? windowStart : stay.start;
                       const clippedEnd = stay.end > windowEnd ? windowEnd : stay.end;
-                      const left = dayDiff(clippedStart, windowStart) * DAY_WIDTH + 3;
-                      const checkoutSpill = stay.end < windowEnd ? CHECKOUT_SPILL_PX : 0;
-                      const width = Math.max(
-                        18,
-                        dayDiff(clippedEnd, clippedStart) * DAY_WIDTH - 6 + checkoutSpill,
-                      );
+                      const left = dayDiff(clippedStart, windowStart) * DAY_WIDTH +
+                        (stay.start < windowStart ? 3 : CHECKIN_OFFSET_PX);
+                      const right = dayDiff(clippedEnd, windowStart) * DAY_WIDTH +
+                        (stay.end < windowEnd ? CHECKOUT_OFFSET_PX : -3);
+                      const width = Math.max(18, right - left);
                       const color = PLATFORM_COLORS[stay.platform] || { background: "#6b7280", foreground: "#ffffff" };
                       return (
                         <button
