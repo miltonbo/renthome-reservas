@@ -29,6 +29,11 @@ interface MasterCalendarProps {
 // 1920px dashboard without horizontal scrolling (1309 exposed this edge
 // case), while retaining enough width for readable day headers and bars.
 const DAY_WIDTH = 48;
+// Airbnb lets the bar enter the check-out day slightly: the apartment is
+// occupied until 11:00, even though that date may accept a later check-in.
+// Keep this visual only; reservation dates and overlap calculations remain
+// half-open [check-in, check-out).
+const CHECKOUT_SPILL_PX = 12;
 // Six weeks keeps near-future OTA bookings visible on first load. The earlier
 // 24-day window made successfully imported reservations look missing when
 // their arrival fell just beyond the viewport (for example, 16 September
@@ -173,9 +178,9 @@ export function MasterCalendar({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="max-h-[72vh] overflow-auto">
         <div style={{ minWidth: 220 + DAY_WIDTH * VISIBLE_DAYS }}>
-          <div className="sticky top-0 z-20 flex border-b border-[var(--line)] bg-[var(--bg-2)]">
+          <div className="sticky top-0 z-30 flex border-b border-[var(--line)] bg-[var(--bg-2)] shadow-[0_2px_6px_rgba(15,23,42,0.08)]">
             <div className="sticky left-0 z-30 flex w-[220px] shrink-0 items-end border-r border-[var(--line)] bg-[var(--bg-2)] px-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ink-4)]">
               Departamento
             </div>
@@ -186,7 +191,7 @@ export function MasterCalendar({
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`flex h-14 shrink-0 flex-col items-center justify-center border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""}`}
+                    className={`relative flex h-14 shrink-0 flex-col items-center justify-center border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""} ${isToday ? "before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
                     style={{ width: DAY_WIDTH }}
                   >
                     <span className={`text-[9px] font-medium uppercase ${isToday ? "text-[var(--brand-orange)]" : "text-[var(--ink-4)]"}`}>
@@ -252,7 +257,7 @@ export function MasterCalendar({
                         return (
                           <div
                             key={day.toISOString()}
-                            className={`h-full shrink-0 border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""} ${isToday ? "bg-[var(--brand-orange-faint)]" : ""}`}
+                            className={`relative h-full shrink-0 border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""} ${isToday ? "bg-[var(--brand-orange-faint)] before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
                             style={{ width: DAY_WIDTH }}
                           />
                         );
@@ -263,7 +268,11 @@ export function MasterCalendar({
                       const clippedStart = stay.start < windowStart ? windowStart : stay.start;
                       const clippedEnd = stay.end > windowEnd ? windowEnd : stay.end;
                       const left = dayDiff(clippedStart, windowStart) * DAY_WIDTH + 3;
-                      const width = Math.max(18, dayDiff(clippedEnd, clippedStart) * DAY_WIDTH - 6);
+                      const checkoutSpill = stay.end < windowEnd ? CHECKOUT_SPILL_PX : 0;
+                      const width = Math.max(
+                        18,
+                        dayDiff(clippedEnd, clippedStart) * DAY_WIDTH - 6 + checkoutSpill,
+                      );
                       const color = PLATFORM_COLORS[stay.platform] || { background: "#6b7280", foreground: "#ffffff" };
                       return (
                         <button
