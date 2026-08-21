@@ -29,11 +29,12 @@ interface MasterCalendarProps {
 // 1920px dashboard without horizontal scrolling (1309 exposed this edge
 // case), while retaining enough width for readable day headers and bars.
 const DAY_WIDTH = 48;
-// Position the bar inside its arrival/departure dates using RentHome's real
-// times. Consecutive stays therefore leave a small, truthful 11:00–14:00 gap
-// instead of visually merging into one reservation.
-const CHECKIN_OFFSET_PX = Math.round(DAY_WIDTH * 14 / 24);
-const CHECKOUT_OFFSET_PX = Math.round(DAY_WIDTH * 11 / 24);
+// Visual turnover split inside a shared check-out/check-in date: the outgoing
+// stay uses 30%, a 5% gap keeps both bookings distinguishable, and the incoming
+// stay receives the remaining 65%. This is presentation only; operational
+// times and overlap rules remain check-out 11:00 / check-in 14:00.
+const CHECKOUT_OFFSET_PX = Math.round(DAY_WIDTH * 0.30);
+const CHECKIN_OFFSET_PX = Math.round(DAY_WIDTH * 0.35);
 // Six weeks keeps near-future OTA bookings visible on first load. The earlier
 // 24-day window made successfully imported reservations look missing when
 // their arrival fell just beyond the viewport (for example, 16 September
