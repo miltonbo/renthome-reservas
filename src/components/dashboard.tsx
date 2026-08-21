@@ -309,6 +309,15 @@ function friendlyIcalName(summary: string | null | undefined, platform: string):
   return summary;
 }
 
+/** Imported availability blocks belong in the operational calendar, but
+ * they are not guest reservations and must not affect reservation stats. */
+function isAvailabilityBlock(event: CalendarEvent): boolean {
+  const summary = (event.summary || "").toLowerCase();
+  return summary.includes("not available") ||
+    summary.includes("blocked") ||
+    /^\s*closed\b/.test(summary);
+}
+
 /** Build a deduped list of stays for one property from Reservation rows
  *  + iCal-synced events. Three layers of dedup so the dashboard never
  *  double-counts the SAME booking represented in two places:
@@ -412,8 +421,7 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
     // blocked range into two overlapping events with different UIDs)
     // surface as a phantom "Booking.com & Booking.com" double-booking
     // on the dashboard.
-    if (ev.platform === "airbnb" && (ev.summary?.includes("Not available") || ev.summary?.includes("Blocked"))) continue;
-    if (/^\s*CLOSED\b/i.test(ev.summary || "")) continue;
+    if (isAvailabilityBlock(ev)) continue;
     // Same-dates + generic-summary heuristic: drop the iCal twin.
     const dateKey = `${normalizedPlatform(ev.platform)}\u0000${ev.startDate}|${ev.endDate}`;
     if (reservationDateKeys.has(dateKey) && isGenericIcalName(ev.summary || "")) continue;
@@ -464,6 +472,24 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
 
   collapsed.sort((a, b) => a.start.getTime() - b.start.getTime());
   return collapsed;
+}
+
+/** Confirmed stays plus imported periods in which the physical apartment is
+ * unavailable. Blocks intentionally have no reservation id. */
+export function buildMasterCalendarStays(
+  property: Property,
+  events: CalendarEvent[],
+): UnifiedStay[] {
+  const stays = buildUnifiedStays(property, events);
+  for (const event of events.filter(isAvailabilityBlock)) {
+    stays.push({
+      start: reservationLocalDate(event.startDate),
+      end: reservationLocalDate(event.endDate),
+      name: "No disponible",
+      platform: `${event.platform}-block`,
+    });
+  }
+  return stays.sort((a, b) => a.start.getTime() - b.start.getTime());
 }
 
 /** Per-property double-booking detection. Returns the list of overlapping
@@ -979,7 +1005,7 @@ export function Dashboard({
   const masterCalendarProperties = useMemo(() => properties.map((property) => ({
     id: property.id,
     name: property.name,
-    stays: buildUnifiedStays(property, allSyncedEvents[property.id] || []),
+    stays: buildMasterCalendarStays(property, allSyncedEvents[property.id] || []),
     syncError: (allLinks[property.id] || []).some((link) => Boolean(link.lastError)),
   })), [properties, allSyncedEvents, allLinks]);
 

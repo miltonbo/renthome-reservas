@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Property, Reservation } from "@/lib/types";
 import {
+  buildMasterCalendarStays,
   buildUnifiedStays,
   type CalendarEvent,
   type UnifiedStay,
@@ -70,6 +71,24 @@ function project(stays: UnifiedStay[]) {
 }
 
 describe("buildUnifiedStays linked source roles", () => {
+  it("shows availability blocks only in the master calendar", () => {
+    const blocked = event({
+      uid: "blocked-uid",
+      summary: "Airbnb (Not available)",
+      startDate: "2026-08-24",
+      endDate: "2026-08-27",
+    });
+
+    expect(buildUnifiedStays(property([]), [blocked])).toEqual([]);
+    expect(project(buildMasterCalendarStays(property([]), [blocked]))).toEqual([{
+      start: "2026-08-24",
+      end: "2026-08-27",
+      name: "No disponible",
+      platform: "airbnb-block",
+      reservationId: undefined,
+    }]);
+  });
+
   it("lets an explicit claim replace only the exact platform+UID source", () => {
     const claim = reservation({
       id: 41,

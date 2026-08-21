@@ -37,10 +37,19 @@ const VISIBLE_DAYS = 42;
 
 const PLATFORM_COLORS: Record<string, { background: string; foreground: string }> = {
   airbnb: { background: "#ff385c", foreground: "#ffffff" },
+  "airbnb-block": { background: "#64748b", foreground: "#ffffff" },
   booking: { background: "#1769aa", foreground: "#ffffff" },
   direct: { background: "#159a73", foreground: "#ffffff" },
   vrbo: { background: "#5b4bc4", foreground: "#ffffff" },
 };
+
+function platformLabel(platform: string): string {
+  if (platform.endsWith("-block")) return "Bloqueo del canal";
+  if (platform === "direct") return "Directa";
+  if (platform === "booking") return "Booking";
+  if (platform === "airbnb") return "Airbnb";
+  return platform;
+}
 
 const INVENTORY_ORDER = [
   "Sky Elite 305", "Sky Elite 329", "Sky Elite 331", "Sky Elite 406",
@@ -265,11 +274,11 @@ export function MasterCalendar({
                             : onOpenProperty(property.id)}
                           className="absolute top-[9px] z-[2] h-[34px] overflow-hidden rounded-lg px-2 text-left text-[11px] font-semibold shadow-sm transition-transform hover:z-[3] hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1"
                           style={{ left, width, backgroundColor: color.background, color: color.foreground }}
-                          title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${stay.platform}`}
+                          title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}`}
                         >
                           <span className="block truncate">{stay.name}</span>
                           <span className="block truncate text-[9px] font-medium opacity-80">
-                            {stay.platform === "direct" ? "Directa" : stay.platform === "booking" ? "Booking" : stay.platform === "airbnb" ? "Airbnb" : stay.platform}
+                            {platformLabel(stay.platform)}
                           </span>
                         </button>
                       );
@@ -284,7 +293,7 @@ export function MasterCalendar({
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--line)] px-4 py-2.5 text-[10px] text-[var(--ink-4)] sm:px-5">
         {[
-          ["#ff385c", "Airbnb"], ["#1769aa", "Booking"], ["#159a73", "Directa"], ["#5b4bc4", "Vrbo"],
+          ["#ff385c", "Airbnb"], ["#64748b", "No disponible"], ["#1769aa", "Booking"], ["#159a73", "Directa"], ["#5b4bc4", "Vrbo"],
         ].map(([color, label]) => (
           <span key={label} className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
