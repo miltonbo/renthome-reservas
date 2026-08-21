@@ -26,7 +26,11 @@ interface MasterCalendarProps {
 }
 
 const DAY_WIDTH = 54;
-const VISIBLE_DAYS = 24;
+// Six weeks keeps near-future OTA bookings visible on first load. The earlier
+// 24-day window made successfully imported reservations look missing when
+// their arrival fell just beyond the viewport (for example, 16 September
+// while viewing from 19 August).
+const VISIBLE_DAYS = 42;
 
 const PLATFORM_COLORS: Record<string, { background: string; foreground: string }> = {
   airbnb: { background: "#ff385c", foreground: "#ffffff" },
@@ -106,8 +110,11 @@ export function MasterCalendar({
     });
   }, [properties]);
 
-  const monthLabel = new Intl.DateTimeFormat("es-BO", { month: "long", year: "numeric" })
-    .format(windowStart);
+  const monthFormatter = new Intl.DateTimeFormat("es-BO", { month: "short", year: "numeric" });
+  const lastVisibleDay = addDays(windowEnd, -1);
+  const monthLabel = windowStart.getMonth() === lastVisibleDay.getMonth()
+    ? monthFormatter.format(windowStart)
+    : `${monthFormatter.format(windowStart)} – ${monthFormatter.format(lastVisibleDay)}`;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm">
