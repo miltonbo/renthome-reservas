@@ -1,15 +1,15 @@
 {
-  "name": "renttools",
+  "name": "renthome-reservas",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "homepage": "https://renttools.io",
+  "homepage": "https://github.com/miltonbo/renthome-reservas",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gribadan/RentTools.io.git"
+    "url": "https://github.com/miltonbo/renthome-reservas.git"
   },
   "bugs": {
-    "url": "https://github.com/Gribadan/RentTools.io/issues"
+    "url": "https://github.com/miltonbo/renthome-reservas/issues"
   },
   "scripts": {
     "dev": "next dev",
@@ -53,6 +53,7 @@
     "eslint": "^10",
     "eslint-config-next": "^16.2.12",
     "tailwindcss": "^4",
+    "tsx": "^4.23.12",
     "typescript": "^6",
     "vitest": "^4.1.6"
   },
