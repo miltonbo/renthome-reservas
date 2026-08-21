@@ -105,7 +105,7 @@ model Property {
   name           String
   minNights      Int              @default(1)
   checkInTime    String           @default("14:00")
-  checkOutTime   String           @default("12:00")
+  checkOutTime   String           @default("11:00")
   bookingWindow  Int              @default(365) // days forward from today to accept bookings; beyond this, events are ignored
   cleaningEnabled Boolean         @default(true) // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation; conflict detection still runs
   feedToken      String?          @unique // optional opt-in token gating the public iCal feed; null = public

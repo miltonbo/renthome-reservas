@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
-const SITE_NAME = "RentTools";
+const SITE_NAME = "RentHome Reservas";
 const SITE_TAGLINE =
   "Free open-source property manager for short-term rental hosts. Sync Airbnb + Booking.com calendars, automate cleaning, extract guest passports.";
 
@@ -110,7 +110,7 @@ const ORGANIZATION_JSON_LD = {
     width: 512,
     height: 512,
   },
-  sameAs: ["https://github.com/Gribadan/RentTools.io"],
+  sameAs: ["https://github.com/miltonbo/renthome-reservas"],
   founder: { "@type": "Person", name: "Ilya Asminkin" },
   contactPoint: {
     "@type": "ContactPoint",

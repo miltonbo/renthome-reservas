@@ -22,7 +22,7 @@ export const translations = {
   "common.calendar": { en: "Calendar", ru: "Календарь", de: "Kalender", fr: "Calendrier", es: "Calendario" },
 
   // Login
-  "login.title": { en: "RentTools", ru: "RentTools", de: "RentTools", fr: "RentTools", es: "RentTools" },
+  "login.title": { en: "RentHome", ru: "RentHome", de: "RentHome", fr: "RentHome", es: "RentHome" },
   "login.subtitle": { en: "Sign in to continue", ru: "Войдите для продолжения", de: "Anmelden, um fortzufahren", fr: "Connectez-vous pour continuer", es: "Inicie sesión para continuar" },
   "login.username": { en: "Username", ru: "Логин", de: "Benutzername", fr: "Identifiant", es: "Usuario" },
   "login.usernamePlaceholder": { en: "Enter username", ru: "Введите логин", de: "Benutzername eingeben", fr: "Saisissez votre identifiant", es: "Introduzca el usuario" },
@@ -113,7 +113,7 @@ export const translations = {
   "profile.close": { en: "Close", ru: "Закрыть", de: "Schließen", fr: "Fermer", es: "Cerrar" },
 
   // Sidebar
-  "sidebar.title": { en: "RentTools", ru: "RentTools", de: "RentTools", fr: "RentTools", es: "RentTools" },
+  "sidebar.title": { en: "RentHome", ru: "RentHome", de: "RentHome", fr: "RentHome", es: "RentHome" },
   "sidebar.subtitle": { en: "Properties & guests", ru: "Объекты и гости", de: "Unterkünfte & Gäste", fr: "Logements et voyageurs", es: "Alojamientos y huéspedes" },
   "sidebar.dashboard": { en: "Dashboard", ru: "Обзор", de: "Übersicht", fr: "Tableau de bord", es: "Panel" },
   "sidebar.tasks": { en: "Tasks", ru: "Задачи", de: "Aufgaben", fr: "Tâches", es: "Tareas" },

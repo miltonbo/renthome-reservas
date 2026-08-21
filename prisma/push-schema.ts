@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Guest" ADD COLUMN "parentId" INTEGER`,
     `ALTER TABLE "Property" ADD COLUMN "minNights" INTEGER NOT NULL DEFAULT 1`,
     `ALTER TABLE "Property" ADD COLUMN "checkInTime" TEXT NOT NULL DEFAULT '14:00'`,
-    `ALTER TABLE "Property" ADD COLUMN "checkOutTime" TEXT NOT NULL DEFAULT '12:00'`,
+    `ALTER TABLE "Property" ADD COLUMN "checkOutTime" TEXT NOT NULL DEFAULT '11:00'`,
     `ALTER TABLE "Property" ADD COLUMN "bookingWindow" INTEGER NOT NULL DEFAULT 365`,
     `ALTER TABLE "Reservation" ADD COLUMN "linkedEventUid" TEXT`,
     // Durable identity + semantics for a synced-event relationship.

@@ -1,0 +1,288 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+export interface MasterCalendarStay {
+  start: Date;
+  end: Date;
+  name: string;
+  platform: string;
+  reservationId?: number;
+}
+
+interface MasterCalendarProperty {
+  id: number;
+  name: string;
+  stays: MasterCalendarStay[];
+  syncError?: boolean;
+}
+
+interface MasterCalendarProps {
+  properties: MasterCalendarProperty[];
+  loading?: boolean;
+  onOpenProperty: (propertyId: number) => void;
+  onOpenReservation: (propertyId: number, reservationId: number) => void;
+  onCreateReservation: (propertyId: number) => void;
+}
+
+const DAY_WIDTH = 54;
+const VISIBLE_DAYS = 24;
+
+const PLATFORM_COLORS: Record<string, { background: string; foreground: string }> = {
+  airbnb: { background: "#ff385c", foreground: "#ffffff" },
+  booking: { background: "#1769aa", foreground: "#ffffff" },
+  direct: { background: "#159a73", foreground: "#ffffff" },
+  vrbo: { background: "#5b4bc4", foreground: "#ffffff" },
+};
+
+const INVENTORY_ORDER = [
+  "Sky Elite 305", "Sky Elite 329", "Sky Elite 331", "Sky Elite 406",
+  "Sky Elite 523", "Sky Elite 527", "Sky Elite 528", "Sky Elite 540",
+  "Sky Eclipse 1309", "Sky Eclipse 1402", "Sky Eclipse 1602", "Sky Eclipse 1709",
+  "Luxe Suites 104", "Luxe Suites 113", "Luxe Suites 117", "Luxe Suites 204",
+  "Luxe Suites 205", "Luxe Suites 316", "Luxe Suites 406",
+  "Sky Moon 706", "Sky Luxia 112", "Stanza 8B", "Uptown Nuu 12D",
+];
+
+function startOfLocalDay(value = new Date()): Date {
+  const next = new Date(value);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function addDays(value: Date, days: number): Date {
+  const next = new Date(value);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function dayDiff(a: Date, b: Date): number {
+  const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((utcA - utcB) / 86_400_000);
+}
+
+function buildingName(propertyName: string): string {
+  if (propertyName.startsWith("Sky Elite")) return "Sky Elite";
+  if (propertyName.startsWith("Sky Eclipse")) return "Sky Eclipse";
+  if (propertyName.startsWith("Luxe Suites")) return "Luxe Suites";
+  if (propertyName.startsWith("Sky Moon")) return "Sky Moon";
+  if (propertyName.startsWith("Sky Luxia")) return "Sky Luxia";
+  if (propertyName.startsWith("Stanza")) return "Stanza";
+  if (propertyName.startsWith("Uptown")) return "Uptown Nuu";
+  return "Otros";
+}
+
+function shortUnitName(propertyName: string): string {
+  return propertyName.split(" ").at(-1) || propertyName;
+}
+
+function formatRange(start: Date, end: Date): string {
+  const formatter = new Intl.DateTimeFormat("es-BO", { day: "2-digit", month: "short" });
+  return `${formatter.format(start)} → ${formatter.format(end)}`;
+}
+
+export function MasterCalendar({
+  properties,
+  loading = false,
+  onOpenProperty,
+  onOpenReservation,
+  onCreateReservation,
+}: MasterCalendarProps) {
+  const today = useMemo(() => startOfLocalDay(), []);
+  const [windowStart, setWindowStart] = useState(() => addDays(today, -2));
+  const windowEnd = useMemo(() => addDays(windowStart, VISIBLE_DAYS), [windowStart]);
+  const days = useMemo(
+    () => Array.from({ length: VISIBLE_DAYS }, (_, index) => addDays(windowStart, index)),
+    [windowStart],
+  );
+
+  const orderedProperties = useMemo(() => {
+    const order = new Map(INVENTORY_ORDER.map((name, index) => [name, index]));
+    return [...properties].sort((a, b) => {
+      const ai = order.get(a.name) ?? 999;
+      const bi = order.get(b.name) ?? 999;
+      return ai - bi || a.name.localeCompare(b.name);
+    });
+  }, [properties]);
+
+  const monthLabel = new Intl.DateTimeFormat("es-BO", { month: "long", year: "numeric" })
+    .format(windowStart);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3 sm:px-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-[var(--ink)]">Calendario maestro</h2>
+            <span className="rounded-full bg-[var(--brand-orange-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--brand-orange)]">
+              {properties.length} departamentos
+            </span>
+          </div>
+          <p className="mt-0.5 text-xs text-[var(--ink-4)]">
+            Reservas confirmadas, ingresos y salidas en una sola vista
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setWindowStart(addDays(windowStart, -7))}
+            className="rounded-lg border border-[var(--line-2)] px-2.5 py-1.5 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
+            aria-label="Semana anterior"
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            onClick={() => setWindowStart(addDays(today, -2))}
+            className="rounded-lg border border-[var(--line-2)] px-3 py-1.5 text-xs font-medium text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            onClick={() => setWindowStart(addDays(windowStart, 7))}
+            className="rounded-lg border border-[var(--line-2)] px-2.5 py-1.5 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
+            aria-label="Semana siguiente"
+          >
+            →
+          </button>
+          <span className="ml-1 hidden min-w-32 capitalize text-right text-xs font-medium text-[var(--ink-3)] sm:inline">
+            {monthLabel}
+          </span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <div style={{ minWidth: 220 + DAY_WIDTH * VISIBLE_DAYS }}>
+          <div className="sticky top-0 z-20 flex border-b border-[var(--line)] bg-[var(--bg-2)]">
+            <div className="sticky left-0 z-30 flex w-[220px] shrink-0 items-end border-r border-[var(--line)] bg-[var(--bg-2)] px-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ink-4)]">
+              Departamento
+            </div>
+            <div className="flex">
+              {days.map((day) => {
+                const isToday = day.getTime() === today.getTime();
+                const weekend = day.getDay() === 0 || day.getDay() === 6;
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={`flex h-14 shrink-0 flex-col items-center justify-center border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""}`}
+                    style={{ width: DAY_WIDTH }}
+                  >
+                    <span className={`text-[9px] font-medium uppercase ${isToday ? "text-[var(--brand-orange)]" : "text-[var(--ink-4)]"}`}>
+                      {new Intl.DateTimeFormat("es-BO", { weekday: "short" }).format(day).slice(0, 2)}
+                    </span>
+                    <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${isToday ? "bg-[var(--brand-orange)] text-white" : "text-[var(--ink-2)]"}`}>
+                      {day.getDate()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="space-y-px p-3">
+              {Array.from({ length: 8 }, (_, index) => (
+                <div key={index} className="h-12 animate-pulse rounded-lg bg-[var(--bg-3)]" />
+              ))}
+            </div>
+          ) : orderedProperties.map((property, index) => {
+            const building = buildingName(property.name);
+            const previousBuilding = index > 0 ? buildingName(orderedProperties[index - 1].name) : null;
+            const visibleStays = property.stays.filter(
+              (stay) => stay.start < windowEnd && stay.end > windowStart,
+            );
+
+            return (
+              <div key={property.id}>
+                {building !== previousBuilding && (
+                  <div className="sticky left-0 z-10 flex h-7 items-center border-b border-[var(--line)] bg-[var(--brand-navy)] px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">
+                    {building}
+                  </div>
+                )}
+                <div className="flex h-[52px] border-b border-[var(--line)] last:border-b-0">
+                  <div className="sticky left-0 z-10 flex w-[220px] shrink-0 items-center justify-between gap-2 border-r border-[var(--line)] bg-[var(--bg-2)] px-3">
+                    <button
+                      type="button"
+                      onClick={() => onOpenProperty(property.id)}
+                      className="min-w-0 text-left"
+                    >
+                      <span className="block truncate text-xs font-semibold text-[var(--ink)]">{property.name}</span>
+                      <span className="mt-0.5 block text-[10px] text-[var(--ink-4)]">
+                        Unidad {shortUnitName(property.name)}{property.syncError ? " · error de sync" : ""}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onCreateReservation(property.id)}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand-orange-soft)] text-base font-medium text-[var(--brand-orange)] hover:bg-[var(--brand-orange)] hover:text-white"
+                      aria-label={`Agregar reserva en ${property.name}`}
+                      title="Agregar reserva"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <div className="relative h-[52px]" style={{ width: DAY_WIDTH * VISIBLE_DAYS }}>
+                    <div className="absolute inset-0 flex">
+                      {days.map((day) => {
+                        const weekend = day.getDay() === 0 || day.getDay() === 6;
+                        const isToday = day.getTime() === today.getTime();
+                        return (
+                          <div
+                            key={day.toISOString()}
+                            className={`h-full shrink-0 border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""} ${isToday ? "bg-[var(--brand-orange-faint)]" : ""}`}
+                            style={{ width: DAY_WIDTH }}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    {visibleStays.map((stay, stayIndex) => {
+                      const clippedStart = stay.start < windowStart ? windowStart : stay.start;
+                      const clippedEnd = stay.end > windowEnd ? windowEnd : stay.end;
+                      const left = dayDiff(clippedStart, windowStart) * DAY_WIDTH + 3;
+                      const width = Math.max(18, dayDiff(clippedEnd, clippedStart) * DAY_WIDTH - 6);
+                      const color = PLATFORM_COLORS[stay.platform] || { background: "#6b7280", foreground: "#ffffff" };
+                      return (
+                        <button
+                          key={`${stay.reservationId ?? stay.name}-${stay.start.toISOString()}-${stayIndex}`}
+                          type="button"
+                          onClick={() => stay.reservationId
+                            ? onOpenReservation(property.id, stay.reservationId)
+                            : onOpenProperty(property.id)}
+                          className="absolute top-[9px] z-[2] h-[34px] overflow-hidden rounded-lg px-2 text-left text-[11px] font-semibold shadow-sm transition-transform hover:z-[3] hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1"
+                          style={{ left, width, backgroundColor: color.background, color: color.foreground }}
+                          title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${stay.platform}`}
+                        >
+                          <span className="block truncate">{stay.name}</span>
+                          <span className="block truncate text-[9px] font-medium opacity-80">
+                            {stay.platform === "direct" ? "Directa" : stay.platform === "booking" ? "Booking" : stay.platform === "airbnb" ? "Airbnb" : stay.platform}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--line)] px-4 py-2.5 text-[10px] text-[var(--ink-4)] sm:px-5">
+        {[
+          ["#ff385c", "Airbnb"], ["#1769aa", "Booking"], ["#159a73", "Directa"], ["#5b4bc4", "Vrbo"],
+        ].map(([color, label]) => (
+          <span key={label} className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+            {label}
+          </span>
+        ))}
+        <span className="ml-auto">Check-in 14:00 · Check-out 11:00</span>
+      </div>
+    </section>
+  );
+}

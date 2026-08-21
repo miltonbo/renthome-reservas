@@ -63,7 +63,7 @@ export interface Property {
   name: string;
   minNights: number;
   checkInTime: string;  // "HH:MM" — guest arrival time, e.g. "14:00"
-  checkOutTime: string; // "HH:MM" — guest departure time, e.g. "12:00"
+  checkOutTime: string; // "HH:MM" — guest departure time, e.g. "11:00"
   bookingWindow: number; // days forward from today to consider bookings; beyond this, events are ignored
   cleaningEnabled: boolean; // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation
   feedToken: string | null; // optional token gating the public iCal feed

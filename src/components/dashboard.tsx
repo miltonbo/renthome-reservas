@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DateSlider } from "@/components/date-slider";
 import { CleaningSchedule, type CleanerAssignmentInfo } from "@/components/cleaning-schedule";
 import { DashboardOnboarding } from "@/components/dashboard-onboarding";
+import { MasterCalendar } from "@/components/master-calendar";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, CalendarLink, DateOverride } from "@/lib/types";
@@ -260,6 +261,21 @@ function toLocalDateStr(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Reservation dates are calendar dates, not instants. Prisma/API values may
+ * arrive as ISO timestamps at UTC midnight; constructing a Date from those in
+ * Bolivia shifts them to the previous day. Preserve the ISO date component. */
+function reservationDateKey(value: string | Date): string {
+  const raw = value instanceof Date ? value.toISOString() : value;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  return toLocalDateStr(new Date(value));
+}
+
+function reservationLocalDate(value: string | Date): Date {
+  const [year, month, day] = reservationDateKey(value).split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 /** True for iCal summaries that almost always indicate "this is a
  *  generic blocked booking, not a guest name" — Airbnb's "Reserved",
  *  Booking.com's "CLOSED - Not available", host-blocks, etc. Used to
@@ -337,8 +353,8 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
     if (!role && sourceKey) {
       const source = eventBySource.get(sourceKey);
       if (source) {
-        const reservationStart = toLocalDateStr(new Date(reservation.checkIn));
-        const reservationEnd = toLocalDateStr(new Date(reservation.checkOut));
+        const reservationStart = reservationDateKey(reservation.checkIn);
+        const reservationEnd = reservationDateKey(reservation.checkOut);
         const overlapsSource =
           reservationStart < source.endDate && reservationEnd > source.startDate;
         const abutsSource =
@@ -362,16 +378,14 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
     // even if malformed legacy data happens to give both ranges the
     // same dates. Its role is authoritative: source + Direct both stay.
     if (linkedRoleByReservation.get(r.id) === "extension") continue;
-    const start = toLocalDateStr(new Date(r.checkIn));
-    const end = toLocalDateStr(new Date(r.checkOut));
+    const start = reservationDateKey(r.checkIn);
+    const end = reservationDateKey(r.checkOut);
     reservationDateKeys.add(`${normalizedPlatform(r.platform)}\u0000${start}|${end}`);
   }
   const stays: UnifiedStay[] = [];
   for (const r of p.reservations) {
-    const start = new Date(r.checkIn);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(r.checkOut);
-    end.setHours(0, 0, 0, 0);
+    const start = reservationLocalDate(r.checkIn);
+    const end = reservationLocalDate(r.checkOut);
     stays.push({
       start,
       end,
@@ -402,10 +416,8 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
     // Same-dates + generic-summary heuristic: drop the iCal twin.
     const dateKey = `${normalizedPlatform(ev.platform)}\u0000${ev.startDate}|${ev.endDate}`;
     if (reservationDateKeys.has(dateKey) && isGenericIcalName(ev.summary || "")) continue;
-    const start = new Date(ev.startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(ev.endDate);
-    end.setHours(0, 0, 0, 0);
+    const start = reservationLocalDate(ev.startDate);
+    const end = reservationLocalDate(ev.endDate);
     stays.push({ start, end, name: friendlyIcalName(ev.summary, ev.platform), platform: ev.platform });
   }
 
@@ -952,6 +964,21 @@ export function Dashboard({
     setTimeout(() => onSelectReservation(reservationId), 50);
   };
 
+  const masterCalendarProperties = useMemo(() => properties.map((property) => ({
+    id: property.id,
+    name: property.name,
+    stays: buildUnifiedStays(property, allSyncedEvents[property.id] || []),
+    syncError: (allLinks[property.id] || []).some((link) => Boolean(link.lastError)),
+  })), [properties, allSyncedEvents, allLinks]);
+
+  const openReservationFormForProperty = (propertyId: number) => {
+    setFormPropertyId(propertyId);
+    setFormName("");
+    setFormCheckIn("");
+    setFormCheckOut("");
+    setShowForm(true);
+  };
+
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString(c.dateLocale, { day: "2-digit", month: "short" });
 
@@ -1282,6 +1309,16 @@ export function Dashboard({
             </div>
           )}
         </div>
+      )}
+
+      {!selectedProperty && properties.length > 0 && (
+        <MasterCalendar
+          properties={masterCalendarProperties}
+          loading={loadingCalendarData}
+          onOpenProperty={onSelectProperty}
+          onOpenReservation={handleRowClick}
+          onCreateReservation={openReservationFormForProperty}
+        />
       )}
 
       {/* Property cards (dashboard mode only). Each card surfaces the
@@ -1685,6 +1722,54 @@ export function Dashboard({
             cleanerAssignments={cleanerAssignments}
             onCleanerConflictDatesChange={setCleanerConflictDates}
           />
+        </div>
+      )}
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Nueva reserva">
+          <form onSubmit={handleSubmit} className="w-full max-w-lg rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--ink)]">Nueva reserva confirmada</h2>
+                <p className="mt-1 text-xs text-[var(--ink-4)]">La unidad seleccionada será la asignación física real.</p>
+              </div>
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1.5 text-[var(--ink-4)] hover:bg-[var(--bg-3)] hover:text-[var(--ink)]" aria-label="Cerrar">✕</button>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="sm:col-span-2">
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Departamento físico</span>
+                <select value={formPropertyId} onChange={(e) => setFormPropertyId(Number(e.target.value))} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+                  {properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
+                </select>
+              </label>
+              <label className="sm:col-span-2">
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Nombre del huésped o reserva</span>
+                <input autoFocus required value={formName} onChange={(e) => setFormName(e.target.value)} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]" placeholder="Ej. María Pérez" />
+              </label>
+              <label>
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Canal</span>
+                <select value={formPlatform} onChange={(e) => setFormPlatform(e.target.value)} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+                  {formPlatformOptions.map((platform) => <option key={platform} value={platform}>{platformDisplayName(platform)}</option>)}
+                </select>
+              </label>
+              <div>
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Estadía</span>
+                <DateSlider checkIn={formCheckIn} checkOut={formCheckOut} onChangeCheckIn={setFormCheckIn} onChangeCheckOut={setFormCheckOut} bookedDates={bookedDates} compact />
+              </div>
+            </div>
+
+            {formConflicts.length > 0 && (
+              <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300">
+                Estas fechas se superponen con {formConflicts.map((conflict) => conflict.name).join(", ")}. Cambie la unidad o las fechas.
+              </div>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]">Cancelar</button>
+              <button type="submit" disabled={!formName.trim() || !formCheckIn || !formCheckOut || formCheckIn >= formCheckOut || formConflicts.length > 0} className="rounded-lg bg-[var(--brand-orange)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--m-accent-2)] disabled:cursor-not-allowed disabled:opacity-45">Guardar reserva</button>
+            </div>
+          </form>
         </div>
       )}
     </div>

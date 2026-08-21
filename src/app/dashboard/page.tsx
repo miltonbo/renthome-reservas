@@ -364,7 +364,7 @@ function AppContent({
               properties={properties}
               minNights={selectedProperty.minNights || 3}
               checkInTime={selectedProperty.checkInTime || "14:00"}
-              checkOutTime={selectedProperty.checkOutTime || "12:00"}
+              checkOutTime={selectedProperty.checkOutTime || "11:00"}
               bookingWindow={selectedProperty.bookingWindow || 365}
               ownerUserId={selectedProperty.userId}
               onUpdateProperty={handleUpdateProperty}

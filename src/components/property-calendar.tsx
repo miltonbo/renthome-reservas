@@ -767,7 +767,7 @@ export function PropertyCalendar({
                   today={today}
                   minNights={property.minNights || 3}
                   checkInTime={property.checkInTime || "14:00"}
-                  checkOutTime={property.checkOutTime || "12:00"}
+                  checkOutTime={property.checkOutTime || "11:00"}
                   bars={data.bars}
                   bufferDates={data.bufferDates}
                   potentialDates={data.potentialDates}
