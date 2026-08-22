@@ -8,6 +8,7 @@ export interface MasterCalendarStay {
   name: string;
   platform: string;
   reservationId?: number;
+  totalPrice?: number | null;
 }
 
 interface MasterCalendarProperty {
@@ -102,6 +103,10 @@ function shortUnitName(propertyName: string): string {
 function formatRange(start: Date, end: Date): string {
   const formatter = new Intl.DateTimeFormat("es-BO", { day: "2-digit", month: "short" });
   return `${formatter.format(start)} → ${formatter.format(end)}`;
+}
+
+function formatBolivianos(value: number): string {
+  return `Bs ${new Intl.NumberFormat("es-BO", { maximumFractionDigits: 2 }).format(value)}`;
 }
 
 export function MasterCalendar({
@@ -283,11 +288,14 @@ export function MasterCalendar({
                             : onOpenProperty(property.id)}
                           className="absolute top-[9px] z-[2] h-[34px] overflow-hidden rounded-lg px-2 text-left text-[11px] font-semibold shadow-sm transition-transform hover:z-[3] hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1"
                           style={{ left, width, backgroundColor: color.background, color: color.foreground }}
-                          title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}`}
+                          title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
                           <span className="block truncate">{stay.name}</span>
-                          <span className="block truncate text-[9px] font-medium opacity-80">
-                            {platformLabel(stay.platform)}
+                          <span className="flex items-center justify-between gap-1 text-[9px] font-medium opacity-90">
+                            <span className="truncate">{platformLabel(stay.platform)}</span>
+                            {stay.totalPrice != null && (
+                              <span className="shrink-0 font-semibold">{formatBolivianos(stay.totalPrice)}</span>
+                            )}
                           </span>
                         </button>
                       );

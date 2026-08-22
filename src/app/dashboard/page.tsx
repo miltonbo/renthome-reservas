@@ -166,6 +166,8 @@ function AppContent({
     totalPrice?: number | null;
     guaranteeAmount?: number | null;
     hasParking?: boolean;
+    parkingNightlyPrice?: number | null;
+    parkingTotalPrice?: number | null;
   }) => {
     const res = await fetch("/api/reservations", {
       method: "POST",

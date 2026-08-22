@@ -305,6 +305,8 @@ model Reservation {
   totalPrice      Float?
   guaranteeAmount Float?
   hasParking      Boolean  @default(false)
+  parkingNightlyPrice Float?
+  parkingTotalPrice   Float?
   propertyId      Int
   property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   guests          Guest[]

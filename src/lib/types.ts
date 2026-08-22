@@ -56,6 +56,8 @@ export interface Reservation {
   totalPrice?: number | null;
   guaranteeAmount?: number | null;
   hasParking?: boolean;
+  parkingNightlyPrice?: number | null;
+  parkingTotalPrice?: number | null;
   propertyId: number;
   createdAt: string;
   guests?: Guest[];

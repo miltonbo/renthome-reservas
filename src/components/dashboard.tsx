@@ -237,6 +237,7 @@ export interface UnifiedStay {
   name: string;
   platform: string;
   reservationId?: number;
+  totalPrice?: number | null;
 }
 
 type LinkedEventRole = "claim" | "extension";
@@ -408,6 +409,7 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
           ? "direct"
           : r.platform || "direct",
       reservationId: r.id,
+      totalPrice: r.totalPrice,
     });
   }
   for (const ev of events) {
@@ -545,6 +547,8 @@ interface DashboardProps {
     totalPrice?: number | null;
     guaranteeAmount?: number | null;
     hasParking?: boolean;
+    parkingNightlyPrice?: number | null;
+    parkingTotalPrice?: number | null;
   }) => Promise<{ ok: boolean; error?: string }>;
   onAddProperty?: (name: string) => Promise<void> | void;
   /** Rename a property in place. Lets the host rename from the
@@ -583,9 +587,12 @@ export function Dashboard({
   const [formTotalPrice, setFormTotalPrice] = useState("");
   const [formGuarantee, setFormGuarantee] = useState("");
   const [formHasParking, setFormHasParking] = useState(false);
+  const [formParkingNightlyPrice, setFormParkingNightlyPrice] = useState("");
+  const [formParkingTotalPrice, setFormParkingTotalPrice] = useState("");
   const [savingReservation, setSavingReservation] = useState(false);
   const [reservationSaveError, setReservationSaveError] = useState("");
   const [priceSource, setPriceSource] = useState<"nightly" | "total">("nightly");
+  const [parkingPriceSource, setParkingPriceSource] = useState<"nightly" | "total">("nightly");
   const [allSyncedEvents, setAllSyncedEvents] = useState<Record<number, CalendarEvent[]>>({});
   const [allLinks, setAllLinks] = useState<Record<number, CalendarLink[]>>({});
   const [allOverrides, setAllOverrides] = useState<Record<number, DateOverride[]>>({});
@@ -1023,6 +1030,23 @@ export function Dashboard({
     }
   }, [formNightCount, formNightlyPrice, formTotalPrice, priceSource]);
 
+  useEffect(() => {
+    if (!formHasParking || formNightCount <= 0) return;
+    if (parkingPriceSource === "nightly") {
+      const nightly = moneyValue(formParkingNightlyPrice);
+      setFormParkingTotalPrice(nightly === null ? "" : formatMoneyInput(nightly * formNightCount));
+    } else {
+      const total = moneyValue(formParkingTotalPrice);
+      setFormParkingNightlyPrice(total === null ? "" : formatMoneyInput(total / formNightCount));
+    }
+  }, [formHasParking, formNightCount, formParkingNightlyPrice, formParkingTotalPrice, parkingPriceSource]);
+
+  const formGrandTotal = useMemo(() =>
+    (moneyValue(formTotalPrice) || 0) +
+    (moneyValue(formGuarantee) || 0) +
+    (formHasParking ? (moneyValue(formParkingTotalPrice) || 0) : 0),
+  [formTotalPrice, formGuarantee, formHasParking, formParkingTotalPrice]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || !formCheckIn || !formCheckOut || !formPropertyId || savingReservation) return;
@@ -1038,6 +1062,8 @@ export function Dashboard({
       totalPrice: moneyValue(formTotalPrice),
       guaranteeAmount: moneyValue(formGuarantee),
       hasParking: formHasParking,
+      parkingNightlyPrice: formHasParking ? moneyValue(formParkingNightlyPrice) : null,
+      parkingTotalPrice: formHasParking ? moneyValue(formParkingTotalPrice) : null,
     }).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }));
     setSavingReservation(false);
     if (!result.ok) {
@@ -1051,7 +1077,10 @@ export function Dashboard({
     setFormTotalPrice("");
     setFormGuarantee("");
     setFormHasParking(false);
+    setFormParkingNightlyPrice("");
+    setFormParkingTotalPrice("");
     setPriceSource("nightly");
+    setParkingPriceSource("nightly");
     setFormPlatform("direct");
     setShowForm(false);
   };
@@ -1077,7 +1106,10 @@ export function Dashboard({
     setFormTotalPrice("");
     setFormGuarantee("");
     setFormHasParking(false);
+    setFormParkingNightlyPrice("");
+    setFormParkingTotalPrice("");
     setPriceSource("nightly");
+    setParkingPriceSource("nightly");
     setFormPlatform("direct");
     setReservationSaveError("");
     setShowForm(true);
@@ -1915,13 +1947,56 @@ export function Dashboard({
                   />
                 </div>
               </label>
-              <label>
-                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Parqueo</span>
-                <select value={formHasParking ? "yes" : "no"} onChange={(e) => setFormHasParking(e.target.value === "yes")} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+              <div className="sm:col-span-2 mt-1 flex items-center gap-3" aria-hidden="true">
+                <span className="h-px flex-1 bg-[var(--line-2)]" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-4)]">Parqueo</span>
+                <span className="h-px flex-1 bg-[var(--line-2)]" />
+              </div>
+              <label className="sm:col-span-2">
+                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">¿Incluye parqueo?</span>
+                <select value={formHasParking ? "yes" : "no"} onChange={(e) => {
+                  const enabled = e.target.value === "yes";
+                  setFormHasParking(enabled);
+                  if (!enabled) {
+                    setFormParkingNightlyPrice("");
+                    setFormParkingTotalPrice("");
+                  }
+                }} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
                   <option value="no">No</option>
                   <option value="yes">Sí</option>
                 </select>
               </label>
+              {formHasParking && (
+                <>
+                  <label>
+                    <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Parqueo por noche</span>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">Bs</span>
+                      <input type="number" min="0" step="0.01" inputMode="decimal" value={formParkingNightlyPrice}
+                        onChange={(e) => { setParkingPriceSource("nightly"); setFormParkingNightlyPrice(e.target.value); }}
+                        className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]" placeholder="30" />
+                    </div>
+                  </label>
+                  <label>
+                    <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">
+                      Parqueo total {formNightCount > 0 && <span className="font-normal text-[var(--ink-4)]">· {formNightCount} {formNightCount === 1 ? "noche" : "noches"}</span>}
+                    </span>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">Bs</span>
+                      <input type="number" min="0" step="0.01" inputMode="decimal" value={formParkingTotalPrice}
+                        onChange={(e) => { setParkingPriceSource("total"); setFormParkingTotalPrice(e.target.value); }}
+                        className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]" placeholder="0" />
+                    </div>
+                  </label>
+                </>
+              )}
+              <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-[var(--brand-orange)]/25 bg-[var(--brand-orange-soft)] px-4 py-3">
+                <div>
+                  <span className="block text-xs font-semibold text-[var(--ink)]">Monto total a cobrar</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--ink-4)]">Estadía + garantía + parqueo</span>
+                </div>
+                <span className="text-lg font-bold tabular-nums text-[var(--brand-orange)]">Bs {formatMoneyInput(formGrandTotal)}</span>
+              </div>
             </div>
 
             {formConflicts.length > 0 && (

@@ -86,6 +86,8 @@ describe("POST /api/reservations — linked calendar source", () => {
         totalPrice: 1200,
         guaranteeAmount: 250,
         hasParking: true,
+        parkingNightlyPrice: 35,
+        parkingTotalPrice: 140,
       }),
     );
 
@@ -97,6 +99,8 @@ describe("POST /api/reservations — linked calendar source", () => {
         totalPrice: 1200,
         guaranteeAmount: 250,
         hasParking: true,
+        parkingNightlyPrice: 35,
+        parkingTotalPrice: 140,
       }),
     });
   });

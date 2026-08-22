@@ -67,6 +67,8 @@ CREATE TABLE IF NOT EXISTS "Reservation" (
     "totalPrice" REAL,
     "guaranteeAmount" REAL,
     "hasParking" INTEGER NOT NULL DEFAULT 0,
+    "parkingNightlyPrice" REAL,
+    "parkingTotalPrice" REAL,
     "propertyId" INTEGER NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Reservation_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -259,6 +261,8 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Reservation" ADD COLUMN "totalPrice" REAL`,
     `ALTER TABLE "Reservation" ADD COLUMN "guaranteeAmount" REAL`,
     `ALTER TABLE "Reservation" ADD COLUMN "hasParking" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "Reservation" ADD COLUMN "parkingNightlyPrice" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "parkingTotalPrice" REAL`,
   ];
 
   // Feedback table — site-wide visitor feedback queue. New table, so we

@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
       totalPrice,
       guaranteeAmount,
       hasParking,
+      parkingNightlyPrice,
+      parkingTotalPrice,
     } = await request.json();
     if (
       typeof name !== "string" ||
@@ -68,7 +70,11 @@ export async function POST(request: NextRequest) {
         (typeof totalPrice !== "number" || !Number.isFinite(totalPrice) || totalPrice < 0)) ||
       (guaranteeAmount !== undefined && guaranteeAmount !== null &&
         (typeof guaranteeAmount !== "number" || !Number.isFinite(guaranteeAmount) || guaranteeAmount < 0)) ||
-      (hasParking !== undefined && typeof hasParking !== "boolean")
+      (hasParking !== undefined && typeof hasParking !== "boolean") ||
+      (parkingNightlyPrice !== undefined && parkingNightlyPrice !== null &&
+        (typeof parkingNightlyPrice !== "number" || !Number.isFinite(parkingNightlyPrice) || parkingNightlyPrice < 0)) ||
+      (parkingTotalPrice !== undefined && parkingTotalPrice !== null &&
+        (typeof parkingTotalPrice !== "number" || !Number.isFinite(parkingTotalPrice) || parkingTotalPrice < 0))
     ) {
       return NextResponse.json({ error: "Invalid reservation data" }, { status: 400 });
     }
@@ -277,6 +283,8 @@ export async function POST(request: NextRequest) {
         ...(totalPrice !== undefined ? { totalPrice } : {}),
         ...(guaranteeAmount !== undefined ? { guaranteeAmount } : {}),
         ...(hasParking !== undefined ? { hasParking } : {}),
+        ...(parkingNightlyPrice !== undefined ? { parkingNightlyPrice } : {}),
+        ...(parkingTotalPrice !== undefined ? { parkingTotalPrice } : {}),
         propertyId,
       },
     });
@@ -325,6 +333,8 @@ export async function POST(request: NextRequest) {
       totalPrice: reservation.totalPrice,
       guaranteeAmount: reservation.guaranteeAmount,
       hasParking: reservation.hasParking,
+      parkingNightlyPrice: reservation.parkingNightlyPrice,
+      parkingTotalPrice: reservation.parkingTotalPrice,
     });
     return NextResponse.json(reservation);
   } catch (err) {
