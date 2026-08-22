@@ -708,15 +708,20 @@ export function Dashboard({
 
   // Platform pills shown in the Add-Reservation form. Order:
   //   1. Slugs the user has linked (in PLATFORM_PRESETS sort order, then alpha)
-  //   2. "direct" — always offered as the manual-add channel
-  // If the user has no links yet, fall back to airbnb + booking + direct
-  // so a brand-new account doesn't see an empty toggle.
+  //   2. Booking and Vrbo — always available for manually entered stays
+  //   3. "direct" — always offered as the manual-add channel
+  // Airbnb remains available whenever it is linked; brand-new accounts get it
+  // as a sensible fallback alongside the fixed manual channels.
   const formPlatformOptions = useMemo<string[]>(() => {
-    const linked = linkedPlatformSlugs.length > 0 ? linkedPlatformSlugs : ["airbnb", "booking"];
+    const linked = new Set(
+      linkedPlatformSlugs.length > 0
+        ? [...linkedPlatformSlugs, "booking", "vrbo"]
+        : ["airbnb", "booking", "vrbo"],
+    );
     const ordered: string[] = [];
     for (const preset of PLATFORM_PRESETS) {
       if (preset.slug === "direct") continue;
-      if (linked.includes(preset.slug)) ordered.push(preset.slug);
+      if (linked.has(preset.slug)) ordered.push(preset.slug);
     }
     // Custom slugs that aren't in the bundled presets: tail in alpha order.
     const known = new Set(PLATFORM_PRESETS.map((p) => p.slug));
