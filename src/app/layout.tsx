@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { Providers } from "@/components/providers";
-import { FeedbackButton } from "@/components/feedback-button";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { JsonLd } from "@/components/json-ld";
 import { getLocale } from "@/lib/i18n/server";
@@ -185,11 +184,6 @@ export default async function RootLayout({
         <Providers initialLocale={lang} initialSession={clientSession}>
           <ImpersonationBanner />
           {children}
-          {/* Floating feedback pill — site-wide on public pages. The
-              component itself opts out on /dashboard, /admin, /g/, /invite/
-              via usePathname so signed-in app surfaces stay uncluttered.
-              Inside Providers so useI18n() resolves the visitor's locale. */}
-          <FeedbackButton />
         </Providers>
       </body>
     </html>

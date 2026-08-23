@@ -269,7 +269,7 @@ export function CalendarGrid({
           <div key={`${monthKey}-w${wi}`} className="grid grid-cols-7 border-b border-[var(--line)] last:border-b-0">
             {week.map((dayNum, di) => {
               if (dayNum === null) {
-                return <div key={`c-${di}`} className={`${cellHeightClass} border-r border-[var(--line)] last:border-r-0`} />;
+                return <div key={`blank-${di}`} className={`${cellHeightClass} border-r border-[var(--line)] last:border-r-0`} />;
               }
               const ds = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
               const isToday = year === today.getFullYear() && month === today.getMonth() && dayNum === today.getDate();
@@ -314,7 +314,7 @@ export function CalendarGrid({
               const showMiddleIndicator = !hasBar && (isManualCleaning || isBuffer || isPotential || isUnbookable || (isOpen && !hasBar) || (isClosed && !isBuffer) || (isConflict && !isOpen && !isClosed));
               return (
                 <div
-                  key={`c-${dayNum}`}
+                  key={`day-${dayNum}`}
                   onClick={(e) => {
                     onCellClick(ds, (e.currentTarget as HTMLElement).getBoundingClientRect());
                   }}
