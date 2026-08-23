@@ -307,6 +307,9 @@ model Reservation {
   hasParking      Boolean  @default(false)
   parkingNightlyPrice Float?
   parkingTotalPrice   Float?
+  extensionOfId       Int?
+  extensionOf         Reservation?  @relation("ReservationExtensions", fields: [extensionOfId], references: [id], onDelete: Cascade)
+  extensions          Reservation[] @relation("ReservationExtensions")
   propertyId      Int
   property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   guests          Guest[]
@@ -315,6 +318,7 @@ model Reservation {
   updatedAt       DateTime @updatedAt
 
   @@index([propertyId, linkedEventPlatform, linkedEventUid])
+  @@index([extensionOfId])
 }
 
 model DateOverride {

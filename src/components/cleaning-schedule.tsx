@@ -249,6 +249,8 @@ export function computeCleaningDays(
     /** Exact synced source referenced by a local claim/extension row. */
     linkedSourceKey?: string;
     linkedRole?: "claim" | "extension";
+    reservationId?: number;
+    extensionOfId?: number;
   }
   const rawBookings: Booking[] = [];
   const sourceByKey = new Map<string, Booking>();
@@ -317,6 +319,8 @@ export function computeCleaningDays(
       platform,
       linkedSourceKey: exactLinkedKey,
       linkedRole,
+      reservationId: res.id,
+      extensionOfId: res.extensionOfId || undefined,
     });
   }
 
@@ -326,9 +330,44 @@ export function computeCleaningDays(
   // at the internal source/Direct boundary.
   const connectedBookings: Booking[] = [];
   const consumed = new Set<Booking>();
+
+  // A manually negotiated extension is a separate financial/channel row,
+  // but operationally it is the same guest. Merge each root + its contiguous
+  // extensions so cleaning is scheduled only at the family's final checkout.
+  const reservationById = new Map(
+    rawBookings.filter((booking) => booking.reservationId).map((booking) => [booking.reservationId!, booking]),
+  );
+  for (const root of reservationById.values()) {
+    if (root.extensionOfId) continue;
+    const extensions = rawBookings
+      .filter((booking) => booking.extensionOfId === root.reservationId)
+      .sort((a, b) => a.start.localeCompare(b.start));
+    if (extensions.length === 0) continue;
+    let start = root.start;
+    let end = root.end;
+    const members = [root];
+    for (const extension of extensions) {
+      if (!rangesConnect(start, end, extension.start, extension.end)) continue;
+      start = start < extension.start ? start : extension.start;
+      end = end > extension.end ? end : extension.end;
+      members.push(extension);
+    }
+    if (members.length === 1) continue;
+    for (const member of members) consumed.add(member);
+    if (root.linkedSourceKey) {
+      const source = sourceByKey.get(root.linkedSourceKey);
+      if (source) {
+        consumed.add(source);
+        if (source.start < start) start = source.start;
+        if (source.end > end) end = source.end;
+      }
+    }
+    connectedBookings.push({ start, end, name: root.name, platform: root.platform });
+  }
   for (const [sourceKey, source] of sourceByKey) {
     const pending = rawBookings.filter(
       (booking) =>
+        !consumed.has(booking) &&
         booking.linkedSourceKey === sourceKey &&
         (booking.linkedRole === "claim" || booking.linkedRole === "extension"),
     );

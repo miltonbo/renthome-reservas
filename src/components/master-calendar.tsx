@@ -9,6 +9,7 @@ export interface MasterCalendarStay {
   platform: string;
   reservationId?: number;
   totalPrice?: number | null;
+  extensionOfId?: number | null;
 }
 
 interface MasterCalendarProperty {
@@ -274,7 +275,7 @@ export function MasterCalendar({
                       const clippedStart = stay.start < windowStart ? windowStart : stay.start;
                       const clippedEnd = stay.end > windowEnd ? windowEnd : stay.end;
                       const left = dayDiff(clippedStart, windowStart) * DAY_WIDTH +
-                        (stay.start < windowStart ? 3 : CHECKIN_OFFSET_PX);
+                        (stay.start < windowStart ? 3 : stay.extensionOfId ? CHECKOUT_OFFSET_PX : CHECKIN_OFFSET_PX);
                       const right = dayDiff(clippedEnd, windowStart) * DAY_WIDTH +
                         (stay.end < windowEnd ? CHECKOUT_OFFSET_PX : -3);
                       const width = Math.max(18, right - left);
@@ -290,7 +291,10 @@ export function MasterCalendar({
                           style={{ left, width, backgroundColor: color.background, color: color.foreground }}
                           title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
-                          <span className="block truncate">{stay.name}</span>
+                          <span className="flex items-center gap-1 truncate">
+                            {stay.extensionOfId && <span className="rounded bg-white/25 px-1 text-[8px] uppercase">Ext.</span>}
+                            <span className="truncate">{stay.name}</span>
+                          </span>
                           <span className="flex items-center justify-between gap-1 text-[9px] font-medium opacity-90">
                             <span className="truncate">{platformLabel(stay.platform)}</span>
                             {stay.totalPrice != null && (

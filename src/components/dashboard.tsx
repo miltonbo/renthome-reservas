@@ -238,6 +238,7 @@ export interface UnifiedStay {
   platform: string;
   reservationId?: number;
   totalPrice?: number | null;
+  extensionOfId?: number | null;
 }
 
 type LinkedEventRole = "claim" | "extension";
@@ -276,6 +277,11 @@ function reservationDateKey(value: string | Date): string {
 function reservationLocalDate(value: string | Date): Date {
   const [year, month, day] = reservationDateKey(value).split("-").map(Number);
   return new Date(year, month - 1, day);
+}
+
+function addCalendarDays(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return toLocalDateStr(new Date(year, month - 1, day + days));
 }
 
 /** True for iCal summaries that almost always indicate "this is a
@@ -410,6 +416,7 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
           : r.platform || "direct",
       reservationId: r.id,
       totalPrice: r.totalPrice,
+      extensionOfId: r.extensionOfId,
     });
   }
   for (const ev of events) {
@@ -549,6 +556,7 @@ interface DashboardProps {
     hasParking?: boolean;
     parkingNightlyPrice?: number | null;
     parkingTotalPrice?: number | null;
+    extensionOfId?: number | null;
   }) => Promise<{ ok: boolean; error?: string }>;
   onAddProperty?: (name: string) => Promise<void> | void;
   /** Rename a property in place. Lets the host rename from the
@@ -591,6 +599,8 @@ export function Dashboard({
   const [formParkingTotalPrice, setFormParkingTotalPrice] = useState("");
   const [savingReservation, setSavingReservation] = useState(false);
   const [reservationSaveError, setReservationSaveError] = useState("");
+  const [inspectedReservationId, setInspectedReservationId] = useState<number | null>(null);
+  const [formExtensionOfId, setFormExtensionOfId] = useState<number | null>(null);
   const [priceSource, setPriceSource] = useState<"nightly" | "total">("nightly");
   const [parkingPriceSource, setParkingPriceSource] = useState<"nightly" | "total">("nightly");
   const [allSyncedEvents, setAllSyncedEvents] = useState<Record<number, CalendarEvent[]>>({});
@@ -1064,6 +1074,7 @@ export function Dashboard({
       hasParking: formHasParking,
       parkingNightlyPrice: formHasParking ? moneyValue(formParkingNightlyPrice) : null,
       parkingTotalPrice: formHasParking ? moneyValue(formParkingTotalPrice) : null,
+      extensionOfId: formExtensionOfId,
     }).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }));
     setSavingReservation(false);
     if (!result.ok) {
@@ -1082,12 +1093,48 @@ export function Dashboard({
     setPriceSource("nightly");
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
+    setFormExtensionOfId(null);
     setShowForm(false);
   };
 
   const handleRowClick = (propertyId: number, reservationId: number) => {
     onSelectProperty(propertyId);
     setTimeout(() => onSelectReservation(reservationId), 50);
+  };
+
+  const inspectedContext = useMemo(() => {
+    if (!inspectedReservationId) return null;
+    for (const property of properties) {
+      const selected = property.reservations.find((item) => item.id === inspectedReservationId);
+      if (!selected) continue;
+      const rootId = selected.extensionOfId || selected.id;
+      const root = property.reservations.find((item) => item.id === rootId) || selected;
+      const family = property.reservations.filter((item) => item.id === rootId || item.extensionOfId === rootId);
+      const finalCheckOut = family.map((item) => reservationDateKey(item.checkOut)).sort().at(-1)!;
+      return { property, selected, root, rootId, family, finalCheckOut };
+    }
+    return null;
+  }, [inspectedReservationId, properties]);
+
+  const openExtensionForm = () => {
+    if (!inspectedContext) return;
+    setFormPropertyId(inspectedContext.property.id);
+    setFormName(inspectedContext.root.name);
+    setFormCheckIn(inspectedContext.finalCheckOut);
+    setFormCheckOut("");
+    setFormNightlyPrice("");
+    setFormTotalPrice("");
+    setFormGuarantee("");
+    setFormHasParking(Boolean(inspectedContext.selected.hasParking));
+    setFormParkingNightlyPrice("");
+    setFormParkingTotalPrice("");
+    setPriceSource("nightly");
+    setParkingPriceSource("nightly");
+    setFormPlatform("direct");
+    setFormExtensionOfId(inspectedContext.rootId);
+    setReservationSaveError("");
+    setInspectedReservationId(null);
+    setShowForm(true);
   };
 
   const masterCalendarProperties = useMemo(() => properties.map((property) => ({
@@ -1111,6 +1158,7 @@ export function Dashboard({
     setPriceSource("nightly");
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
+    setFormExtensionOfId(null);
     setReservationSaveError("");
     setShowForm(true);
   };
@@ -1452,7 +1500,7 @@ export function Dashboard({
           properties={masterCalendarProperties}
           loading={loadingCalendarData}
           onOpenProperty={onSelectProperty}
-          onOpenReservation={handleRowClick}
+          onOpenReservation={(_propertyId, reservationId) => setInspectedReservationId(reservationId)}
           onCreateReservation={openReservationFormForProperty}
         />
       )}
@@ -1861,13 +1909,35 @@ export function Dashboard({
         </div>
       )}
 
+      {inspectedContext && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Detalle de reserva">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div><h2 className="text-lg font-semibold text-[var(--ink)]">{inspectedContext.root.name}</h2><p className="text-xs text-[var(--ink-4)]">{inspectedContext.property.name}</p></div>
+              <button type="button" onClick={() => setInspectedReservationId(null)} aria-label="Cerrar" className="p-1.5 text-[var(--ink-4)]">✕</button>
+            </div>
+            <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="font-medium">{platformDisplayName(inspectedContext.selected.platform)}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Salida vigente</dt><dd className="font-medium">{new Date(`${inspectedContext.finalCheckOut}T12:00:00`).toLocaleDateString("es-BO")}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Hospedaje</dt><dd className="font-medium">Bs {inspectedContext.selected.totalPrice ?? 0}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="font-medium">{inspectedContext.selected.hasParking ? `Bs ${inspectedContext.selected.parkingTotalPrice ?? 0}` : "No"}</dd></div>
+              <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Garantía vigente</dt><dd className="font-medium">Bs {inspectedContext.root.guaranteeAmount ?? 0} · no se cobra nuevamente</dd></div>
+            </dl>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => handleRowClick(inspectedContext.property.id, inspectedContext.selected.id)} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm">Ver detalle</button>
+              <button type="button" onClick={openExtensionForm} className="rounded-lg bg-[var(--brand-orange)] px-3 py-2 text-sm font-semibold text-white">Extender estadía</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Nueva reserva">
           <form onSubmit={handleSubmit} className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--ink)]">Nueva reserva confirmada</h2>
-                <p className="mt-1 text-xs text-[var(--ink-4)]">La unidad seleccionada será la asignación física real.</p>
+                <h2 className="text-lg font-semibold text-[var(--ink)]">{formExtensionOfId ? "Extender estadía" : "Nueva reserva confirmada"}</h2>
+                <p className="mt-1 text-xs text-[var(--ink-4)]">{formExtensionOfId ? "Puede usar otro canal y otra tarifa; la garantía se mantiene." : "La unidad seleccionada será la asignación física real."}</p>
               </div>
               <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1.5 text-[var(--ink-4)] hover:bg-[var(--bg-3)] hover:text-[var(--ink)]" aria-label="Cerrar">✕</button>
             </div>
@@ -1875,7 +1945,7 @@ export function Dashboard({
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="sm:col-span-2">
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Departamento físico</span>
-                <select value={formPropertyId} onChange={(e) => setFormPropertyId(Number(e.target.value))} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+                <select disabled={Boolean(formExtensionOfId)} value={formPropertyId} onChange={(e) => setFormPropertyId(Number(e.target.value))} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)] disabled:opacity-70">
                   {properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
                 </select>
               </label>
@@ -1895,7 +1965,13 @@ export function Dashboard({
               </label>
               <div>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Estadía</span>
-                <DateSlider checkIn={formCheckIn} checkOut={formCheckOut} onChangeCheckIn={setFormCheckIn} onChangeCheckOut={setFormCheckOut} bookedDates={bookedDates} compact />
+                {formExtensionOfId ? (
+                  <div className="flex h-10 items-center gap-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm">
+                    <span className="shrink-0 text-[var(--ink-3)]">{new Date(`${formCheckIn}T12:00:00`).toLocaleDateString("es-BO")}</span>
+                    <span>→</span>
+                    <input aria-label="Nueva fecha de salida" type="date" min={addCalendarDays(formCheckIn, 1)} value={formCheckOut} onChange={(e) => setFormCheckOut(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" />
+                  </div>
+                ) : <DateSlider checkIn={formCheckIn} checkOut={formCheckOut} onChangeCheckIn={setFormCheckIn} onChangeCheckOut={setFormCheckOut} bookedDates={bookedDates} compact />}
               </div>
               <label>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Precio por noche</span>
@@ -1933,7 +2009,9 @@ export function Dashboard({
               </label>
               <label>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Garantía</span>
-                <div className="relative">
+                {formExtensionOfId ? (
+                  <div className="flex h-10 items-center rounded-lg border border-[var(--line-2)] bg-[var(--bg-3)] px-3 text-xs text-[var(--ink-3)]">Se mantiene; no se cobra nuevamente</div>
+                ) : <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">Bs</span>
                   <input
                     type="number"
@@ -1945,7 +2023,7 @@ export function Dashboard({
                     className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]"
                     placeholder="0"
                   />
-                </div>
+                </div>}
               </label>
               <div className="sm:col-span-2 mt-1 flex items-center gap-3" aria-hidden="true">
                 <span className="h-px flex-1 bg-[var(--line-2)]" />

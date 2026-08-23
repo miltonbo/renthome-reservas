@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       hasParking,
       parkingNightlyPrice,
       parkingTotalPrice,
+      extensionOfId,
     } = await request.json();
     if (
       typeof name !== "string" ||
@@ -74,7 +75,9 @@ export async function POST(request: NextRequest) {
       (parkingNightlyPrice !== undefined && parkingNightlyPrice !== null &&
         (typeof parkingNightlyPrice !== "number" || !Number.isFinite(parkingNightlyPrice) || parkingNightlyPrice < 0)) ||
       (parkingTotalPrice !== undefined && parkingTotalPrice !== null &&
-        (typeof parkingTotalPrice !== "number" || !Number.isFinite(parkingTotalPrice) || parkingTotalPrice < 0))
+        (typeof parkingTotalPrice !== "number" || !Number.isFinite(parkingTotalPrice) || parkingTotalPrice < 0)) ||
+      (extensionOfId !== undefined && extensionOfId !== null &&
+        (!Number.isInteger(extensionOfId) || extensionOfId <= 0))
     ) {
       return NextResponse.json({ error: "Invalid reservation data" }, { status: 400 });
     }
@@ -93,6 +96,33 @@ export async function POST(request: NextRequest) {
     }
     if (checkOutDate <= checkInDate) {
       return NextResponse.json({ error: "checkOut must be after checkIn" }, { status: 400 });
+    }
+
+    let extensionRootId: number | null = null;
+    if (extensionOfId != null) {
+      const requestedRoot = await prisma.reservation.findFirst({
+        where: { id: extensionOfId, propertyId },
+        select: { id: true, extensionOfId: true, checkOut: true },
+      });
+      if (!requestedRoot || requestedRoot.extensionOfId) {
+        return NextResponse.json({ error: "Invalid extension root" }, { status: 409 });
+      }
+      const existingExtensions = await prisma.reservation.findMany({
+        where: { extensionOfId: requestedRoot.id },
+        select: { checkOut: true },
+      });
+      const familyEnd = [requestedRoot.checkOut, ...existingExtensions.map((item) => item.checkOut)]
+        .reduce((latest, value) => value > latest ? value : latest);
+      if (checkInDate.getTime() !== familyEnd.getTime()) {
+        return NextResponse.json(
+          { error: "Extension must start at the current checkout" },
+          { status: 409 },
+        );
+      }
+      if (guaranteeAmount != null && guaranteeAmount !== 0) {
+        return NextResponse.json({ error: "Extension cannot add a guarantee" }, { status: 400 });
+      }
+      extensionRootId = requestedRoot.id;
     }
 
     // Check overlap with existing RentTools reservations on the same
@@ -285,6 +315,7 @@ export async function POST(request: NextRequest) {
         ...(hasParking !== undefined ? { hasParking } : {}),
         ...(parkingNightlyPrice !== undefined ? { parkingNightlyPrice } : {}),
         ...(parkingTotalPrice !== undefined ? { parkingTotalPrice } : {}),
+        ...(extensionRootId ? { extensionOfId: extensionRootId } : {}),
         propertyId,
       },
     });
@@ -335,6 +366,7 @@ export async function POST(request: NextRequest) {
       hasParking: reservation.hasParking,
       parkingNightlyPrice: reservation.parkingNightlyPrice,
       parkingTotalPrice: reservation.parkingTotalPrice,
+      extensionOfId: reservation.extensionOfId,
     });
     return NextResponse.json(reservation);
   } catch (err) {

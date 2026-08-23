@@ -105,6 +105,36 @@ describe("POST /api/reservations — linked calendar source", () => {
     });
   });
 
+  it("creates a separately priced extension at the family's current checkout", async () => {
+    mocks.reservationFindFirst
+      .mockResolvedValueOnce({ id: 44, extensionOfId: null, checkOut: new Date("2026-08-23T00:00:00.000Z") })
+      .mockResolvedValueOnce(null);
+    mocks.reservationFindMany.mockResolvedValue([]);
+
+    const response = await POST(postRequest({
+      checkIn: "2026-08-23",
+      checkOut: "2026-08-26",
+      platform: "direct",
+      extensionOfId: 44,
+      nightlyPrice: 280,
+      totalPrice: 840,
+      guaranteeAmount: null,
+      hasParking: true,
+      parkingNightlyPrice: 30,
+      parkingTotalPrice: 90,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.reservationCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        extensionOfId: 44,
+        platform: "direct",
+        totalPrice: 840,
+        parkingTotalPrice: 90,
+      }),
+    });
+  });
+
   it("normalizes and excludes only the exact property/platform/UID source", async () => {
     mocks.calendarEventFindFirst
       .mockResolvedValueOnce({
