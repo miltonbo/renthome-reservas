@@ -508,7 +508,10 @@ function AppContent({
         onLogout={handleLogout}
       />
       <SyncAlertsBanner />
-      <main className="flex-1 overflow-y-auto px-3 sm:px-6 lg:px-8 pb-3 sm:pb-6 lg:pb-8" style={{ scrollbarGutter: "stable" }}>
+      <main
+        className={`min-h-0 flex-1 px-3 pb-3 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8 ${activeView === "dashboard" && !selectedPropertyId ? "overflow-hidden" : "overflow-y-auto"}`}
+        style={{ scrollbarGutter: "stable" }}
+      >
         {loadingProperties && properties.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--line-2)] border-t-sky-400" />
@@ -517,7 +520,7 @@ function AppContent({
           /* The calendar's frozen header pins to top:0 of <main>, so
              <main> must have NO top padding for that view. Every other
              view gets the standard top breathing room here. */
-          <div className={activeView === "calendar" ? "" : "pt-3 sm:pt-6 lg:pt-8"}>
+          <div className={`${activeView === "dashboard" && !selectedPropertyId ? "h-full min-h-0" : ""} ${activeView === "calendar" ? "" : "pt-3 sm:pt-6 lg:pt-8"}`}>
             {renderContent()}
           </div>
         )}

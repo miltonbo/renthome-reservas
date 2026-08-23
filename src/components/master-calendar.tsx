@@ -139,7 +139,7 @@ export function MasterCalendar({
     : `${monthFormatter.format(windowStart)} – ${monthFormatter.format(lastVisibleDay)}`;
 
   return (
-    <section className="[--property-column-width:148px] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm sm:[--property-column-width:184px] lg:[--property-column-width:210px]">
+    <section className="flex min-h-0 flex-1 flex-col [--property-column-width:148px] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm sm:[--property-column-width:184px] lg:[--property-column-width:210px]">
       <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] px-2.5 py-2 sm:px-4 sm:py-2.5">
         <div>
           <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export function MasterCalendar({
         </div>
       </div>
 
-      <div className="max-h-[78vh] overflow-auto sm:max-h-[75vh]">
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
         <div style={{ minWidth: `calc(var(--property-column-width) + ${DAY_WIDTH * VISIBLE_DAYS}px)` }}>
           <div className="sticky top-0 z-30 flex border-b border-[var(--line)] bg-[var(--bg-2)] shadow-[0_2px_6px_rgba(15,23,42,0.08)]">
             <div className="sticky left-0 z-30 flex w-[var(--property-column-width)] shrink-0 items-end border-r border-[var(--line)] bg-[var(--bg-2)] px-2 pb-2 text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-4)] sm:px-3 sm:text-[10px]">

@@ -1307,8 +1307,8 @@ export function Dashboard({
   };
 
   return (
-    <div className="-mx-3 sm:-mx-6 lg:-mx-8">
-    <div className={`mx-auto max-w-none px-2 sm:px-4 ${selectedProperty ? "space-y-6" : "space-y-3 sm:space-y-4"}`}>
+    <div className={`-mx-3 sm:-mx-6 lg:-mx-8 ${selectedProperty ? "" : "h-full min-h-0"}`}>
+    <div className={`mx-auto max-w-none px-2 sm:px-4 ${selectedProperty ? "space-y-6" : "flex h-full min-h-0 flex-col gap-3 sm:gap-4"}`}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -1782,33 +1782,6 @@ export function Dashboard({
         </div>
       )}
 
-
-      {/* Search */}
-      {allReservations.length > 0 && (
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={c.searchPlaceholder}
-            className="h-9 w-full rounded-md border border-[var(--line)] bg-[var(--bg-2)] pl-9 pr-8 text-sm text-[var(--ink)] placeholder-[var(--ink-4)] outline-none transition-colors focus:border-[var(--line-2)]"
-          />
-          <svg className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-4)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2M16.5 10.5a6 6 0 11-12 0 6 6 0 0112 0z" />
-          </svg>
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--ink-4)] hover:text-[var(--ink)]"
-              aria-label="Clear search"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      )}
 
       {/* Reservations List */}
       {false && ((displayReservations.length > 0 || (useSections && past.length > 0)) ? (
