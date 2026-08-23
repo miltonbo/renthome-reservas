@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { CleaningSchedule } from "@/components/cleaning-schedule";
 import { AnnouncementBanner } from "@/components/announcement-banner";
-import { SupportFooter } from "@/components/support-footer";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/alternates";
@@ -187,7 +186,6 @@ export function CleanerApp({ user, onLogout }: CleanerAppProps) {
           )}
         </div>
       </main>
-      <SupportFooter />
     </div>
   );
 }

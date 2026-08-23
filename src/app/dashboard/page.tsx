@@ -18,7 +18,6 @@ import { TasksPanel } from "@/components/tasks-panel";
 import { ReportsPanel } from "@/components/reports-panel";
 import { SyncAlertsBanner } from "@/components/sync-alerts-banner";
 import { AnnouncementBanner } from "@/components/announcement-banner";
-import { SupportFooter } from "@/components/support-footer";
 import { CleanerApp } from "@/components/cleaner-app";
 import type { Property, Guest, Reservation } from "@/lib/types";
 
@@ -523,7 +522,6 @@ function AppContent({
           </div>
         )}
       </main>
-      <SupportFooter />
     </div>
   );
 }
