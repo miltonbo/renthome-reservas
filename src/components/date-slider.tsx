@@ -13,10 +13,9 @@ interface DateSliderProps {
   compact?: boolean;
   // RT-25.6 tick 8 — set of YYYY-MM-DD dates already covered by an
   // existing reservation or synced calendar event on the property the
-  // host picked in the form. Days in this set get a small amber marker
-  // in the grid so the host can see what's taken before clicking. No
-  // hard block on selection — matches the no-hard-block convention of
-  // the in-form conflict warning (tick 7).
+  // host picked in the form. Occupied nights are visually marked and
+  // cannot be selected. A booked check-in day may still be used as the
+  // preceding stay's check-out boundary when every earlier night is free.
   bookedDates?: ReadonlySet<string>;
 }
 
@@ -25,6 +24,27 @@ function toDateStr(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+export function canSelectCalendarDate(
+  dateStr: string,
+  selecting: "in" | "out",
+  checkIn: string,
+  bookedDates?: ReadonlySet<string>,
+): boolean {
+  if (!bookedDates?.has(dateStr)) return true;
+  if (selecting !== "out" || !checkIn || dateStr <= checkIn) return false;
+
+  // The selected date is an exclusive check-out boundary. It is valid even
+  // when another guest checks in that day, provided none of this stay's
+  // actual nights [checkIn, dateStr) are occupied.
+  const cursor = new Date(`${checkIn}T12:00:00`);
+  const end = new Date(`${dateStr}T12:00:00`);
+  while (cursor < end) {
+    if (bookedDates.has(toDateStr(cursor))) return false;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return true;
 }
 
 function nightCountLabel(count: number, locale: Locale): string {
@@ -217,6 +237,7 @@ function CalendarGrid({
                   const isEnd = dateStr === checkOut;
                   const inRange = isInRange(dateStr);
                   const isBooked = bookedDates?.has(dateStr) ?? false;
+                  const canSelect = canSelectCalendarDate(dateStr, selecting, checkIn, bookedDates);
 
                   // Dim dates more than 3 days in the past
                   const threeDaysAgo = new Date(today);
@@ -227,9 +248,10 @@ function CalendarGrid({
                     <button
                       key={dateStr}
                       type="button"
-                      disabled={isPast}
+                      disabled={isPast || !canSelect}
                       onClick={() => handleDayClick(dateStr)}
-                      title={isBooked ? "Already booked on this property" : undefined}
+                      aria-label={`${dateStr}${isBooked ? " · Ocupado" : ""}`}
+                      title={isBooked ? (canSelect ? "Ocupado desde este día; disponible como salida" : "Ocupado por una reserva") : undefined}
                       className={`relative flex h-8 items-center justify-center rounded-md text-xs transition-all ${
                         isPast
                           ? "text-[var(--ink-4)] cursor-not-allowed"
@@ -237,8 +259,10 @@ function CalendarGrid({
                           ? "bg-[var(--ink)] text-white font-semibold"
                           : inRange
                           ? "bg-[var(--ink)]/12 text-sky-300"
+                          : isBooked && !canSelect
+                          ? "cursor-not-allowed bg-amber-500/25 text-amber-200 ring-1 ring-inset ring-amber-400/35"
                           : isBooked
-                          ? "bg-amber-500/10 text-amber-200 hover:bg-amber-500/20"
+                          ? "bg-amber-500/15 text-amber-200 ring-1 ring-inset ring-amber-400/25 hover:bg-amber-500/25"
                           : isToday
                           ? "text-[var(--ink)] ring-1 ring-[var(--ink)]/40"
                           : "text-[var(--ink-2)] hover:bg-[var(--bg-3)]"

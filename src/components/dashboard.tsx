@@ -995,9 +995,11 @@ export function Dashboard({
     const pid = Number(formPropertyId);
     const property = properties.find((p) => p.id === pid);
     const addRange = (from: string, to: string) => {
-      if (!from || !to || from >= to) return;
-      const start = new Date(from + "T00:00:00");
-      const end = new Date(to + "T00:00:00");
+      const fromDate = reservationDateKey(from);
+      const toDate = reservationDateKey(to);
+      if (!fromDate || !toDate || fromDate >= toDate) return;
+      const start = new Date(fromDate + "T12:00:00");
+      const end = new Date(toDate + "T12:00:00");
       for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, "0");
