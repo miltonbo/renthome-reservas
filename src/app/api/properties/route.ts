@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
 
     const include = {
       reservations: {
+        where: { status: "confirmed" },
         orderBy: { checkIn: "asc" as const },
         include: { _count: { select: { guests: true } } },
       },

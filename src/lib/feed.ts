@@ -75,7 +75,7 @@ export async function generateFeed(propertyId: number, forPlatform: string): Pro
   });
 
   const allReservations = await prisma.reservation.findMany({
-    where: { propertyId, checkOut: { gte: new Date() } },
+    where: { propertyId, status: "confirmed", checkOut: { gte: new Date() } },
     orderBy: { checkIn: "asc" },
   });
 

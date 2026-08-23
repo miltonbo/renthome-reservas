@@ -264,8 +264,12 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Reservation" ADD COLUMN "hasParking" INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE "Reservation" ADD COLUMN "parkingNightlyPrice" REAL`,
     `ALTER TABLE "Reservation" ADD COLUMN "parkingTotalPrice" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'confirmed'`,
+    `ALTER TABLE "Reservation" ADD COLUMN "cancellationReason" TEXT`,
+    `ALTER TABLE "Reservation" ADD COLUMN "cancelledAt" DATETIME`,
     `ALTER TABLE "Reservation" ADD COLUMN "extensionOfId" INTEGER`,
     `CREATE INDEX IF NOT EXISTS "Reservation_extensionOfId_idx" ON "Reservation"("extensionOfId")`,
+    `CREATE INDEX IF NOT EXISTS "Reservation_status_idx" ON "Reservation"("status")`,
   ];
 
   // Feedback table — site-wide visitor feedback queue. New table, so we

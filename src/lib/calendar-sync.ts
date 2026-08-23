@@ -365,6 +365,7 @@ export async function syncAllCalendars(opts?: {
       const linkedReservations = await prisma.reservation.findMany({
         where: {
           propertyId,
+          status: "confirmed",
           linkedEventUid: { not: null },
         },
         select: {

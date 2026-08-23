@@ -41,6 +41,7 @@ export async function loadEffectiveLinkedStayRange(args: {
   const candidates = await prisma.reservation.findMany({
     where: {
       propertyId,
+      status: "confirmed",
       OR: [
         // Explicit link candidates are filtered by exact source platform and
         // durable role below. UID alone is not globally unique.

@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const propertyId = request.nextUrl.searchParams.get("propertyId");
     const accessibleIds = await listAccessiblePropertyIds(session.userId, session.role);
     const where = propertyId
-      ? { propertyId: parseInt(propertyId), property: { id: { in: accessibleIds } } }
-      : { property: { id: { in: accessibleIds } } };
+      ? { propertyId: parseInt(propertyId), property: { id: { in: accessibleIds } }, status: "confirmed" }
+      : { property: { id: { in: accessibleIds } }, status: "confirmed" };
     const reservations = await prisma.reservation.findMany({
       where,
       orderBy: { checkIn: "asc" },
@@ -101,14 +101,14 @@ export async function POST(request: NextRequest) {
     let extensionRootId: number | null = null;
     if (extensionOfId != null) {
       const requestedRoot = await prisma.reservation.findFirst({
-        where: { id: extensionOfId, propertyId },
+        where: { id: extensionOfId, propertyId, status: "confirmed" },
         select: { id: true, extensionOfId: true, checkOut: true },
       });
       if (!requestedRoot || requestedRoot.extensionOfId) {
         return NextResponse.json({ error: "Invalid extension root" }, { status: 409 });
       }
       const existingExtensions = await prisma.reservation.findMany({
-        where: { extensionOfId: requestedRoot.id },
+        where: { extensionOfId: requestedRoot.id, status: "confirmed" },
         select: { checkOut: true },
       });
       const familyEnd = [requestedRoot.checkOut, ...existingExtensions.map((item) => item.checkOut)]
@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
     const overlap = await prisma.reservation.findFirst({
       where: {
         propertyId,
+        status: "confirmed",
         checkIn: { lt: checkOutDate },
         checkOut: { gt: checkInDate },
       },

@@ -165,6 +165,7 @@ export async function POST(request: NextRequest) {
       const overlap = await prisma.reservation.findFirst({
         where: {
           propertyId: v.propertyId,
+          status: "confirmed",
           checkIn: { lt: v.checkOut },
           checkOut: { gt: v.checkIn },
         },

@@ -117,7 +117,7 @@ export async function auditProperty(propertyId: number): Promise<PropertyAuditRe
       orderBy: { platform: "asc" },
     }),
     prisma.reservation.findMany({
-      where: { propertyId },
+      where: { propertyId, status: "confirmed" },
       orderBy: { checkIn: "asc" },
     }),
     prisma.calendarEvent.findMany({

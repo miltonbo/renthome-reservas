@@ -63,10 +63,11 @@ export async function GET(request: NextRequest) {
 
     const where: {
       property: { id: { in: number[] } };
+      status: string;
       propertyId?: number;
       checkIn?: { lte?: Date };
       checkOut?: { gte?: Date };
-    } = { property: { id: { in: accessibleIds } } };
+    } = { property: { id: { in: accessibleIds } }, status: "confirmed" };
 
     if (propertyIdParam) {
       const pid = parseInt(propertyIdParam);

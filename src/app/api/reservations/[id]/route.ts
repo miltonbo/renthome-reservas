@@ -21,6 +21,7 @@ async function loadManageableReservation(
       linkedEventUid: true,
       linkedEventPlatform: true,
       linkedEventRole: true,
+      status: true,
       checkIn: true,
       checkOut: true,
     },
@@ -44,6 +45,9 @@ export async function PATCH(
 
     const owned = await loadManageableReservation(numId, session.userId, session.role);
     if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (owned.status === "cancelled") {
+      return NextResponse.json({ error: "Cancelled reservation cannot be edited" }, { status: 409 });
+    }
 
     const body = await request.json();
     const data: Record<string, unknown> = {};
@@ -75,6 +79,31 @@ export async function PATCH(
         );
       }
       data.platform = body.platform;
+    }
+    const nullableAmounts = [
+      "nightlyPrice",
+      "totalPrice",
+      "guaranteeAmount",
+      "parkingNightlyPrice",
+      "parkingTotalPrice",
+    ] as const;
+    for (const field of nullableAmounts) {
+      if (body[field] === undefined) continue;
+      const value = body[field];
+      if (value !== null && (typeof value !== "number" || !Number.isFinite(value) || value < 0)) {
+        return NextResponse.json({ error: `Invalid ${field}` }, { status: 400 });
+      }
+      data[field] = value;
+    }
+    if (body.hasParking !== undefined) {
+      if (typeof body.hasParking !== "boolean") {
+        return NextResponse.json({ error: "Invalid hasParking" }, { status: 400 });
+      }
+      data.hasParking = body.hasParking;
+      if (!body.hasParking) {
+        data.parkingNightlyPrice = null;
+        data.parkingTotalPrice = null;
+      }
     }
 
     // Host-editable group-chat name override. Empty string / whitespace
@@ -150,6 +179,7 @@ export async function PATCH(
           where: {
             propertyId: current.propertyId,
             id: { not: numId },
+            status: "confirmed",
             checkIn: { lt: newCheckOut },
             checkOut: { gt: newCheckIn },
           },

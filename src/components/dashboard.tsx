@@ -558,6 +558,13 @@ interface DashboardProps {
     parkingTotalPrice?: number | null;
     extensionOfId?: number | null;
   }) => Promise<{ ok: boolean; error?: string }>;
+  onUpdateReservation?: (id: number, data: {
+    name?: string; checkIn?: string; checkOut?: string; platform?: string;
+    nightlyPrice?: number | null; totalPrice?: number | null;
+    guaranteeAmount?: number | null; hasParking?: boolean;
+    parkingNightlyPrice?: number | null; parkingTotalPrice?: number | null;
+  }) => Promise<{ ok: boolean; error?: string }>;
+  onCancelReservation?: (id: number, reason?: string) => Promise<{ ok: boolean; error?: string }>;
   onAddProperty?: (name: string) => Promise<void> | void;
   /** Rename a property in place. Lets the host rename from the
    *  dashboard header without opening Sync settings. Optional so
@@ -577,6 +584,8 @@ export function Dashboard({
   onSelectProperty,
   onSelectReservation,
   onAddReservation,
+  onUpdateReservation,
+  onCancelReservation,
   onAddProperty,
   onUpdateProperty,
   onRefresh,
@@ -601,6 +610,11 @@ export function Dashboard({
   const [reservationSaveError, setReservationSaveError] = useState("");
   const [inspectedReservationId, setInspectedReservationId] = useState<number | null>(null);
   const [formExtensionOfId, setFormExtensionOfId] = useState<number | null>(null);
+  const [formEditingId, setFormEditingId] = useState<number | null>(null);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancellingReservation, setCancellingReservation] = useState(false);
+  const [cancellationError, setCancellationError] = useState("");
   const [priceSource, setPriceSource] = useState<"nightly" | "total">("nightly");
   const [parkingPriceSource, setParkingPriceSource] = useState<"nightly" | "total">("nightly");
   const [allSyncedEvents, setAllSyncedEvents] = useState<Record<number, CalendarEvent[]>>({});
@@ -949,6 +963,7 @@ export function Dashboard({
     const out: Conflict[] = [];
     if (property) {
       for (const res of property.reservations) {
+        if (res.id === formEditingId) continue;
         const checkIn = reservationDateKey(res.checkIn);
         const checkOut = reservationDateKey(res.checkOut);
         if (checkIn < formCheckOut && checkOut > formCheckIn) {
@@ -977,7 +992,7 @@ export function Dashboard({
       }
     }
     return out;
-  }, [formPropertyId, formCheckIn, formCheckOut, properties, allSyncedEvents]);
+  }, [formPropertyId, formCheckIn, formCheckOut, formEditingId, properties, allSyncedEvents]);
 
   // RT-25.6 tick 8 — booked-dates set for the in-form date picker.
   // Same data sources as the conflict warning (tick 7) — Reservation
@@ -1009,6 +1024,7 @@ export function Dashboard({
     };
     if (property) {
       for (const res of property.reservations) {
+        if (res.id === formEditingId) continue;
         addRange(res.checkIn, res.checkOut);
       }
     }
@@ -1017,7 +1033,7 @@ export function Dashboard({
       addRange(ev.startDate, ev.endDate);
     }
     return set;
-  }, [formPropertyId, properties, allSyncedEvents]);
+  }, [formPropertyId, formEditingId, properties, allSyncedEvents]);
 
   const formNightCount = useMemo(() => {
     if (!formCheckIn || !formCheckOut || formCheckIn >= formCheckOut) return 0;
@@ -1068,20 +1084,25 @@ export function Dashboard({
     if (!formName.trim() || !formCheckIn || !formCheckOut || !formPropertyId || savingReservation) return;
     setSavingReservation(true);
     setReservationSaveError("");
-    const result = await onAddReservation({
+    const reservationData = {
       name: formName.trim(),
       checkIn: formCheckIn,
       checkOut: formCheckOut,
       platform: formPlatform,
-      propertyId: Number(formPropertyId),
       nightlyPrice: moneyValue(formNightlyPrice),
       totalPrice: moneyValue(formTotalPrice),
       guaranteeAmount: moneyValue(formGuarantee),
       hasParking: formHasParking,
       parkingNightlyPrice: formHasParking ? moneyValue(formParkingNightlyPrice) : null,
       parkingTotalPrice: formHasParking ? moneyValue(formParkingTotalPrice) : null,
-      extensionOfId: formExtensionOfId,
-    }).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }));
+    };
+    const result = formEditingId && onUpdateReservation
+      ? await onUpdateReservation(formEditingId, reservationData).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }))
+      : await onAddReservation({
+          ...reservationData,
+          propertyId: Number(formPropertyId),
+          extensionOfId: formExtensionOfId,
+        }).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }));
     setSavingReservation(false);
     if (!result.ok) {
       setReservationSaveError(result.error || "No se pudo guardar la reserva.");
@@ -1100,6 +1121,7 @@ export function Dashboard({
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
     setFormExtensionOfId(null);
+    setFormEditingId(null);
     setShowForm(false);
   };
 
@@ -1138,9 +1160,49 @@ export function Dashboard({
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
     setFormExtensionOfId(inspectedContext.rootId);
+    setFormEditingId(null);
     setReservationSaveError("");
     setInspectedReservationId(null);
     setShowForm(true);
+  };
+
+  const openEditForm = () => {
+    if (!inspectedContext) return;
+    const reservation = inspectedContext.selected;
+    setFormPropertyId(inspectedContext.property.id);
+    setFormName(reservation.name);
+    setFormCheckIn(reservationDateKey(reservation.checkIn));
+    setFormCheckOut(reservationDateKey(reservation.checkOut));
+    setFormNightlyPrice(reservation.nightlyPrice == null ? "" : formatMoneyInput(reservation.nightlyPrice));
+    setFormTotalPrice(reservation.totalPrice == null ? "" : formatMoneyInput(reservation.totalPrice));
+    setFormGuarantee(reservation.guaranteeAmount == null ? "" : formatMoneyInput(reservation.guaranteeAmount));
+    setFormHasParking(Boolean(reservation.hasParking));
+    setFormParkingNightlyPrice(reservation.parkingNightlyPrice == null ? "" : formatMoneyInput(reservation.parkingNightlyPrice));
+    setFormParkingTotalPrice(reservation.parkingTotalPrice == null ? "" : formatMoneyInput(reservation.parkingTotalPrice));
+    setFormPlatform(reservation.platform || "direct");
+    setPriceSource("nightly");
+    setParkingPriceSource("nightly");
+    setFormExtensionOfId(null);
+    setFormEditingId(reservation.id);
+    setReservationSaveError("");
+    setInspectedReservationId(null);
+    setShowForm(true);
+  };
+
+  const confirmCancellation = async () => {
+    if (!inspectedContext || !onCancelReservation || cancellingReservation) return;
+    setCancellingReservation(true);
+    setCancellationError("");
+    const result = await onCancelReservation(inspectedContext.selected.id, cancellationReason)
+      .catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }));
+    setCancellingReservation(false);
+    if (!result.ok) {
+      setCancellationError(result.error || "No se pudo cancelar la reserva.");
+      return;
+    }
+    setCancellationReason("");
+    setShowCancelForm(false);
+    setInspectedReservationId(null);
   };
 
   const masterCalendarProperties = useMemo(() => properties.map((property) => ({
@@ -1165,6 +1227,7 @@ export function Dashboard({
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
     setFormExtensionOfId(null);
+    setFormEditingId(null);
     setReservationSaveError("");
     setShowForm(true);
   };
@@ -1929,21 +1992,43 @@ export function Dashboard({
               <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="font-medium">{inspectedContext.selected.hasParking ? `Bs ${inspectedContext.selected.parkingTotalPrice ?? 0}` : "No"}</dd></div>
               <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Garantía vigente</dt><dd className="font-medium">Bs {inspectedContext.root.guaranteeAmount ?? 0} · no se cobra nuevamente</dd></div>
             </dl>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button type="button" onClick={() => handleRowClick(inspectedContext.property.id, inspectedContext.selected.id)} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm">Ver detalle</button>
+              <button type="button" onClick={openEditForm} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm font-medium">Modificar</button>
+              <button type="button" onClick={() => { setCancellationReason(""); setCancellationError(""); setShowCancelForm(true); }} className="rounded-lg border border-red-500/40 px-3 py-2 text-sm font-medium text-red-400">Cancelar reserva</button>
               <button type="button" onClick={openExtensionForm} className="rounded-lg bg-[var(--brand-orange)] px-3 py-2 text-sm font-semibold text-white">Extender estadía</button>
             </div>
           </div>
         </div>
       )}
 
+      {inspectedContext && showCancelForm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 p-4" role="dialog" aria-modal="true" aria-label="Cancelar reserva">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
+            <h2 className="text-lg font-semibold text-[var(--ink)]">Cancelar reserva</h2>
+            <p className="mt-2 text-sm text-[var(--ink-3)]">
+              Se liberarán las fechas de {inspectedContext.root.name}. La reserva dejará de mostrarse, pero quedará registrada como cancelada.
+            </p>
+            <label className="mt-4 block">
+              <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Motivo de cancelación (opcional)</span>
+              <textarea value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} maxLength={1000} rows={3} className="w-full resize-none rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] p-3 text-sm text-[var(--ink)] outline-none focus:border-red-400" placeholder="Ej. El huésped canceló su viaje" />
+            </label>
+            {cancellationError && <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-2.5 text-sm text-red-400">{cancellationError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" disabled={cancellingReservation} onClick={() => setShowCancelForm(false)} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-sm">Volver</button>
+              <button type="button" disabled={cancellingReservation} onClick={confirmCancellation} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{cancellingReservation ? "Cancelando…" : "Confirmar cancelación"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Nueva reserva">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label={formEditingId ? "Modificar reserva" : "Nueva reserva"}>
           <form onSubmit={handleSubmit} className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--ink)]">{formExtensionOfId ? "Extender estadía" : "Nueva reserva confirmada"}</h2>
-                <p className="mt-1 text-xs text-[var(--ink-4)]">{formExtensionOfId ? "Puede usar otro canal y otra tarifa; la garantía se mantiene." : "La unidad seleccionada será la asignación física real."}</p>
+                <h2 className="text-lg font-semibold text-[var(--ink)]">{formEditingId ? "Modificar reserva" : formExtensionOfId ? "Extender estadía" : "Nueva reserva confirmada"}</h2>
+                <p className="mt-1 text-xs text-[var(--ink-4)]">{formEditingId ? "Actualice únicamente los datos que necesite cambiar." : formExtensionOfId ? "Puede usar otro canal y otra tarifa; la garantía se mantiene." : "La unidad seleccionada será la asignación física real."}</p>
               </div>
               <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1.5 text-[var(--ink-4)] hover:bg-[var(--bg-3)] hover:text-[var(--ink)]" aria-label="Cerrar">✕</button>
             </div>
@@ -2097,7 +2182,7 @@ export function Dashboard({
 
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" disabled={savingReservation} onClick={() => setShowForm(false)} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)] disabled:opacity-45">Cancelar</button>
-              <button type="submit" disabled={savingReservation || !formName.trim() || !formCheckIn || !formCheckOut || formCheckIn >= formCheckOut || formConflicts.length > 0} className="rounded-lg bg-[var(--brand-orange)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--m-accent-2)] disabled:cursor-not-allowed disabled:opacity-45">{savingReservation ? "Guardando…" : "Guardar reserva"}</button>
+              <button type="submit" disabled={savingReservation || !formName.trim() || !formCheckIn || !formCheckOut || formCheckIn >= formCheckOut || formConflicts.length > 0} className="rounded-lg bg-[var(--brand-orange)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--m-accent-2)] disabled:cursor-not-allowed disabled:opacity-45">{savingReservation ? "Guardando…" : formEditingId ? "Guardar cambios" : "Guardar reserva"}</button>
             </div>
           </form>
         </div>

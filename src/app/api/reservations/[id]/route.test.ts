@@ -547,6 +547,51 @@ describe("PATCH /api/reservations/:id — date edits", () => {
   });
 });
 
+describe("PATCH /api/reservations/:id — commercial details", () => {
+  it("updates channel, lodging, guarantee and parking amounts", async () => {
+    mocks.reservationFindUnique.mockResolvedValue({
+      ...original,
+      platform: "direct",
+      linkedEventUid: null,
+    });
+    const response = await PATCH(
+      patchRequest({
+        platform: "vrbo",
+        nightlyPrice: 320,
+        totalPrice: 960,
+        guaranteeAmount: 300,
+        hasParking: true,
+        parkingNightlyPrice: 35,
+        parkingTotalPrice: 105,
+      }),
+      patchParams(),
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.reservationUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        platform: "vrbo",
+        nightlyPrice: 320,
+        totalPrice: 960,
+        guaranteeAmount: 300,
+        hasParking: true,
+        parkingNightlyPrice: 35,
+        parkingTotalPrice: 105,
+      }),
+    }));
+  });
+
+  it("clears parking amounts when parking is disabled", async () => {
+    await PATCH(patchRequest({ hasParking: false }), patchParams());
+    expect(mocks.reservationUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        hasParking: false,
+        parkingNightlyPrice: null,
+        parkingTotalPrice: null,
+      }),
+    }));
+  });
+});
+
 describe("DELETE /api/reservations/:id — linked calendar source", () => {
   it("looks up and deletes only the exact property/platform/UID source", async () => {
     mocks.reservationFindUnique.mockResolvedValue({

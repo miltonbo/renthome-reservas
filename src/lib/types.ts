@@ -58,6 +58,9 @@ export interface Reservation {
   hasParking?: boolean;
   parkingNightlyPrice?: number | null;
   parkingTotalPrice?: number | null;
+  status?: "confirmed" | "cancelled";
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
   extensionOfId?: number | null;
   propertyId: number;
   createdAt: string;

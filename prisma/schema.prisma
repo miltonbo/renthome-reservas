@@ -307,6 +307,9 @@ model Reservation {
   hasParking      Boolean  @default(false)
   parkingNightlyPrice Float?
   parkingTotalPrice   Float?
+  status              String    @default("confirmed") // "confirmed" | "cancelled"
+  cancellationReason  String?
+  cancelledAt         DateTime?
   extensionOfId       Int?
   extensionOf         Reservation?  @relation("ReservationExtensions", fields: [extensionOfId], references: [id], onDelete: Cascade)
   extensions          Reservation[] @relation("ReservationExtensions")
@@ -319,6 +322,7 @@ model Reservation {
 
   @@index([propertyId, linkedEventPlatform, linkedEventUid])
   @@index([extensionOfId])
+  @@index([status])
 }
 
 model DateOverride {

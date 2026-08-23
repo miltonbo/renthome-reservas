@@ -213,6 +213,12 @@ function AppContent({
       waGroupUrl?: string | null;
       groupName?: string | null;
       phone?: string | null;
+      nightlyPrice?: number | null;
+      totalPrice?: number | null;
+      guaranteeAmount?: number | null;
+      hasParking?: boolean;
+      parkingNightlyPrice?: number | null;
+      parkingTotalPrice?: number | null;
     }
   ) => {
     const res = await fetch(`/api/reservations/${id}`, {
@@ -226,6 +232,21 @@ function AppContent({
     }
     const errBody = await res.json().catch(() => ({} as { error?: string }));
     return { ok: false as const, error: errBody?.error || `Request failed (${res.status})` };
+  };
+
+  const handleCancelReservation = async (id: number, reason?: string) => {
+    const res = await fetch(`/api/reservations/${id}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: reason || null }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({} as { error?: string }));
+      return { ok: false as const, error: body?.error || `Request failed (${res.status})` };
+    }
+    if (selectedReservationId === id) setSelectedReservationId(null);
+    await fetchProperties({ background: true });
+    return { ok: true as const };
   };
 
   const handleUpdateProperty = async (id: number, data: { name?: string; minNights?: number; checkInTime?: string; checkOutTime?: string; bookingWindow?: number }) => {
@@ -438,6 +459,8 @@ function AppContent({
               onSelectProperty={handleSelectProperty}
               onSelectReservation={handleSelectReservation}
               onAddReservation={handleAddReservation}
+              onUpdateReservation={handleUpdateReservation}
+              onCancelReservation={handleCancelReservation}
               onUpdateProperty={handleUpdateProperty}
             />
           );
@@ -463,6 +486,8 @@ function AppContent({
         onSelectProperty={handleSelectProperty}
         onSelectReservation={handleSelectReservation}
         onAddReservation={handleAddReservation}
+        onUpdateReservation={handleUpdateReservation}
+        onCancelReservation={handleCancelReservation}
         onAddProperty={handleAddProperty}
         onUpdateProperty={handleUpdateProperty}
         onRefresh={fetchProperties}
