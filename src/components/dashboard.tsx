@@ -949,26 +949,30 @@ export function Dashboard({
     const out: Conflict[] = [];
     if (property) {
       for (const res of property.reservations) {
-        if (res.checkIn < formCheckOut && res.checkOut > formCheckIn) {
+        const checkIn = reservationDateKey(res.checkIn);
+        const checkOut = reservationDateKey(res.checkOut);
+        if (checkIn < formCheckOut && checkOut > formCheckIn) {
           out.push({
             key: `r-${res.id}`,
             name: res.name,
             platform: res.platform,
-            from: res.checkIn,
-            to: res.checkOut,
+            from: checkIn,
+            to: checkOut,
           });
         }
       }
     }
     const events = allSyncedEvents[pid] || [];
     for (const ev of events) {
-      if (ev.startDate < formCheckOut && ev.endDate > formCheckIn) {
+      const startDate = reservationDateKey(ev.startDate);
+      const endDate = reservationDateKey(ev.endDate);
+      if (startDate < formCheckOut && endDate > formCheckIn) {
         out.push({
           key: `e-${ev.id}`,
           name: friendlyIcalName(ev.summary, ev.platform),
           platform: ev.platform,
-          from: ev.startDate,
-          to: ev.endDate,
+          from: startDate,
+          to: endDate,
         });
       }
     }
@@ -1122,12 +1126,12 @@ export function Dashboard({
     setFormName(inspectedContext.root.name);
     setFormCheckIn(inspectedContext.finalCheckOut);
     setFormCheckOut("");
-    setFormNightlyPrice("");
-    setFormTotalPrice("");
+    setFormNightlyPrice(inspectedContext.root.nightlyPrice == null ? "" : formatMoneyInput(inspectedContext.root.nightlyPrice));
+    setFormTotalPrice(inspectedContext.root.totalPrice == null ? "" : formatMoneyInput(inspectedContext.root.totalPrice));
     setFormGuarantee("");
-    setFormHasParking(Boolean(inspectedContext.selected.hasParking));
-    setFormParkingNightlyPrice("");
-    setFormParkingTotalPrice("");
+    setFormHasParking(Boolean(inspectedContext.root.hasParking));
+    setFormParkingNightlyPrice(inspectedContext.root.parkingNightlyPrice == null ? "" : formatMoneyInput(inspectedContext.root.parkingNightlyPrice));
+    setFormParkingTotalPrice(inspectedContext.root.parkingTotalPrice == null ? "" : formatMoneyInput(inspectedContext.root.parkingTotalPrice));
     setPriceSource("nightly");
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
