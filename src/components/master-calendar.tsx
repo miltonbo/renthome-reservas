@@ -288,16 +288,22 @@ export function MasterCalendar({
                           onClick={() => stay.reservationId
                             ? onOpenReservation(property.id, stay.reservationId)
                             : onOpenProperty(property.id)}
-                          className="absolute top-2 z-[2] h-8 overflow-hidden rounded-lg px-2 text-left text-[11px] font-semibold shadow-sm transition-transform hover:z-[3] hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1"
+                          className={`absolute top-2 z-[2] h-8 overflow-hidden text-left text-[11px] font-semibold shadow-sm transition-[filter,box-shadow] hover:z-[3] hover:brightness-110 hover:ring-1 hover:ring-inset hover:ring-white/45 focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1 ${
+                            stay.extensionOfId
+                              ? "rounded-l-sm rounded-r-lg border-l-2 border-dashed border-white/75 pl-1.5 pr-2"
+                              : "rounded-lg px-2"
+                          }`}
                           style={{ left, width, backgroundColor: color.background, color: color.foreground }}
-                          title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${formatBolivianos(stay.totalPrice)}` : ""}`}
+                          title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
                           <span className="flex items-center gap-1 truncate">
-                            {stay.extensionOfId && <span className="rounded bg-white/25 px-1 text-[8px] uppercase">Ext.</span>}
+                            {stay.extensionOfId && (
+                              <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-white/25 text-[10px] leading-none" aria-hidden>↳</span>
+                            )}
                             <span className="truncate">{stay.name}</span>
                           </span>
                           <span className="flex items-center justify-between gap-1 text-[9px] font-medium opacity-90">
-                            <span className="truncate">{platformLabel(stay.platform)}</span>
+                            <span className="truncate">{stay.extensionOfId ? `Extensión · ${platformLabel(stay.platform)}` : platformLabel(stay.platform)}</span>
                             {stay.totalPrice != null && (
                               <span className="shrink-0 font-semibold">{formatBolivianos(stay.totalPrice)}</span>
                             )}
@@ -322,6 +328,10 @@ export function MasterCalendar({
             {label}
           </span>
         ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--ink-4)]/25 text-[10px] text-[var(--ink-3)]">↳</span>
+          Extensión
+        </span>
         <span className="ml-auto">Check-in 14:00 · Check-out 11:00</span>
       </div>
     </section>
