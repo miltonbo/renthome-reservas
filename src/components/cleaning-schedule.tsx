@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { useI18n } from "@/lib/i18n/context";
@@ -21,6 +21,16 @@ interface CopyShape {
   conflictBackupSet: (name: string) => string;
   daysCount: (n: number) => string;
   cleaningCta: string;
+  todayGroup: string;
+  tomorrowGroup: string;
+  datedGroup: (date: string) => string;
+  guestChange: string;
+  sameDay: string;
+  enters: string;
+  leaves: string;
+  priority: string;
+  potential: string;
+  viewReservation: (name: string) => string;
 }
 
 const COPY: Record<Locale, CopyShape> = {
@@ -36,6 +46,16 @@ const COPY: Record<Locale, CopyShape> = {
     conflictBackupSet: (name) => ` (conflict — backup: ${name})`,
     daysCount: (n) => (n === 1 ? "day" : "days"),
     cleaningCta: "Cleaning",
+    todayGroup: "Cleanings today",
+    tomorrowGroup: "Cleanings tomorrow",
+    datedGroup: (date) => `Cleanings on ${date}`,
+    guestChange: "Guest change",
+    sameDay: "(same day)",
+    enters: "Arrives",
+    leaves: "Leaves",
+    priority: "Priority",
+    potential: "Potential",
+    viewReservation: (name) => `View ${name}'s reservation`,
   },
   ru: {
     dateLocale: "ru-RU",
@@ -49,6 +69,16 @@ const COPY: Record<Locale, CopyShape> = {
     conflictBackupSet: (name) => ` (конфликт — резерв: ${name})`,
     daysCount: (n) => (n === 1 ? "день" : "дней"),
     cleaningCta: "Уборка",
+    todayGroup: "Уборки сегодня",
+    tomorrowGroup: "Уборки завтра",
+    datedGroup: (date) => `Уборки ${date}`,
+    guestChange: "Смена гостя",
+    sameDay: "(в тот же день)",
+    enters: "Заезд",
+    leaves: "Выезд",
+    priority: "Приоритет",
+    potential: "Возможно",
+    viewReservation: (name) => `Открыть бронь: ${name}`,
   },
   de: {
     dateLocale: "de-DE",
@@ -62,6 +92,16 @@ const COPY: Record<Locale, CopyShape> = {
     conflictBackupSet: (name) => ` (Konflikt — Backup: ${name})`,
     daysCount: (n) => (n === 1 ? "Tag" : "Tage"),
     cleaningCta: "Reinigung",
+    todayGroup: "Reinigungen heute",
+    tomorrowGroup: "Reinigungen morgen",
+    datedGroup: (date) => `Reinigungen am ${date}`,
+    guestChange: "Gästewechsel",
+    sameDay: "(am selben Tag)",
+    enters: "Anreise",
+    leaves: "Abreise",
+    priority: "Priorität",
+    potential: "Möglich",
+    viewReservation: (name) => `Buchung von ${name} öffnen`,
   },
   fr: {
     dateLocale: "fr-FR",
@@ -75,6 +115,16 @@ const COPY: Record<Locale, CopyShape> = {
     conflictBackupSet: (name) => ` (conflit — remplaçant : ${name})`,
     daysCount: (n) => (n === 1 ? "jour" : "jours"),
     cleaningCta: "Ménage",
+    todayGroup: "Ménages aujourd’hui",
+    tomorrowGroup: "Ménages demain",
+    datedGroup: (date) => `Ménages le ${date}`,
+    guestChange: "Changement de voyageur",
+    sameDay: "(le même jour)",
+    enters: "Arrivée",
+    leaves: "Départ",
+    priority: "Priorité",
+    potential: "Potentiel",
+    viewReservation: (name) => `Voir la réservation de ${name}`,
   },
   es: {
     dateLocale: "es-ES",
@@ -88,6 +138,16 @@ const COPY: Record<Locale, CopyShape> = {
     conflictBackupSet: (name) => ` (conflicto — suplente: ${name})`,
     daysCount: (n) => (n === 1 ? "día" : "días"),
     cleaningCta: "Limpieza",
+    todayGroup: "Limpiezas hoy",
+    tomorrowGroup: "Limpiezas mañana",
+    datedGroup: (date) => `Limpiezas el ${date}`,
+    guestChange: "Cambio de huésped",
+    sameDay: "(el mismo día)",
+    enters: "Entra",
+    leaves: "Sale",
+    priority: "Prioridad",
+    potential: "Potencial",
+    viewReservation: (name) => `Ver reserva de ${name}`,
   },
 };
 
@@ -131,6 +191,8 @@ interface CleaningDay {
   bufferMode: BufferMode; // "full" = bufferBefore/After ≥ 1, "quick" = same-day turnover
   prevGuest?: string;
   nextGuest?: string;
+  prevReservationId?: number;
+  nextReservationId?: number;
   manualNote?: string;
   movableTo?: string;
   hoursAvailable?: number; // only when meaningful (< 24h, true same-day turnover)
@@ -363,7 +425,13 @@ export function computeCleaningDays(
         if (source.end > end) end = source.end;
       }
     }
-    connectedBookings.push({ start, end, name: root.name, platform: root.platform });
+    connectedBookings.push({
+      start,
+      end,
+      name: root.name,
+      platform: root.platform,
+      reservationId: root.reservationId,
+    });
   }
   for (const [sourceKey, source] of sourceByKey) {
     const pending = rawBookings.filter(
@@ -396,7 +464,16 @@ export function computeCleaningDays(
 
     if (connectedCount > 0) {
       consumed.add(source);
-      connectedBookings.push({ start, end, name, platform: source.platform });
+      const namedMember = rawBookings.find(
+        (booking) => consumed.has(booking) && booking.linkedSourceKey === sourceKey && booking.reservationId,
+      );
+      connectedBookings.push({
+        start,
+        end,
+        name,
+        platform: source.platform,
+        reservationId: namedMember?.reservationId,
+      });
     }
   }
 
@@ -410,7 +487,10 @@ export function computeCleaningDays(
     const last = deduped[deduped.length - 1];
     if (last && b.start < last.end) {
       if (b.end > last.end) last.end = b.end;
-      if (b.name !== "Reserved" && b.name !== "CLOSED - Not available") last.name = b.name;
+      if (b.name !== "Reserved" && b.name !== "CLOSED - Not available") {
+        last.name = b.name;
+        if (b.reservationId) last.reservationId = b.reservationId;
+      }
     } else {
       deduped.push({ ...b });
     }
@@ -447,6 +527,7 @@ export function computeCleaningDays(
               kind: "before",
               bufferMode: "full",
               nextGuest: displayName,
+              nextReservationId: b.reservationId,
               nextStartDate: b.start,
             });
           }
@@ -474,6 +555,7 @@ export function computeCleaningDays(
               kind: gapHasBooking ? "before" : "gap-potential",
               bufferMode: "full",
               nextGuest: displayName,
+              nextReservationId: b.reservationId,
               nextStartDate: b.start,
               gapStartDate: gapHasBooking ? undefined : gapBookableStart,
               gapEndDate: gapHasBooking ? undefined : gapBookableEnd,
@@ -494,6 +576,7 @@ export function computeCleaningDays(
           kind: "after",
           bufferMode: "full",
           prevGuest: displayName,
+          prevReservationId: b.reservationId,
           prevEndDate: b.end,
         });
       }
@@ -548,8 +631,10 @@ export function computeCleaningDays(
         kind,
         bufferMode: "quick",
         prevGuest: displayName,
+        prevReservationId: b.reservationId,
         prevEndDate: b.end,
         nextGuest,
+        nextReservationId: next?.reservationId,
         nextStartDate,
         hoursAvailable,
       });
@@ -575,6 +660,7 @@ export function computeCleaningDays(
               kind: "gap-potential",
               bufferMode: "quick",
               nextGuest: nextDisplayName,
+              nextReservationId: next.reservationId,
               nextStartDate: next.start,
               gapStartDate: gapStart,
               gapEndDate: addDaysStr(next.start, -1),
@@ -619,7 +705,6 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
   selectedPropertyId,
   hideControls = false,
   includePotential: controlledIncludePotential,
-  onIncludePotentialChange,
   cleanerAssignments,
   onCleanerConflictDatesChange,
   loading = false,
@@ -630,14 +715,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
   // cleaner's identityKey for a per-cleaner button. Drives the transient
   // "Copied!" label so only the pressed button flips.
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [internalIncludePotential, setInternalIncludePotential] = useState(false);
-  // Controlled when the prop is provided; otherwise fall back to local state
-  // so existing inline call sites keep working unchanged.
-  const includePotential = controlledIncludePotential ?? internalIncludePotential;
-  const setIncludePotential = (v: boolean) => {
-    if (onIncludePotentialChange) onIncludePotentialChange(v);
-    if (controlledIncludePotential === undefined) setInternalIncludePotential(v);
-  };
+  const includePotential = controlledIncludePotential ?? false;
 
   const cleaningDays = useMemo(() => {
     const targetProperties = mode === "property" && selectedPropertyId
@@ -668,40 +746,6 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     allDays.sort((a, b) => a.date.localeCompare(b.date));
     return allDays;
   }, [properties, syncedEvents, links, overrides, mode, selectedPropertyId, cleanerAssignments]);
-
-  const overlaps = useMemo(() => {
-    const dateMap = new Map<string, CleaningDay[]>();
-    for (const day of cleaningDays) {
-      if (day.type !== "cleaning") continue;
-      const existing = dateMap.get(day.date) || [];
-      existing.push(day);
-      dateMap.set(day.date, existing);
-    }
-
-    const result: { date: string; properties: string[]; canMove: boolean; moveSuggestion: string }[] = [];
-    for (const [date, days] of dateMap) {
-      if (days.length <= 1) continue;
-      const propNames = [...new Set(days.map(d => d.property))];
-      if (propNames.length <= 1) continue;
-
-      const nextDay = addDaysStr(date, 1);
-      const allBooked = new Set<string>();
-      for (const prop of properties) {
-        const propEvents = syncedEvents[prop.id] || [];
-        for (const ev of propEvents) {
-          if (nextDay >= ev.startDate && nextDay < ev.endDate) allBooked.add(prop.name);
-        }
-      }
-      const canMove = propNames.some(p => !allBooked.has(p));
-      result.push({
-        date,
-        properties: propNames,
-        canMove,
-        moveSuggestion: canMove ? t("cleaning.moveTo", { date: nextDay }) : t("cleaning.noFreeDay"),
-      });
-    }
-    return result;
-  }, [cleaningDays, properties, syncedEvents, t]);
 
   // RT-25.10 tick 3 — cleaner conflicts. Group cleaning rows by
   // (date, priority-0 cleaner identity). When the same cleaner is the
@@ -790,7 +834,6 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
 
   const todayStr = toDateStr(new Date());
   const futureDays = cleaningDays.filter(d => d.date >= todayStr);
-  const futureOverlaps = overlaps.filter(o => o.date >= todayStr);
   const futureCleanerConflicts = useMemo(
     () => cleanerConflicts.filter((c) => c.date >= todayStr),
     [cleanerConflicts, todayStr]
@@ -830,6 +873,25 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     () => (includePotential ? futureDays : futureDays.filter(d => d.type !== "potential")),
     [futureDays, includePotential]
   );
+  const [inspectedReservationId, setInspectedReservationId] = useState<number | null>(null);
+  const inspectedReservation = useMemo(() => {
+    if (!inspectedReservationId) return null;
+    for (const property of properties) {
+      const reservation = property.reservations.find((item) => item.id === inspectedReservationId);
+      if (reservation) return { property, reservation };
+    }
+    return null;
+  }, [inspectedReservationId, properties]);
+
+  const groupedVisibleDays = useMemo(() => {
+    const groups = new Map<string, CleaningDay[]>();
+    for (const day of visibleDays) {
+      const rows = groups.get(day.date) ?? [];
+      rows.push(day);
+      groups.set(day.date, rows);
+    }
+    return Array.from(groups.entries());
+  }, [visibleDays]);
 
   const formatDate = (d: string) => {
     const date = new Date(d + "T12:00:00");
@@ -840,6 +902,12 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     return date.toLocaleDateString(c.dateLocale, opts);
   };
 
+  const formatGroupTitle = (date: string) => {
+    if (date === todayStr) return c.todayGroup;
+    if (date === addDaysStr(todayStr, 1)) return c.tomorrowGroup;
+    return c.datedGroup(formatShortDate(date));
+  };
+
   // Compact "May 14" / "14 May" for inline date references inside notes.
   const formatShortDate = (d: string) => {
     const date = new Date(d + "T12:00:00");
@@ -848,64 +916,6 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     const opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short" };
     if (dateYear !== currentYear) opts.year = "numeric";
     return date.toLocaleDateString(c.dateLocale, opts);
-  };
-
-  const formatReason = (day: CleaningDay): string => {
-    if (day.isManual) return day.manualNote?.trim() || t("cleaning.manualCleaning");
-
-    switch (day.kind) {
-      case "after": {
-        // bufferMode="quick" = cleaning on the checkout day itself; the
-        // row date already shows the checkout, so we only add the
-        // "next guest arrives DATE" hint when one is coming.
-        if (day.bufferMode === "quick") {
-          if (day.nextGuest && day.nextStartDate) {
-            return t("cleaning.afterGuestQuickWithNext", {
-              name: day.prevGuest || "—",
-              next: day.nextGuest,
-              date: formatShortDate(day.nextStartDate),
-            });
-          }
-          return t("cleaning.afterGuestQuick", { name: day.prevGuest || "—" });
-        }
-        // Full-day after — the cleaning is N days past checkout, so call
-        // out the actual checkout date so "after WHO and WHEN" is clear.
-        if (day.prevEndDate) {
-          return t("cleaning.afterGuestFull", {
-            name: day.prevGuest || "—",
-            date: formatShortDate(day.prevEndDate),
-          });
-        }
-        return t("cleaning.afterGuest", { name: day.prevGuest || "—" });
-      }
-      case "before": {
-        if (day.nextStartDate) {
-          return t("cleaning.beforeGuestFull", {
-            name: day.nextGuest || "—",
-            date: formatShortDate(day.nextStartDate),
-          });
-        }
-        return t("cleaning.beforeGuest", { name: day.nextGuest || "—" });
-      }
-      case "turnover":
-        return t("cleaning.turnover", { from: day.prevGuest || "—", to: day.nextGuest || "—" });
-      case "gap-potential": {
-        if (day.gapStartDate && day.gapEndDate && day.nextStartDate && day.nextGuest) {
-          // Single-day gap — drop the dash so the note reads naturally.
-          const gapText = day.gapStartDate === day.gapEndDate
-            ? formatShortDate(day.gapStartDate)
-            : `${formatShortDate(day.gapStartDate)} – ${formatShortDate(day.gapEndDate)}`;
-          return t("cleaning.gapPotentialSpecific", {
-            gap: gapText,
-            name: day.nextGuest,
-            date: formatShortDate(day.nextStartDate),
-          });
-        }
-        return t("cleaning.gapPotential", { name: day.nextGuest || "—" });
-      }
-      default:
-        return "";
-    }
   };
 
   const formatHours = (h: number): string => {
@@ -1054,40 +1064,50 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     return [...seen.entries()];
   })();
 
+  const guestName = (name?: string) => (name || "—").replace(/\s+block$/i, "");
+  const renderGuest = (name?: string, reservationId?: number) => {
+    const label = guestName(name);
+    if (!reservationId) return <span className="font-semibold text-[var(--ink)]">{label}</span>;
+    return (
+      <button
+        type="button"
+        onClick={() => setInspectedReservationId(reservationId)}
+        className="rounded-md bg-[var(--m-accent)]/10 px-1.5 py-0.5 font-semibold text-[var(--m-accent)] underline decoration-dotted underline-offset-2 transition-colors hover:bg-[var(--m-accent)]/20"
+        aria-label={c.viewReservation(label)}
+      >
+        {label}
+      </button>
+    );
+  };
+
+  const renderMovement = (day: CleaningDay) => {
+    if (day.isManual) return <span>{day.manualNote?.trim() || t("cleaning.manualCleaning")}</span>;
+    if (day.kind === "turnover") {
+      return (
+        <span className="flex flex-wrap items-center gap-1">
+          <span>{c.guestChange}</span>
+          {renderGuest(day.prevGuest, day.prevReservationId)}
+          <span aria-hidden="true">→</span>
+          {renderGuest(day.nextGuest, day.nextReservationId)}
+          <span className="text-[var(--ink-4)]">{c.sameDay}</span>
+        </span>
+      );
+    }
+    if (day.kind === "before" || day.kind === "gap-potential") {
+      return <span className="flex flex-wrap items-center gap-1"><span>{c.enters}</span>{renderGuest(day.nextGuest, day.nextReservationId)}</span>;
+    }
+    return <span className="flex flex-wrap items-center gap-1"><span>{c.leaves}</span>{renderGuest(day.prevGuest, day.prevReservationId)}</span>;
+  };
+
+  const platformLabel = (platform: string) => ({
+    direct: "Directo",
+    airbnb: "Airbnb",
+    booking: "Booking",
+    vrbo: "Vrbo",
+  }[platform.toLowerCase()] || platform);
+
   return (
     <div className="space-y-4">
-      {/* Overlap warnings — gated on !loading. Without this gate the
-          banner flashed during the events / overrides fetch: the
-          schedule was computed from whatever partial data had landed,
-          which sometimes detected a phantom multi-property overlap
-          on the same day that disappeared once the rest of the data
-          caught up. Same false-positive pattern as the dashboard
-          alerts strip; same fix. */}
-      {!loading && futureOverlaps.length > 0 && (
-        <div className="rounded-lg border border-[var(--cleaning-border)] bg-[var(--cleaning-bg)] p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-[var(--cleaning-fg)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            <span className="text-sm font-semibold text-[var(--cleaning-fg)]">
-              {t("cleaning.overlapWarning")} ({futureOverlaps.length} {c.daysCount(futureOverlaps.length)})
-            </span>
-          </div>
-          <p className="text-xs text-[var(--cleaning-fg)] opacity-80">
-            {t("cleaning.overlapDesc")}
-          </p>
-          {futureOverlaps.map(o => (
-            <div key={o.date} className="flex items-center gap-3 text-xs">
-              <span className="font-medium text-[var(--ink)]">{formatDate(o.date)}</span>
-              <span className="text-[var(--ink-3)]">{o.properties.join(" + ")}</span>
-              <span className={o.canMove ? "text-emerald-500" : "text-rose-500"}>
-                {o.moveSuggestion}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Cleaner conflicts (RT-25.10 tick 3) — same cleaner is the
           priority-0 across two or more properties on the same cleaning
           date. Hint at backups but do not auto-reassign. Also gated
@@ -1237,170 +1257,97 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
             />
           </div>
         ) : (
-          <div className="max-h-[400px] overflow-y-auto">
-            {/* Mobile card list */}
-            <div className="sm:hidden">
-              {visibleDays.map((day, i) => {
-                const isOverlap = futureOverlaps.some(o => o.date === day.date);
-                const isCleanerConflict = Boolean(
-                  day.cleanerKey && conflictByDateAndKey.get(day.date)?.has(day.cleanerKey)
-                );
-                const prevYear = i > 0 ? visibleDays[i - 1].date.substring(0, 4) : day.date.substring(0, 4);
-                const thisYear = day.date.substring(0, 4);
-                const showYearDivider = thisYear !== prevYear;
-                return (
-                  <div key={`m-${day.date}-${day.propertyId}-${i}`}>
-                    {showYearDivider && (
-                      <div className="border-b border-[var(--line)] bg-[var(--bg-3)] px-4 py-2 text-xs font-semibold text-[var(--ink-3)]">
-                        {thisYear}
-                      </div>
-                    )}
-                    <div className={`flex flex-col gap-2 border-b border-[var(--line)]/50 px-4 py-3 ${isOverlap ? "bg-[var(--cleaning-cell-bg)]" : isCleanerConflict ? "bg-amber-500/10" : ""}`}>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-[var(--ink)] whitespace-nowrap">
-                          {formatDate(day.date)}
-                          {isOverlap && (
-                            <span className="ml-1.5 text-[10px] font-medium text-[var(--cleaning-fg)]">
-                              {t("cleaning.overlap")}
-                            </span>
+          <div className="max-h-[560px] overflow-y-auto">
+            {groupedVisibleDays.map(([date, days]) => (
+              <section key={date} aria-labelledby={`cleaning-${date}`}>
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--line)] bg-[var(--bg-3)]/95 px-4 py-2.5 backdrop-blur">
+                  <h3 id={`cleaning-${date}`} className="text-sm font-semibold text-[var(--ink)]">
+                    {formatGroupTitle(date)}
+                  </h3>
+                  <span className="rounded-full bg-[var(--ink)]/8 px-2 py-0.5 text-[11px] font-medium text-[var(--ink-3)]">
+                    {days.length}
+                  </span>
+                </div>
+                <div className="divide-y divide-[var(--line)]/50">
+                  {days.map((day, index) => {
+                    const isCleanerConflict = Boolean(
+                      day.cleanerKey && conflictByDateAndKey.get(day.date)?.has(day.cleanerKey)
+                    );
+                    return (
+                      <div
+                        key={`${day.date}-${day.propertyId}-${index}`}
+                        className={`grid gap-2 px-4 py-3 sm:grid-cols-[minmax(150px,0.8fr)_minmax(280px,2fr)_auto] sm:items-center ${
+                          day.hoursAvailable !== undefined
+                            ? "border-l-4 border-l-amber-400 bg-amber-400/[0.06]"
+                            : isCleanerConflict
+                              ? "bg-amber-500/[0.04]"
+                              : "hover:bg-[var(--bg-3)]/70"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-[var(--ink)]">{day.property}</div>
+                          {day.cleanerName && (
+                            <div className="mt-0.5 text-[11px] text-[var(--ink-4)]">🧹 {day.cleanerName}</div>
                           )}
-                          {!isOverlap && isCleanerConflict && (
-                            <span className="ml-1.5 text-[10px] font-medium text-amber-300">
-                              ⚠ {t("cleaning.cleanerConflictShort")}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                        <span className={`inline-block rounded px-1.5 py-0.5 font-medium ${
-                          day.type === "cleaning"
-                            ? "bg-[var(--cleaning-bg)] text-[var(--cleaning-fg)] border border-[var(--cleaning-border)]"
-                            : "bg-[var(--ink)]/10 text-[var(--ink)]"
-                        }`}>
-                          {day.type === "cleaning" ? t("cleaning.typeClean") : t("cleaning.typePotential")}
-                        </span>
-                        {mode === "dashboard" && (
-                          <span className="text-[var(--ink-3)]">{day.property}</span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                        {day.isManual && (
-                          <span className="inline-block rounded bg-[var(--ink)]/10 px-1.5 py-0.5 font-medium text-[var(--ink)]">
-                            {t("cleaning.manual")}
-                          </span>
-                        )}
-                        {!day.isManual && (
-                          <span className={`inline-block rounded px-1.5 py-0.5 font-medium ${
-                            day.bufferMode === "quick"
-                              ? "bg-violet-400/10 text-violet-400"
-                              : "bg-[var(--cleaning-bg)] text-[var(--cleaning-fg)] border border-[var(--cleaning-border)]"
-                          }`}>
-                            {day.bufferMode === "quick" ? t("cleaning.quickTurnover") : t("cleaning.fullDay")}
-                          </span>
-                        )}
-                        {day.hoursAvailable !== undefined && (
-                          <span className="inline-block rounded bg-emerald-500/10 px-1.5 py-0.5 font-medium text-emerald-500">
-                            {formatHours(day.hoursAvailable)}
-                          </span>
-                        )}
-                        <span className="text-[var(--ink-2)]">{formatReason(day)}</span>
-                        {day.cleanerName && (
-                          <span className="ml-auto inline-flex items-center gap-1 rounded bg-[var(--bg-3)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ink-2)]">
-                            🧹 {day.cleanerName}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {/* Desktop table */}
-            <table className="hidden w-full sm:table">
-              <thead>
-                <tr className="border-b border-[var(--line)] text-left">
-                  <th className="px-4 py-2 text-xs font-medium text-[var(--ink-4)] w-[140px]">{t("cleaning.date")}</th>
-                  <th className="px-4 py-2 text-xs font-medium text-[var(--ink-4)]">{t("cleaning.type")}</th>
-                  {mode === "dashboard" && (
-                    <th className="px-4 py-2 text-xs font-medium text-[var(--ink-4)]">{t("cleaning.property")}</th>
-                  )}
-                  <th className="px-4 py-2 text-xs font-medium text-[var(--ink-4)]">{t("cleaning.notes")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleDays.map((day, i) => {
-                  const isOverlap = futureOverlaps.some(o => o.date === day.date);
-                  const isCleanerConflict = Boolean(
-                    day.cleanerKey && conflictByDateAndKey.get(day.date)?.has(day.cleanerKey)
-                  );
-                  const prevYear = i > 0 ? visibleDays[i - 1].date.substring(0, 4) : day.date.substring(0, 4);
-                  const thisYear = day.date.substring(0, 4);
-                  const showYearDivider = thisYear !== prevYear;
-                  return (
-                    <Fragment key={`${day.date}-${day.propertyId}-${i}`}>
-                    {showYearDivider && (
-                      <tr className="border-b border-[var(--line)]">
-                        <td colSpan={10} className="px-4 py-2 text-xs font-semibold text-[var(--ink-3)] bg-[var(--bg-3)]">{thisYear}</td>
-                      </tr>
-                    )}
-                    <tr className={`border-b border-[var(--line)]/50 ${isOverlap ? "bg-[var(--cleaning-cell-bg)]" : isCleanerConflict ? "bg-amber-500/10" : "hover:bg-[var(--bg-3)]"}`}>
-                      <td className="px-4 py-2 text-sm text-[var(--ink)] whitespace-nowrap">
-                        {formatDate(day.date)}
-                        {isOverlap && <span className="ml-1.5 text-[10px] text-[var(--cleaning-fg)] font-medium">{t("cleaning.overlap")}</span>}
-                        {!isOverlap && isCleanerConflict && (
-                          <span className="ml-1.5 text-[10px] text-amber-300 font-medium">⚠ {t("cleaning.cleanerConflictShort")}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${
-                          day.type === "cleaning"
-                            ? "bg-[var(--cleaning-bg)] text-[var(--cleaning-fg)] border border-[var(--cleaning-border)]"
-                            : "bg-[var(--ink)]/10 text-[var(--ink)]"
-                        }`}>
-                          {day.type === "cleaning" ? t("cleaning.typeClean") : t("cleaning.typePotential")}
-                        </span>
-                      </td>
-                      {mode === "dashboard" && (
-                        <td className="px-4 py-2 text-sm text-[var(--ink-3)]">{day.property}</td>
-                      )}
-                      <td className="px-4 py-2 text-xs text-[var(--ink-3)]">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {day.isManual && (
-                            <span className="inline-block rounded bg-[var(--ink)]/10 px-1.5 py-0.5 text-[var(--ink)] font-medium">
-                              {t("cleaning.manual")}
-                            </span>
-                          )}
-                          {!day.isManual && (
-                            <span className={`inline-block rounded px-1.5 py-0.5 font-medium ${
-                              day.bufferMode === "quick"
-                                ? "bg-violet-400/10 text-violet-400"
-                                : "bg-[var(--cleaning-bg)] text-[var(--cleaning-fg)] border border-[var(--cleaning-border)]"
-                            }`}>
-                              {day.bufferMode === "quick" ? t("cleaning.quickTurnover") : t("cleaning.fullDay")}
+                        </div>
+                        <div className="min-w-0 text-xs text-[var(--ink-2)]">
+                          {renderMovement(day)}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                          {day.type === "potential" && (
+                            <span className="rounded-full bg-[var(--ink)]/8 px-2 py-1 text-[10px] font-semibold text-[var(--ink-3)]">
+                              {c.potential}
                             </span>
                           )}
                           {day.hoursAvailable !== undefined && (
-                            <span className="inline-block rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-500 font-medium">
-                              {formatHours(day.hoursAvailable)}
+                            <span className="rounded-full bg-amber-400/15 px-2 py-1 text-[10px] font-bold text-amber-500">
+                              {c.priority} · {formatHours(day.hoursAvailable)}
                             </span>
                           )}
-                          <span className="text-[var(--ink-2)]">{formatReason(day)}</span>
-                          {day.cleanerName && (
-                            <span className="ml-auto inline-flex items-center gap-1 rounded bg-[var(--bg-3)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ink-2)]">
-                              🧹 {day.cleanerName}
+                          {isCleanerConflict && (
+                            <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-500">
+                              ⚠ {t("cleaning.cleanerConflictShort")}
                             </span>
                           )}
                         </div>
-                      </td>
-                    </tr>
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
         )}
       </div>
+
+      {inspectedReservation && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setInspectedReservationId(null);
+          }}
+        >
+          <div role="dialog" aria-modal="true" aria-labelledby="cleaning-reservation-title" className="w-full max-w-lg rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="cleaning-reservation-title" className="text-lg font-semibold text-[var(--ink)]">{inspectedReservation.reservation.name}</h2>
+                <p className="mt-0.5 text-xs text-[var(--ink-4)]">{inspectedReservation.property.name}</p>
+              </div>
+              <button type="button" onClick={() => setInspectedReservationId(null)} className="rounded-lg p-1.5 text-[var(--ink-3)] hover:bg-[var(--bg-3)]" aria-label="Cerrar">✕</button>
+            </div>
+            <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
+              <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{platformLabel(inspectedReservation.reservation.platform)}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Estadía</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{formatShortDate(toReservationDateInput(inspectedReservation.reservation.checkIn))} → {formatShortDate(toReservationDateInput(inspectedReservation.reservation.checkOut))}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Total hospedaje</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.totalPrice != null ? `Bs ${inspectedReservation.reservation.totalPrice}` : "Sin monto"}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.hasParking ? `Sí${inspectedReservation.reservation.parkingTotalPrice ? ` · Bs ${inspectedReservation.reservation.parkingTotalPrice}` : ""}` : "No"}</dd></div>
+              {inspectedReservation.reservation.note && (
+                <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3 font-medium text-[var(--ink)]">{inspectedReservation.reservation.note}</dd></div>
+              )}
+            </dl>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

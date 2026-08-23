@@ -140,4 +140,35 @@ describe("connected-stay cleaning boundaries", () => {
       "2026-08-25",
     ]);
   });
+
+  it("carries both reservation ids into a same-day guest turnover", () => {
+    const outgoing = reservation({
+      id: 20,
+      name: "Outgoing guest",
+      checkIn: "2026-08-21T00:00:00.000Z",
+      checkOut: "2026-08-23T00:00:00.000Z",
+      linkedEventUid: null,
+      linkedEventPlatform: null,
+      linkedEventRole: null,
+    });
+    const incoming = reservation({
+      id: 21,
+      name: "Incoming guest",
+      checkIn: "2026-08-23T00:00:00.000Z",
+      checkOut: "2026-08-25T00:00:00.000Z",
+      linkedEventUid: null,
+      linkedEventPlatform: null,
+      linkedEventRole: null,
+    });
+
+    const turnover = computeCleaningDays(property([outgoing, incoming]), [], [link()])
+      .find((day) => day.date === "2026-08-23");
+
+    expect(turnover).toMatchObject({
+      kind: "turnover",
+      prevReservationId: 20,
+      nextReservationId: 21,
+      hoursAvailable: 2,
+    });
+  });
 });
