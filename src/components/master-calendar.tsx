@@ -32,11 +32,11 @@ interface MasterCalendarProps {
 // case), while retaining enough width for readable day headers and bars.
 const DAY_WIDTH = 48;
 // Visual turnover split inside a shared check-out/check-in date: the outgoing
-// stay uses 29%, a 7% gap keeps both bookings distinguishable, and the incoming
-// stay receives the remaining 64%. This is presentation only; operational
+// stay uses 28%, a 10% gap keeps both bookings distinguishable, and the incoming
+// stay receives the remaining 62%. This is presentation only; operational
 // times and overlap rules remain check-out 11:00 / check-in 14:00.
-const CHECKOUT_OFFSET_PX = DAY_WIDTH * 0.29;
-const CHECKIN_OFFSET_PX = DAY_WIDTH * 0.36;
+const CHECKOUT_OFFSET_PX = DAY_WIDTH * 0.28;
+const CHECKIN_OFFSET_PX = DAY_WIDTH * 0.38;
 // Six weeks keeps near-future OTA bookings visible on first load. The earlier
 // 24-day window made successfully imported reservations look missing when
 // their arrival fell just beyond the viewport (for example, 16 September
