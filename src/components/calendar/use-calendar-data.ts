@@ -28,6 +28,61 @@ interface CalendarEntry {
   linkedEventRole?: "claim" | "extension";
 }
 
+export function isCalendarAvailabilityBlock(
+  event: Pick<CalendarEvent, "summary">,
+): boolean {
+  const summary = (event.summary || "").toLowerCase();
+  return (
+    summary.includes("not available") ||
+    summary.includes("blocked") ||
+    /^\s*closed\b/.test(summary)
+  );
+}
+
+/**
+ * Collapse duplicate/overlapping stay bars emitted by the same channel.
+ *
+ * Availability blocks are deliberately excluded from this collapse. Each
+ * block is a distinct source event and the master calendar renders them as
+ * distinct bars. Keeping them separate here makes the property calendar use
+ * the same visual interpretation (important when two Airbnb blocks overlap,
+ * as currently happens for Sky Elite 406).
+ */
+export function dedupeCalendarBars(bars: CalendarBar[]): CalendarBar[] {
+  const deduped: CalendarBar[] = [];
+  for (const bar of bars) {
+    const isAvailabilityBlock = bar.platform.endsWith("-block");
+    const existing = isAvailabilityBlock
+      ? undefined
+      : deduped.find(
+          (candidate) =>
+            candidate.platform === bar.platform &&
+            !candidate.platform.endsWith("-block") &&
+            candidate.startDate < bar.endDate &&
+            candidate.endDate > bar.startDate,
+        );
+    if (existing) {
+      if (bar.startDate < existing.startDate) existing.startDate = bar.startDate;
+      if (bar.endDate > existing.endDate) existing.endDate = bar.endDate;
+      if (bar.reservationId && !existing.reservationId) {
+        existing.name = bar.name;
+        existing.reservationId = bar.reservationId;
+      }
+      if (bar.eventUid && !existing.eventUid) {
+        existing.eventUid = bar.eventUid;
+      }
+      if (bar.linkedEventUid && !existing.linkedEventUid) {
+        existing.linkedEventUid = bar.linkedEventUid;
+        existing.linkedEventPlatform = bar.linkedEventPlatform;
+        existing.linkedEventRole = bar.linkedEventRole;
+      }
+    } else {
+      deduped.push({ ...bar });
+    }
+  }
+  return deduped;
+}
+
 export interface CalendarData {
   airbnbDates: Set<string>;
   bookingDates: Set<string>;
@@ -86,6 +141,7 @@ export function useCalendarData(
     for (const ev of syncedEvents) {
       if (ev.startDate >= cutoff) continue;
       const platform = ev.platform;
+      const isAvailabilityBlock = isCalendarAvailabilityBlock(ev);
       const dates = platform === "airbnb" ? airbnb : booking;
       const stayDates = platform === "airbnb" ? airbnbStay : bookingStay;
       let d = ev.startDate;
@@ -94,10 +150,16 @@ export function useCalendarData(
         allBooked.add(d);
         d = addDaysStr(d, 1);
       }
-      d = ev.startDate;
-      while (d < ev.endDate) {
-        stayDates.add(d);
-        d = addDaysStr(d, 1);
+      // A channel block occupies inventory but is not a second guest stay.
+      // Do not feed it into cross-channel double-booking detection; otherwise
+      // an Airbnb block mirroring a Booking reservation raises a false
+      // "Airbnb + Booking" conflict in the property calendar.
+      if (!isAvailabilityBlock) {
+        d = ev.startDate;
+        while (d < ev.endDate) {
+          stayDates.add(d);
+          d = addDaysStr(d, 1);
+        }
       }
       // evMap key is `<startDate>|<platform>` so cross-platform events on
       // the same start day coexist. The old key was just startDate, which
@@ -117,10 +179,7 @@ export function useCalendarData(
           eventUid: ev.uid,
         });
       }
-      const isAirbnbBlock = platform === "airbnb" && (
-        ev.summary.includes("Not available") || ev.summary.includes("Blocked")
-      );
-      if (!isAirbnbBlock) {
+      if (!isAvailabilityBlock) {
         allBookings.push({ start: ev.startDate, end: ev.endDate, platform, name: ev.summary });
       }
     }
@@ -682,30 +741,7 @@ export function useCalendarData(
       });
     }
 
-    const deduped: CalendarBar[] = [];
-    for (const bar of result) {
-      const existing = deduped.find(
-        b => b.platform === bar.platform && b.startDate < bar.endDate && b.endDate > bar.startDate
-      );
-      if (existing) {
-        if (bar.startDate < existing.startDate) existing.startDate = bar.startDate;
-        if (bar.endDate > existing.endDate) existing.endDate = bar.endDate;
-        if (bar.reservationId && !existing.reservationId) {
-          existing.name = bar.name;
-          existing.reservationId = bar.reservationId;
-        }
-        if (bar.eventUid && !existing.eventUid) {
-          existing.eventUid = bar.eventUid;
-        }
-        if (bar.linkedEventUid && !existing.linkedEventUid) {
-          existing.linkedEventUid = bar.linkedEventUid;
-          existing.linkedEventPlatform = bar.linkedEventPlatform;
-          existing.linkedEventRole = bar.linkedEventRole;
-        }
-      } else {
-        deduped.push({ ...bar });
-      }
-    }
+    const deduped = dedupeCalendarBars(result);
 
     // Pair linked bars: a manual reservation that has linkedEventUid
     // pointing to an iCal event becomes a separate bar (no overlap), so
