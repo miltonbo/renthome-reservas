@@ -118,7 +118,7 @@ Sin redundancia: 10 × 12 × 0,03 = **3,6 fallos al año**. A 80 € de compensa
 
 Con redundancia (cerradura inteligente + caja de llaves + vecino), la tasa de fallo **tal como la vive el huésped** baja a alrededor del 0,5 %, porque el respaldo resuelve el incidente en 8–22 minutos antes de que el huésped esté lo bastante molesto para volcarlo en la reseña. La caja cuesta 25 € una vez. El vecino cuesta cero. El chequeo de 90 segundos previo a la llegada cuesta unas 4 horas al año (90 s × 10 estancias × 12 meses / 3600 ≈ 6 horas). Con cualquier tarifa horaria del anfitrión superior a 5 €/h, la redundancia se amortiza el primer año y compone los siguientes.
 
-La matemática es contundente y aun así la mayoría de anfitriones la salta, porque el beneficio es invisible —no se puede señalar el incidente que no ocurrió— y el daño también es invisible hasta que cae la primera reseña de 1 estrella. Para la visión operativa más amplia, en el momento en que empiece a gestionar varios check-ins con fiabilidad, [RentTools](/onboard) registra los incidentes de check-in junto con el resto del registro de operaciones y hace aparecer los patrones a partir del segundo o tercer caso.
+La matemática es contundente y aun así la mayoría de anfitriones la salta, porque el beneficio es invisible —no se puede señalar el incidente que no ocurrió— y el daño también es invisible hasta que cae la primera reseña de 1 estrella. Para la visión operativa más amplia, en el momento en que empiece a gestionar varios check-ins con fiabilidad, [RentHome Departamentos](/onboard) registra los incidentes de check-in junto con el resto del registro de operaciones y hace aparecer los patrones a partir del segundo o tercer caso.
 
 ## Preguntas frecuentes
 

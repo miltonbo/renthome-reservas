@@ -93,7 +93,7 @@ Wählen Sie die Zeile, die zu Ihrer Größe passt. **C** ist die Monatsrechnung 
 | Mit zentraler Inbox gespart | ~1,5 Stunden/Monat |
 | Zeitkosten zu 25 $/Stunde | 37,50 $/Monat |
 
-**Break-even bei 1 Objekt: −73 $/Monat.** Ein kostenloser Smoobu-Plan oder eine kostenlose [RentTools](/onboard)-Instanz plus 2-Minuten-Morgen-Check decken 99 % davon. Bei einem Objekt ist der bezahlte Manager ein klarer Verlust.
+**Break-even bei 1 Objekt: −73 $/Monat.** Ein kostenloser Smoobu-Plan oder eine kostenlose [RentHome Departamentos](/onboard)-Instanz plus 2-Minuten-Morgen-Check decken 99 % davon. Bei einem Objekt ist der bezahlte Manager ein klarer Verlust.
 
 ### Drei Objekte
 
@@ -157,12 +157,12 @@ Drei Host-Profile, bei denen die Rechnung „kostenlos bleiben" sagt, auch ab 3+
 
 1. **Single-Plattform-Lister.** Wer 95 % der Buchungen über Airbnb hat und Booking via iCal als Backup nutzt, dessen Versagensquote liegt näher am 1-Objekt-Wert. Der bezahlte Manager kauft eine Synchronisation, die kaum genutzt wird.
 2. **Immer erreichbare Hosts.** Wer jede Nachricht binnen 10 Minuten vom Handy beantwortet, macht manuell, was Auto-Nachrichten automatisch tun. Die Arbeitskosten-Position geht gegen null. Reine Kosten-vs.-Risiko-Rechnung verkleinert den Break-even.
-3. **Selbst-Hosting-Alternativen.** Eine kostenlose [RentTools](/onboard)-Instanz oder Selbsthosting auf einem [4-$-Droplet](/blog/self-hosting-property-manager-droplet) bringt die meisten Sync- und Inbox-Funktionen ohne Pro-Objekt-Gebühr. Bezahlt wird mit Zeit, nicht Geld. Unter 5 Objekten ist die Zeit handhabbar. Darüber nicht.
+3. **Selbst-Hosting-Alternativen.** Eine kostenlose [RentHome Departamentos](/onboard)-Instanz oder Selbsthosting auf einem [4-$-Droplet](/blog/self-hosting-property-manager-droplet) bringt die meisten Sync- und Inbox-Funktionen ohne Pro-Objekt-Gebühr. Bezahlt wird mit Zeit, nicht Geld. Unter 5 Objekten ist die Zeit handhabbar. Darüber nicht.
 
 Das dritte Profil ist die Mehrheit der Leser. Die realistische Leiter eines wachsenden Hosts:
 
 - **Objekt 1:** kostenloser iCal-Kreuz-Import, 5 Minuten am Tag.
-- **Objekt 2:** kostenloser iCal-Kreuz-Import + kostenloser [RentTools](/onboard)-Account oder Smoobu-Kostenlosplan für die Inbox.
+- **Objekt 2:** kostenloser iCal-Kreuz-Import + kostenloser [RentHome Departamentos](/onboard)-Account oder Smoobu-Kostenlosplan für die Inbox.
 - **Objekt 3:** Entscheidungszeit. Entweder bezahlt, oder die höhere Doppelbuchungsquote als Preis fürs Kostenlosbleiben akzeptieren.
 - **Objekt 4–7:** bezahlter Manager, fast sicher. Nach Versagensqualität wählen.
 - **Objekt 8+:** bezahlter Manager, definitiv. Frage ist nur, welcher.

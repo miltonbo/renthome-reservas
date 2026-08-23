@@ -115,7 +115,7 @@ You can't negotiate the VAT or the payment fee, but you can shrink the base they
 - **Reconsider bundled fees.** Every euro of cleaning or extra-guest fee carries the full ~19% stack. That doesn't mean drop the fee — it means know that you recover ~80% of it, and price accordingly.
 - **Audit your active programs.** Genius and Preferred Partner each add a measurable cost. Run them for 60 days, measure the booking lift, and keep only the ones that pay back. The [Genius breakeven math](/blog/booking-com-genius-levels-math) is a worked example of how to decide.
 - **Know your VAT position.** If you're near the registration threshold, the three-point commission-VAT gap belongs in the calculation alongside the cost of registering. Ask an accountant with the real number in hand.
-- **Don't double-pay across platforms.** If you also list on Airbnb, the prerequisite to running both without [double-bookings](/blog/avoiding-double-bookings) is calendar sync — which [RentTools does for free](/onboard), so the only thing you're comparing platform to platform is the take rate, not the operational risk.
+- **Don't double-pay across platforms.** If you also list on Airbnb, the prerequisite to running both without [double-bookings](/blog/avoiding-double-bookings) is calendar sync — which [RentHome Departamentos does for free](/onboard), so the only thing you're comparing platform to platform is the take rate, not the operational risk.
 
 ## FAQ
 

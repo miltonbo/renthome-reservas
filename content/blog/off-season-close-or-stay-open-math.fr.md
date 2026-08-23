@@ -157,7 +157,7 @@ Quatre cas, dont un qui écrase tout le calcul.
 
 Et avant de fermer, chiffrez la troisième option. Une seule location de trois mois sur l'hiver, c'est une rotation au lieu de douze, aucun marketing quotidien et un loyer mensuel qui bat le tarif de basse saison sur la plupart des marchés. Le [calcul de la location moyenne durée](/blog/mid-term-rental-math) est en général meilleur que la fermeture comme que l'arrachage de 22 % d'occupation.
 
-Quelle que soit l'option, gardez les calendriers en communication. La double réservation qui fait vraiment mal arrive dans le mois calme, parce qu'à la troisième semaine vous avez arrêté de vérifier tous les jours : un voyageur de janvier à moitié oublié devient un conflit de février dont vous êtes informé par le voyageur lui-même. C'est exactement ce que [RentTools fait gratuitement](/onboard) : chaque plateforme voit les réservations des autres, y compris celles prises un mois où vous n'étiez pas très attentif.
+Quelle que soit l'option, gardez les calendriers en communication. La double réservation qui fait vraiment mal arrive dans le mois calme, parce qu'à la troisième semaine vous avez arrêté de vérifier tous les jours : un voyageur de janvier à moitié oublié devient un conflit de février dont vous êtes informé par le voyageur lui-même. C'est exactement ce que [RentHome Departamentos fait gratuitement](/onboard) : chaque plateforme voit les réservations des autres, y compris celles prises un mois où vous n'étiez pas très attentif.
 
 ## FAQ
 

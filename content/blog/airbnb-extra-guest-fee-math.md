@@ -108,7 +108,7 @@ Real numbers from the apartment in the hook. 18 months, 138 stays.
 
 The $20-per-guest configuration was the winner — about $3,400 more in net revenue than no fee, on a 4.3% drop in bookings. The $30 setting wasn't worth it: the extra $340 in gross was offset by a steeper conversion penalty and three angry "the price doubled at checkout" messages I spent evenings answering.
 
-Track your own numbers per listing — six months of your own data beats any benchmark, mine included. The [free per-property tracker on RentTools](/onboard) stores stay-level guest count and gross so the column on the right of this table assembles itself.
+Track your own numbers per listing — six months of your own data beats any benchmark, mine included. The [free per-property tracker on RentHome Departamentos](/onboard) stores stay-level guest count and gross so the column on the right of this table assembles itself.
 
 For the deeper pricing posts this builds on, see [length-of-stay discount math](/blog/length-of-stay-discount-math) and [Airbnb cleaning fee vs all-in pricing](/blog/airbnb-cleaning-fee-vs-all-in-pricing).
 

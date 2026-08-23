@@ -41,7 +41,7 @@ Tres cosas concretas se torcen al crecer:
 
 Un módulo de limpieza dedicado arregla cada una invirtiendo el modelo de datos. En lugar de una rejilla 2D que lees a lo ancho, el limpiador ve una lista de *sus* tareas para *hoy*, ordenadas por hora de check-in. El Anfitrión ve un panel de todas las rotaciones de todas las limpiadoras. Mismos datos, dos vistas.
 
-No necesitas una herramienta de 200 $/mes para esto. Hasta nuestra instancia gratuita de [RentTools](/onboard) tiene un flujo de rol limpiador, y no es idea única. Smoobu, Hostaway, Lodgify: cualquier PMS de pago tiene la misma primitiva. La idea es usar *algo* dedicado en vez de una hoja.
+No necesitas una herramienta de 200 $/mes para esto. Hasta nuestra instancia gratuita de [RentHome Departamentos](/onboard) tiene un flujo de rol limpiador, y no es idea única. Smoobu, Hostaway, Lodgify: cualquier PMS de pago tiene la misma primitiva. La idea es usar *algo* dedicado en vez de una hoja.
 
 ## Qué necesita trackear un calendario de limpieza
 
@@ -75,7 +75,7 @@ El patrón correcto es un **rol de limpiador dedicado**. Tres reglas para lo que
 
 La autenticación es la parte que los Anfitriones complican. El limpiador no necesita contraseña. Una cookie persistente de magic-link en su móvil basta; marca `https://tuherramienta.example/cleaner/abc-token-xyz` como favorito, la cookie le mantiene la sesión un año, y la rotación invalida el enlace en cuanto un limpiador deja de trabajar contigo.
 
-Si autoalojas, son aproximadamente una tarde de trabajo. Si usas un PMS gestionado (RentTools, Smoobu, Hostaway), el flujo viene de fábrica.
+Si autoalojas, son aproximadamente una tarde de trabajo. Si usas un PMS gestionado (RentHome Departamentos, Smoobu, Hostaway), el flujo viene de fábrica.
 
 ## Fotos y notas: cuándo pedirlas y qué capturar
 
@@ -126,7 +126,7 @@ Fuera de alcance aquí, pero mi opinión: por rotación para estudios, por hora 
 El estado se queda en pendiente pasada la ventana; el Anfitrión recibe ping. A partir de ahí es una llamada. La herramienta no resuelve un no-show; solo eleva el hecho rápido.
 
 **¿Hay opción gratis para el flujo de rol limpiador?**
-Sí. Las instancias open-source autoalojadas (RentTools, KalSync, etc.) incluyen vistas de rol limpiador. También las gratuitas de PMS pequeños. La opción gratis no es el cuello de botella; la adopción del limpiador suele serlo.
+Sí. Las instancias open-source autoalojadas (RentHome Departamentos, KalSync, etc.) incluyen vistas de rol limpiador. También las gratuitas de PMS pequeños. La opción gratis no es el cuello de botella; la adopción del limpiador suele serlo.
 
 ## Una opinión sin filtros
 

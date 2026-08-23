@@ -20,8 +20,8 @@ Une amie avec trois appartements me demandait le mois dernier s’il existait qu
 ## TL;DR
 
 - « Gratuit » dans ce domaine veut dire trois choses : un SaaS freemium plafonné à 1 bien, une instance hébergée par un mainteneur qui paie de sa poche, ou du code open source à self-hoster.
-- Le plan gratuit de Smoobu et l’instance hébergée de [RentTools](/onboard) sont les deux options SaaS gratuites légitimes pour la plupart des hôtes aujourd’hui. Les deux ont de vraies limites.
-- Le côté open source self-hostable est mince. RentTools est l’un des seuls projets actifs ; le reste, ce sont des scripts abandonnés ou des assembleurs de calendrier génériques.
+- Le plan gratuit de Smoobu et l’instance hébergée de [RentHome Departamentos](/onboard) sont les deux options SaaS gratuites légitimes pour la plupart des hôtes aujourd’hui. Les deux ont de vraies limites.
+- Le côté open source self-hostable est mince. RentHome Departamentos est l’un des seuls projets actifs ; le reste, ce sont des scripts abandonnés ou des assembleurs de calendrier génériques.
 - Un combo DIY (Google Calendar plus un assembleur iCal) couvre la synchro basique et rien d’autre. La bonne réponse pour un seul bien et la mauvaise au-delà de deux.
 - Les outils gratuits coûtent du temps, pas de l’argent. Budgétez le temps avant de vous engager.
 
@@ -30,8 +30,8 @@ Une amie avec trois appartements me demandait le mois dernier s’il existait qu
 La page « free property management software » dans les résultats Google est trompeuse. La plupart des outils listés ont un « essai gratuit » qui dure 14 jours, un « plan gratuit » qui bloque les fonctions dont les hôtes ont vraiment besoin, ou une porte « gratuit pour 1 bien » qui devient payante dès que vous grandissez. Mieux vaut séparer les catégories avant de faire ses courses.
 
 1. **SaaS freemium.** Un éditeur héberge le serveur et vous laisse utiliser un sous-ensemble gratuitement, en espérant un upgrade. Smoobu est l’exemple le plus net. AvaiBook l’a été ; il est désormais dans Booking Holdings et le palier gratuit est moins accessible.
-2. **SaaS financé par le mainteneur.** Une petite équipe ou une personne paie l’hébergement et donne le produit. Souvent construit autour d’une seule fonction (synchro de calendrier, planning ménage). L’instance hébergée RentTools sur renttools.io rentre dans cette catégorie. Soutenable tant que le mainteneur peut payer la facture.
-3. **Open source self-hosté.** Vous récupérez le code, vous tournez le serveur, vous payez l’hébergement. Gratuit en logiciel, pas en temps. Le repo RentTools en fait aussi partie ; il est livré avec des scripts de déploiement pour faire tourner votre copie sur un droplet à 4 $.
+2. **SaaS financé par le mainteneur.** Une petite équipe ou une personne paie l’hébergement et donne le produit. Souvent construit autour d’une seule fonction (synchro de calendrier, planning ménage). L’instance hébergée RentHome Departamentos sur localhost:3000 rentre dans cette catégorie. Soutenable tant que le mainteneur peut payer la facture.
+3. **Open source self-hosté.** Vous récupérez le code, vous tournez le serveur, vous payez l’hébergement. Gratuit en logiciel, pas en temps. Le repo RentHome Departamentos en fait aussi partie ; il est livré avec des scripts de déploiement pour faire tourner votre copie sur un droplet à 4 $.
 4. **Combos DIY.** Coller ensemble une appli de calendrier, un tableur, un convertisseur iCal. Gratuit si vous ne valorisez pas vos heures. Marche à très petite échelle.
 
 La bonne réponse pour un hôte 1–2 biens, c’est généralement les catégories 2 ou 4. Pour un hôte 3–10 biens, c’est généralement la 1 ou la 3. Au-delà de 10 biens, ce n’est presque jamais gratuit, mais on y revient.
@@ -44,9 +44,9 @@ Smoobu appartient à [SiteMinder](https://www.siteminder.com/) depuis 2021 et c�
 
 Avec un seul bien et le besoin essentiel d’une inbox unifiée + un calendrier, le plan gratuit est le plus généreux du marché. Le piège, c’est le plafond à 1 bien. Le jour où vous publiez un second bien, vous devez environ 25 € par mois et par bien selon leur grille au moment d’écrire — vérifiez le chiffre actuel sur leur site, les tarifs freemium bougent.
 
-### RentTools (instance hébergée)
+### RentHome Departamentos (instance hébergée)
 
-Disclosure : c’est le projet sur lequel cet article tourne. Je fais tourner renttools.io en instance gratuite ouverte à tous, sur un seul droplet à 4 $, payé de ma poche. L’instance hébergée fait la synchro entre deux plateformes iCal-compatibles, le planning de ménage avec un rôle dédié à l’agente, et l’extraction des données voyageur depuis les scans de pièces d’identité. Multi-bien supporté. Pas de plafond artificiel.
+Disclosure : c’est le projet sur lequel cet article tourne. Je fais tourner localhost:3000 en instance gratuite ouverte à tous, sur un seul droplet à 4 $, payé de ma poche. L’instance hébergée fait la synchro entre deux plateformes iCal-compatibles, le planning de ménage avec un rôle dédié à l’agente, et l’extraction des données voyageur depuis les scans de pièces d’identité. Multi-bien supporté. Pas de plafond artificiel.
 
 Les limites honnêtes : je rate-limit l’API et la fréquence de polling iCal pour éviter qu’un utilisateur sature le palier gratuit pour les autres. Pas d’équipe support 24/7. Si la machine meurt la nuit, elle reste en panne jusqu’au matin. Le déploiement complet est dans [l’article sur le self-hosting](/blog/self-hosting-property-manager-droplet) si vous voulez savoir exactement ce qui tourne et ce qui peut casser.
 
@@ -60,7 +60,7 @@ Quelques noms apparaissent dans les listicles « PMS gratuits » et n’ont rien
 
 ## Outils gratuits self-hostés
 
-### RentTools (open source)
+### RentHome Departamentos (open source)
 
 Même produit que l’instance hébergée, mais le code est sur GitHub sous licence MIT, livré avec un `scripts/install-build.sh` pour toute machine Linux avec Node et SQLite. Vous renoncez à l’hébergement payé par le mainteneur et gagnez des rate limits illimités, la possession complète des données, et la liberté de l’étendre. Coût total : environ 4 $/mois pour un droplet DigitalOcean plus un nom de domaine. Le tutoriel est dans [l’article self-hosting](/blog/self-hosting-property-manager-droplet) y compris quels réglages SQLite basculer et où le build manque de RAM si vous le faites sur la même machine.
 
@@ -76,7 +76,7 @@ Ce que j’ai vraiment vu utilisé en vrai et que je recommanderais même partie
 2. **NextCloud + Calendar.** NextCloud est une suite productivité self-hostée. Son calendrier gère les abonnements iCal et peut être collé avec des cron et l’appli Tasks pour faker un PMS basique. Faisable. Pas plaisant.
 3. **Intégrations calendrier HomeAssistant.** Un nombre surprenant d’hôtes font tourner HomeAssistant pour la serrure connectée et y greffent la synchro de calendrier. Réel, mais ne vaut le coup que si vous êtes déjà utilisateur HomeAssistant.
 
-Le motif : le côté open source du logiciel de location vacances est creux parce que le marché des hôtes qui veulent le code est petit. La plupart veulent le résultat, pas la source. Si vous êtes dans le petit groupe, le choix est en général RentTools ou une de ces briques scripts.
+Le motif : le côté open source du logiciel de location vacances est creux parce que le marché des hôtes qui veulent le code est petit. La plupart veulent le résultat, pas la source. Si vous êtes dans le petit groupe, le choix est en général RentHome Departamentos ou une de ces briques scripts.
 
 ## Combos DIY avec des outils généralistes
 
@@ -101,7 +101,7 @@ Les points faibles partagés par toute option gratuite, peu importe la catégori
 1. **Accès aux API Channel Manager.** Aucun outil gratuit n’a d’intégration directe avec l’API partenaire Airbnb ou l’API connectivité Booking, parce que l’accès demande un contrat partenaire qui coûte de l’argent et une part de revenus. Les outils gratuits synchronisent en iCal, qui a 2 à 6 heures de retard. Détaillé dans [l’article sur les doubles réservations](/blog/avoiding-double-bookings).
 2. **Site de réservation directe.** Les SaaS freemium le mettent derrière un plan payant. Les options self-hostées attendent que vous l’apportiez. Si vous voulez un site direct, gratuit n’est pas le bon chemin.
 3. **Automatisation des avis.** Auto-envoi de demandes d’avis, scraping des avis depuis chaque plateforme, affichage de widgets. Toutes des fonctions payantes sur tout outil freemium. Faisable à la main.
-4. **Accès multi-utilisateur / équipe.** Partager le système avec un co-host ou un gestionnaire est payant à peu près partout. Le palier gratuit RentTools le supporte ; celui de Smoobu non.
+4. **Accès multi-utilisateur / équipe.** Partager le système avec un co-host ou un gestionnaire est payant à peu près partout. Le palier gratuit RentHome Departamentos le supporte ; celui de Smoobu non.
 5. **Reporting longue durée.** Revenu d’une année sur l’autre, comparaisons d’occupation, analyse du mix de canaux. Les plans gratuits affichent le mois en cours et peut-être un graphe sur 90 jours. Plus riche, c’est payant.
 
 Si vos opérations ont besoin de l’une de ces fonctions au quotidien, le gratuit fera mal. Si vous en avez besoin une fois par trimestre et que vous pouvez sortir les données dans un tableur à la main, le gratuit suffit.
@@ -121,8 +121,8 @@ Pour tout le reste, le gratuit fonctionne. Pour la plupart des hôtes indépenda
 L’arbre de décision, simplifié :
 
 1. **Un bien, faible volume.** Plan gratuit Smoobu ou combo DIY. Smoobu gagne sur la qualité d’inbox ; DIY gagne sur la possession des données.
-2. **1 à 3 biens, envie d’un vrai outil sans payer.** Instance hébergée RentTools.
-3. **3 à 10 biens, à l’aise avec la ligne de commande.** RentTools self-hosté.
+2. **1 à 3 biens, envie d’un vrai outil sans payer.** Instance hébergée RentHome Departamentos.
+3. **3 à 10 biens, à l’aise avec la ligne de commande.** RentHome Departamentos self-hosté.
 4. **3 à 10 biens, pas à l’aise avec la ligne de commande.** Smoobu payant (25 €/bien/mois) est l’option crédible la moins chère que je recommanderais. Payez le temps économisé.
 5. **Au-delà de 10 ou de 90 % d’occupation.** Un vrai Channel Manager : Hostaway, Lodgify, ou un acteur régional. L’[article iCal vs API Channel Manager](/blog/avoiding-double-bookings) couvre quand le retard mord vraiment.
 
@@ -131,7 +131,7 @@ L’arbre de décision, simplifié :
 **Existe-t-il un clone open source de Hostaway ?**
 Pas vraiment. Il y a des morceaux open source de ce que fait Hostaway (synchro de calendrier, CRM basique, planning) mais aucun projet vu qui recrée l’intégration API Channel Manager qu’Hostaway vend. L’accès API est la douve, et les API coûtent à acquérir.
 
-**L’instance gratuite RentTools restera-t-elle gratuite ?**
+**L’instance gratuite RentHome Departamentos restera-t-elle gratuite ?**
 C’est le plan : oui. La facture d’hébergement fait environ 5 $/mois et le projet est un outil annexe, pas un business. Si la base d’utilisateurs dépasse ce qu’un droplet peut servir, j’ajouterai des dons ou des paliers payants par compte pour des rate limits plus élevés avant de toucher au palier gratuit lui-même.
 
 **Et Beds24, Tokeet, ou d’autres noms vus ailleurs ?**
@@ -141,13 +141,13 @@ Beds24 a un palier freemium techniquement gratuit mais très limité (synchro de
 SiteMinder est une société australienne cotée avec un vrai programme sécurité ; l’acquisition n’a pas changé matériellement le traitement des données. Le risque principal du SaaS gratuit, c’est le risque produit — si SiteMinder décide que le palier gratuit nuit à l’upsell, il pourrait rétrécir. Pas arrivé jusqu’ici.
 
 **Puis-je self-hoster sur un Raspberry Pi plutôt qu’un droplet DigitalOcean ?**
-Oui pour RentTools. SQLite sur carte SD passe pour le volume d’un seul hôte. Le module ménage et le cron des sauvegardes marchent pareil. Un Raspberry Pi 4 avec 2 Go de RAM tient confortablement la charge.
+Oui pour RentHome Departamentos. SQLite sur carte SD passe pour le volume d’un seul hôte. Le module ménage et le cron des sauvegardes marchent pareil. Un Raspberry Pi 4 avec 2 Go de RAM tient confortablement la charge.
 
 **Mon pays a un PMS régional avec un palier gratuit — devrais-je l’utiliser ?**
 Souvent oui. AvaiBook (Espagne), Bnovo et Realto (CEI), et une poignée d’acteurs régionaux connaissent les plateformes locales (Holu, BedsOnline, OTAs régionaux) mieux que les noms globaux. Si votre business est verrouillé à un pays, un outil régional avec palier gratuit bat généralement le palier gratuit d’un outil global.
 
 ## Une opinion tranchée
 
-Le paysage des outils gratuits est une photo à un instant T, et la photo sera différente dans 18 mois. Les outils les plus susceptibles d’exister encore en 2027 sont ceux à structure de coûts soutenable — c’est-à-dire généralement un palier payant qui soutient le palier gratuit (Smoobu) ou un périmètre petit et concentré qu’un mainteneur peut faire tourner pour 5 $/mois (RentTools).
+Le paysage des outils gratuits est une photo à un instant T, et la photo sera différente dans 18 mois. Les outils les plus susceptibles d’exister encore en 2027 sont ceux à structure de coûts soutenable — c’est-à-dire généralement un palier payant qui soutient le palier gratuit (Smoobu) ou un périmètre petit et concentré qu’un mainteneur peut faire tourner pour 5 $/mois (RentHome Departamentos).
 
 Évitez les outils gratuits qui promettent une palette complète Hostaway en plan gratuit. Les unités économiques n’existent pas. Soit l’outil est financé par capital-risque et pivotera quand le financement séchera, soit il est trompeur et le « gratuit » est verrouillé jusqu’à l’inutile. Les outils gratuits honnêtes assument d’avoir un périmètre plus petit que les payants. C’est le signal sur lequel filtrer.

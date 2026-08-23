@@ -1057,7 +1057,7 @@ export function AdminPanel() {
                           setSeoDraft(row.id, "ogImage", e.target.value || null)
                         }
                         maxLength={512}
-                        placeholder="https://renttools.io/og/about.png"
+                        placeholder="http://localhost:3000/og/about.png"
                         className="h-9 rounded-lg bg-background/50 font-mono text-xs"
                       />
                       <label
@@ -1073,7 +1073,7 @@ export function AdminPanel() {
                           setSeoDraft(row.id, "canonical", e.target.value || null)
                         }
                         maxLength={512}
-                        placeholder="/about or https://renttools.io/about"
+                        placeholder="/about or http://localhost:3000/about"
                         className="h-9 rounded-lg bg-background/50 font-mono text-xs"
                       />
                       <div className="mt-2 flex items-center justify-end gap-2">

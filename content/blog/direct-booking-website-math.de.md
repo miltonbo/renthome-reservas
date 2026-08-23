@@ -111,7 +111,7 @@ Ich betreibe keine reine Direktbuchungs-Operation, und ich denke, die meisten Ga
 4. **Teilen Sie die Ersparnis bei reinen Gastgeber-/Booking-Sätzen.** Bieten Sie dem Stammgast **5 % Rabatt** auf den Direktpreis. Er schlägt immer noch die Servicegebühr der OTA, und ich erhalte immer noch mehr, als die Plattform gezahlt hätte. Beide Seiten gewinnen; nur die Plattform geht der Provision verlustig.
 5. **Niemals Anzeigen, um Fremde direkt zu jagen.** Das ist die Grenze. Kalt-Akquise ist die Aufgabe der Plattform, und sie ist besser darin, als mein Werbebudget es je sein wird.
 
-Die Kalendersynchronisation darunter — OTA-Feeds plus Direktbuchungen plus Reinigungspuffer, alles an einem Ort, damit der Direktkanal keine Doppelbuchung produziert — ist genau das, was [RentTools](/onboard) macht, kostenlos und Open Source. Die Direktbuchungsseite ist optional; der Kalender, der sie vor dem Knall bewahrt, ist es nicht.
+Die Kalendersynchronisation darunter — OTA-Feeds plus Direktbuchungen plus Reinigungspuffer, alles an einem Ort, damit der Direktkanal keine Doppelbuchung produziert — ist genau das, was [RentHome Departamentos](/onboard) macht, kostenlos und Open Source. Die Direktbuchungsseite ist optional; der Kalender, der sie vor dem Knall bewahrt, ist es nicht.
 
 ## FAQ
 

@@ -1,6 +1,6 @@
-# Adding a new language to RentTools
+# Adding a new language to RentHome Departamentos
 
-Step-by-step playbook for taking RentTools from N languages to N+1. Walks through the code edits, the content edits, and the verification gates that prove Google sees the new locale as a first-class citizen rather than a duplicate of an existing one.
+Step-by-step playbook for taking RentHome Departamentos from N languages to N+1. Walks through the code edits, the content edits, and the verification gates that prove Google sees the new locale as a first-class citizen rather than a duplicate of an existing one.
 
 Read this end-to-end before touching code. The order matters — landing the routing edits before the copy means the new URLs serve a 404, landing the copy before the routing means crawlers index untranslated EN content under the new prefix.
 
@@ -8,7 +8,7 @@ Read this end-to-end before touching code. The order matters — landing the rou
 
 ## Mental model: how locales work on this site
 
-RentTools uses **subdirectory routing with internal rewrite**. Each non-default locale gets its own URL prefix:
+RentHome Departamentos uses **subdirectory routing with internal rewrite**. Each non-default locale gets its own URL prefix:
 
 - Default locale (`en`) → `/`, `/blog/<slug>`, `/onboard`, …
 - Each other locale → `/<locale>/`, `/<locale>/blog/<slug>`, `/<locale>/onboard`, …

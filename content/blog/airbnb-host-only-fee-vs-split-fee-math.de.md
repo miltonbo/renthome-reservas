@@ -133,7 +133,7 @@ Drei operative Hinweise, an denen viele stolpern:
 2. **Die Auszahlungsberichte brauchen 14 Tage, um sauber zu sein.** Das Gastgeber-Dashboard segmentiert Erlöse nach Buchungsdatum, nicht nach Aufenthaltsdatum. In den ersten zwei Wochen nach dem Wechsel sind die Hälfte Ihrer Auszahlungen noch geteilte Buchungen aus der Zeit vor dem Schalter. Schlussfolgerungen bitte erst ab Tag 30.
 3. **Die Neusortierung im Suchranking erfolgt nicht sofort.** Der Conversion-Lift baut sich über 3–6 Wochen auf, während Ihr Inserat in der neuen Preisklasse mehr Klicks einsammelt und das Ranking-Modell von Airbnb Sie hochzieht. Die Zahlen an Tag 30 unterschätzen den Effekt noch.
 
-Wer dieses Experiment auf den eigenen Objekten durchziehen will, braucht eine Erfassung pro Aufenthalt — siehe [kostenlose Tools für die Vermietungsverwaltung 2026](/blog/free-property-management-tools-2026). Der kostenlose [Tracker pro Objekt auf RentTools](/onboard) speichert pro Buchung Brutto und Airbnb-Abzug, sodass die dritte Spalte jeder Tabelle in diesem Beitrag von selbst entsteht.
+Wer dieses Experiment auf den eigenen Objekten durchziehen will, braucht eine Erfassung pro Aufenthalt — siehe [kostenlose Tools für die Vermietungsverwaltung 2026](/blog/free-property-management-tools-2026). Der kostenlose [Tracker pro Objekt auf RentHome Departamentos](/onboard) speichert pro Buchung Brutto und Airbnb-Abzug, sodass die dritte Spalte jeder Tabelle in diesem Beitrag von selbst entsteht.
 
 ## FAQ
 

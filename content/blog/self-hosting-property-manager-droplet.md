@@ -45,7 +45,7 @@ You should NOT self-host if:
 3. You expect five-nines uptime. Single droplet means single point of failure. A reboot, a network blip, a disk-full event — you own the recovery.
 4. You consider "looking at logs" a punishment. Self-hosting is mostly about looking at logs.
 
-The honest middle ground: try a free hosted instance first ([RentTools](/onboard) is one example; there are others). If it fits, stay there. If you want more control, the $4 droplet is the next step. If you outgrow that, a managed PMS is the step after.
+The honest middle ground: try a free hosted instance first ([RentHome Departamentos](/onboard) is one example; there are others). If it fits, stay there. If you want more control, the $4 droplet is the next step. If you outgrow that, a managed PMS is the step after.
 
 ## The droplet sizing question
 

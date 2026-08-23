@@ -34,7 +34,7 @@ Linen inventory is one of those problems where the wrong question — "how many 
 3. **Number of bathrooms** for towel + bath mat counts.
 4. **Turnover cadence** — how many check-ins per month at 80% occupancy. Higher cadence = faster wear cycle = bigger spare buffer.
 
-Track those four numbers per listing in whatever spreadsheet runs your operation. If you don't have a spreadsheet, [the open-source RentTools onboarding flow](/onboard) will set one up for you in seven minutes.
+Track those four numbers per listing in whatever spreadsheet runs your operation. If you don't have a spreadsheet, [the open-source RentHome Departamentos onboarding flow](/onboard) will set one up for you in seven minutes.
 
 ## The three-set minimum (the math)
 

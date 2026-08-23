@@ -41,7 +41,7 @@ Three specific things go wrong as you grow:
 
 A purpose-built cleaning module fixes each of these by inverting the data model. Instead of a 2D grid where you read across, the cleaner sees a list of *their* tasks for *today*, ordered by check-in time. The host sees a dashboard of all turnovers across all cleaners. Same data, two views.
 
-You do not need a $200/month tool to get this. Even our free [RentTools](/onboard) instance has a cleaner-role flow, and it is not a unique idea. Smoobu, Hostaway, Lodgify: every paid PMS has the same primitive. The point is to use *some* purpose-built thing rather than a Sheet.
+You do not need a $200/month tool to get this. Even our free [RentHome Departamentos](/onboard) instance has a cleaner-role flow, and it is not a unique idea. Smoobu, Hostaway, Lodgify: every paid PMS has the same primitive. The point is to use *some* purpose-built thing rather than a Sheet.
 
 ## What a cleaning schedule needs to track
 
@@ -75,7 +75,7 @@ The right pattern is a **dedicated cleaner role**. Three rules for what it sees:
 
 Authentication is the part hosts overthink. The cleaner does not need a password. A persistent magic-link cookie on their phone is enough; they bookmark `https://yourtool.example/cleaner/abc-token-xyz`, the cookie keeps them signed in for a year, and rotation invalidates the link the moment a cleaner stops working with you.
 
-If you self-host, this is roughly an afternoon of work. If you use a hosted PMS (RentTools, Smoobu, Hostaway), the flow ships out of the box.
+If you self-host, this is roughly an afternoon of work. If you use a hosted PMS (RentHome Departamentos, Smoobu, Hostaway), the flow ships out of the box.
 
 ## Photos and notes: when to ask and what to capture
 
@@ -126,7 +126,7 @@ Out of scope here, but my opinion: per turnover for studios, per hour for villas
 Status stays pending past the cleaning window; the host gets pinged. From there it is a phone call. The tool cannot solve a no-show; it can only surface that one happened, fast.
 
 **Is there a free option for the cleaner-role flow?**
-Yes. Open-source self-hosted PMS instances (RentTools, KalSync, etc.) include cleaner-role views. So do free tiers of small commercial PMS providers. The free option is not the bottleneck; cleaner adoption usually is.
+Yes. Open-source self-hosted PMS instances (RentHome Departamentos, KalSync, etc.) include cleaner-role views. So do free tiers of small commercial PMS providers. The free option is not the bottleneck; cleaner adoption usually is.
 
 ## One opinionated take
 

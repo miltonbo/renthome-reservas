@@ -105,7 +105,7 @@ Cet horodatage, c'est tout le jeu. Neuf paniques sur dix du type « mon calendri
 
 Voici la partie honnête. Même avec les sept causes écartées et chaque flux sain, le propre tirage de la plateforme de destination reste le plancher. Booking.com tire toutes les 2 à 6 heures, et vous n'y changez rien.
 
-Une couche intermédiaire règle la moitié du problème. Un outil open source comme [RentTools](/onboard) — ou un cron que vous écrivez vous-même — interroge les flux *sources* toutes les 10 minutes, si bien que votre hub apprend une nouvelle réservation Airbnb en dix minutes plutôt qu'en heures. Ce qu'il ne peut pas faire : obliger Booking.com à tirer *depuis le hub* plus vite que Booking.com ne le veut. La seule chose qui bat le cycle de polling, c'est la connexion API en temps réel, qu'Airbnb et Booking.com ne vendent qu'aux PMS certifiés, à 100-300 $ par mois.
+Une couche intermédiaire règle la moitié du problème. Un outil open source comme [RentHome Departamentos](/onboard) — ou un cron que vous écrivez vous-même — interroge les flux *sources* toutes les 10 minutes, si bien que votre hub apprend une nouvelle réservation Airbnb en dix minutes plutôt qu'en heures. Ce qu'il ne peut pas faire : obliger Booking.com à tirer *depuis le hub* plus vite que Booking.com ne le veut. La seule chose qui bat le cycle de polling, c'est la connexion API en temps réel, qu'Airbnb et Booking.com ne vendent qu'aux PMS certifiés, à 100-300 $ par mois.
 
 Pour un à trois logements, ne perdez pas le sommeil à cause de la fenêtre de rafraîchissement. Les causes de péremption ci-dessus — une URL réinitialisée que personne n'a mise à jour, un flux que la plateforme a abandonné en silence — provoquent à petite échelle bien plus de doubles réservations que le tirage de 2 à 6 heures. Si vous voulez la mise en place complète plutôt que le dépannage, commencez par [synchroniser gratuitement les calendriers Airbnb et Booking.com](/blog/airbnb-booking-calendar-sync-free).
 
@@ -132,7 +132,7 @@ Oui — c'est exactement le mécanisme. Si votre import Booking.com du calendrie
 **Pourquoi n'y a-t-il pas d'erreur quand la synchro iCal échoue ?**
 Parce qu'iCal est un protocole de tirage sans canal d'envoi ni signal de santé standard. La destination tire une URL au rythme ; si le tirage échoue, elle conserve les dernières bonnes données et réessaie plus tard. Rien dans le standard n'oblige la destination à vous alerter — donc elle ne le fait pas.
 
-**À quelle fréquence RentTools rafraîchit-il les flux ?**
+**À quelle fréquence RentHome Departamentos rafraîchit-il les flux ?**
 Toutes les 10 minutes côté source. Le hub apprend donc une nouvelle réservation en dix minutes, contre les heures qu'exige un import direct de plateforme à plateforme. Il ne peut pas pour autant forcer la plateforme de destination à tirer du hub plus vite que son propre cycle de 2 à 6 heures — aucun outil iCal ne le peut.
 
 ## Une opinion assumée

@@ -34,7 +34,7 @@ El inventario de lencería es uno de esos problemas donde la pregunta equivocada
 3. **Número de baños** para conteos de toallas y alfombrillas.
 4. **Cadencia de rotación** —cuántos check-ins/mes al 80 % de ocupación—. Mayor cadencia = ciclo de desgaste más rápido = mayor buffer de repuesto.
 
-Trackea esos cuatro números por anuncio en la hoja que lleve tu operación. Si no tienes hoja, [el flujo de onboarding de RentTools open-source](/onboard) te lo monta en siete minutos.
+Trackea esos cuatro números por anuncio en la hoja que lleve tu operación. Si no tienes hoja, [el flujo de onboarding de RentHome Departamentos open-source](/onboard) te lo monta en siete minutos.
 
 ## El mínimo de tres juegos (las cuentas)
 

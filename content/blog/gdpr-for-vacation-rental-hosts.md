@@ -51,7 +51,7 @@ Our [/privacy page](/privacy) is the example I think small hosts can copy almost
 - What data: passport scan, booking dates, communication history.
 - Why: legal guest registration, dispute resolution, stay logistics.
 - How long: a specific number of days, not "as needed".
-- Who else: the platforms (Airbnb, Booking), and any tooling you use ([RentTools](/onboard), if you use it).
+- Who else: the platforms (Airbnb, Booking), and any tooling you use ([RentHome Departamentos](/onboard), if you use it).
 - How to delete: an email address that you actually check.
 
 Skip the disclaimer paragraphs. Skip the "your privacy is important to us" line. Supervisory authorities call that performative. State the facts.
@@ -90,7 +90,7 @@ The single biggest GDPR mistake I see hosts make is the WhatsApp folder of passp
 A sub-processor is anyone besides you who handles guest data because they help you do the job. Examples:
 
 - The **booking platforms** (Airbnb, Booking, Vrbo). These are joint controllers, not sub-processors. Their privacy policies cover their side.
-- Your **PMS or sync tool**. If you use Hostaway, Lodgify, Smoobu, or RentTools, that is a sub-processor. List it.
+- Your **PMS or sync tool**. If you use Hostaway, Lodgify, Smoobu, or RentHome Departamentos, that is a sub-processor. List it.
 - Your **cloud hosting**. If you self-host on a droplet, the cloud provider is technically a sub-processor. List it.
 - Your **email provider**. The inbox where guests send you scans. Gmail, Outlook, Fastmail. List it.
 - A **payment processor**. Stripe, Wise, your bank's merchant portal. List it.

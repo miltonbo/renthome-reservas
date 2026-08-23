@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 // Force per-request rendering. Same reason as sitemap: build-time DB is
 // empty, so a static llms.txt would ship blank until the next deploy.
@@ -32,14 +32,14 @@ export async function GET() {
     .catch(() => []);
 
   const lines: string[] = [];
-  lines.push("# RentTools");
+  lines.push("# RentHome Departamentos");
   lines.push("");
   lines.push(
-    "> Open-source property management tool for short-term rental hosts. Self-hosted or hosted-free. Calendar sync (Airbnb, Booking.com, Vrbo, any iCal source), cleaning automation, GDPR-friendly guest data, multi-property management."
+    "> Sistema interno de RentHome Departamentos para centralizar reservas, calendarios y limpiezas."
   );
   lines.push("");
   lines.push(
-    "RentTools is built for hosts running 1–20 short-term rentals who want a free alternative to $100/mo channel managers. The hosted instance runs at https://renttools.io; the source is MIT-licensed at https://github.com/Gribadan/RentTools.io."
+    "RentHome Departamentos administra 23 unidades físicas y centraliza reservas de Airbnb, Booking.com, Vrbo y canales directos."
   );
   lines.push("");
 
@@ -47,7 +47,7 @@ export async function GET() {
   lines.push("");
   lines.push(`- [Home](${SITE_URL}/): Product overview, what it does, and how it compares to paid channel managers.`);
   lines.push(`- [Sign up](${SITE_URL}/signup): Create an account on the hosted instance.`);
-  lines.push(`- [Privacy policy](${SITE_URL}/privacy): How RentTools stores and processes guest data.`);
+  lines.push(`- [Privacy policy](${SITE_URL}/privacy): How RentHome Departamentos stores and processes guest data.`);
   lines.push(`- [Terms](${SITE_URL}/terms): Service terms for the hosted instance.`);
   lines.push("");
 
@@ -61,10 +61,9 @@ export async function GET() {
     lines.push("");
   }
 
-  lines.push("## Optional");
+  lines.push("## Recursos");
   lines.push("");
-  lines.push(`- [Sitemap](${SITE_URL}/sitemap.xml): Machine-readable URL index for every public page.`);
-  lines.push(`- [GitHub repository](https://github.com/Gribadan/RentTools.io): Source code, issues, self-host instructions.`);
+  lines.push(`- [Sitemap](${SITE_URL}/sitemap.xml): Índice de páginas públicas.`);
   lines.push("");
 
   return new Response(lines.join("\n"), {

@@ -98,7 +98,7 @@ No necesita una hoja de cálculo para saber si esto le cuesta. Necesita tres nú
 
 El hueco entre el paso 3 y el paso 1, en porcentaje, es su margen real. Por debajo del ~0,5 % ya tiene las divisas igualadas o ya cambia usted mismo — pare aquí, está bien. Si es del 2–4 %, está pagando a la plataforma por algo que Wise hace por una fracción, y la Solución 1 o la 2 le devolverán esos 20 minutos muchas veces. Hágalo una vez al año, porque los ajustes de cobro tienen la costumbre de reiniciarse cuando añade un banco nuevo o un anuncio nuevo.
 
-Ya que está con los números, el precio por noche del que sale todo es la otra palanca que merece un vistazo — [el precio por noche de equilibrio real](/blog/break-even-nightly-rate-math) muestra lo que cada reserva tiene que cubrir de verdad antes de que entre ninguna de estas comisiones. Y si lo monta todo desde cero, [RentTools](/onboard) aparta la operativa — calendarios, limpieza, datos de huéspedes — para que se concentre en las cifras que mueven el rendimiento.
+Ya que está con los números, el precio por noche del que sale todo es la otra palanca que merece un vistazo — [el precio por noche de equilibrio real](/blog/break-even-nightly-rate-math) muestra lo que cada reserva tiene que cubrir de verdad antes de que entre ninguna de estas comisiones. Y si lo monta todo desde cero, [RentHome Departamentos](/onboard) aparta la operativa — calendarios, limpieza, datos de huéspedes — para que se concentre en las cifras que mueven el rendimiento.
 
 ## FAQ
 

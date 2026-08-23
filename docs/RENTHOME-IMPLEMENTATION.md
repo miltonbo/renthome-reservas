@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Convertir RentTools en el calendario maestro privado de RentHome Departamentos.
+Convertir RentHome Departamentos en el calendario maestro privado de RentHome Departamentos.
 La fuente de verdad será la ocupación de cada unidad física, sin perder el
 anuncio o canal mediante el cual se vendió la reserva.
 

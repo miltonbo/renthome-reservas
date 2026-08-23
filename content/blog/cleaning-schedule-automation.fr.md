@@ -41,7 +41,7 @@ Trois choses dérapent à mesure que vous grandissez :
 
 Un module ménage dédié règle chacun de ces points en inversant le modèle de données. Au lieu d’une grille 2D qu’on lit en travers, l’agente voit la liste de *ses* tâches *aujourd’hui*, triées par heure d’arrivée. L’hôte voit un tableau de bord de toutes les rotations sur toutes les agentes. Mêmes données, deux vues.
 
-Vous n’avez pas besoin d’un outil à 200 $/mois. Même notre instance gratuite [RentTools](/onboard) a un flux dédié, et l’idée n’est pas unique. Smoobu, Hostaway, Lodgify : chaque PMS payant a la même primitive. Le but est d’utiliser *quelque chose* de dédié plutôt qu’un Sheet.
+Vous n’avez pas besoin d’un outil à 200 $/mois. Même notre instance gratuite [RentHome Departamentos](/onboard) a un flux dédié, et l’idée n’est pas unique. Smoobu, Hostaway, Lodgify : chaque PMS payant a la même primitive. Le but est d’utiliser *quelque chose* de dédié plutôt qu’un Sheet.
 
 ## Ce qu’un planning de ménage doit suivre
 
@@ -75,7 +75,7 @@ Le bon motif, c’est un **rôle ménage dédié**. Trois règles pour ce qu’i
 
 L’authentification, c’est ce que les hôtes sur-pensent. L’agente n’a pas besoin de mot de passe. Un cookie magic-link persistant sur son téléphone suffit ; elle bookmark `https://votreoutil.example/agente/abc-token-xyz`, le cookie la garde connectée un an, et la rotation invalide le lien dès qu’elle quitte.
 
-En self-hosting, c’est environ une après-midi de travail. En PMS hébergé (RentTools, Smoobu, Hostaway), le flux est livré clé en main.
+En self-hosting, c’est environ une après-midi de travail. En PMS hébergé (RentHome Departamentos, Smoobu, Hostaway), le flux est livré clé en main.
 
 ## Photos et notes : quand demander, quoi capturer
 
@@ -126,7 +126,7 @@ Hors sujet ici, mais mon avis : forfait pour studios, horaire pour villas. Le fo
 Le statut reste en attente au-delà de la fenêtre ; l’hôte est pingé. Ensuite c’est un coup de fil. L’outil ne peut pas régler un no-show ; il peut seulement faire remonter qu’il a eu lieu, vite.
 
 **Y a-t-il une option gratuite pour le flux dédié ?**
-Oui. Les PMS open source self-hostés (RentTools, KalSync, etc.) incluent les vues dédiées. Les paliers gratuits de petits PMS commerciaux aussi. Ce n’est pas le gratuit qui freine ; c’est l’adoption par l’agente.
+Oui. Les PMS open source self-hostés (RentHome Departamentos, KalSync, etc.) incluent les vues dédiées. Les paliers gratuits de petits PMS commerciaux aussi. Ce n’est pas le gratuit qui freine ; c’est l’adoption par l’agente.
 
 ## Une opinion tranchée
 

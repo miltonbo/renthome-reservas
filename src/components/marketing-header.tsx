@@ -6,8 +6,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useI18n } from "@/lib/i18n/context";
 import { useSession } from "@/lib/session-context";
 
-const REPO_URL = "https://github.com/miltonbo/renthome-reservas";
-
 interface MarketingHeaderProps {
   /** Sticky variant for long-content pages (blog post + index). Off by
    *  default so the home page and onboarding wizard match. */
@@ -37,8 +35,8 @@ const NAV_LABELS = {
  * Brand mark: animated coral pill + house silhouette + three SMIL smoke
  * puffs from the chimney. Same SVG that ships in the home-page header.
  *
- * Nav: Blog · GitHub · Sign in · Get started · ThemeToggle · LocaleSwitcher.
- * GitHub + Get started both hide on <sm to keep the small-screen header
+ * Nav: Blog · Sign in · Get started · ThemeToggle · LocaleSwitcher.
+ * Get started hides on <sm to keep the small-screen header
  * to a single readable row.
  */
 export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: MarketingHeaderProps) {
@@ -127,17 +125,6 @@ export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: Ma
           >
             {t.blog}
           </Link>
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] text-[var(--ink-3)] transition-colors hover:bg-[var(--bg-2)] hover:text-[var(--ink)] sm:inline-flex"
-          >
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3" />
-            </svg>
-            GitHub
-          </a>
           {isAuthenticated ? (
             // Already signed in — collapse Sign in + Get started into a
             // single Dashboard button. Anything else is the wrong call:

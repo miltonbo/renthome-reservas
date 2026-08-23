@@ -103,7 +103,7 @@ Les deux grandes plateformes supportent les jours tampons. Aucune ne les appelle
 
 Erreur de configuration courante : régler le tampon à la main sur les deux plateformes. Ça double-compte. Airbnb voit son propre tampon de 1 jour plus le tampon iCal de Booking de 1 jour plus son propre tampon supplémentaire de 1 jour, et vous bloquez 3 nuits au lieu d’une. Réglez le tampon côté canonique. Laissez iCal porter. Faites confiance à la propagation.
 
-Si vous self-hostez avec [RentTools](/onboard) ou un autre outil intermédiaire, même règle. Réglez le tampon une fois, à l’endroit canonique, et laissez la couche de synchro faire son travail.
+Si vous self-hostez avec [RentHome Departamentos](/onboard) ou un autre outil intermédiaire, même règle. Réglez le tampon une fois, à l’endroit canonique, et laissez la couche de synchro faire son travail.
 
 ## FAQ
 

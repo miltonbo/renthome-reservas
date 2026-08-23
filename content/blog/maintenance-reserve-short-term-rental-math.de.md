@@ -167,4 +167,4 @@ Gastgeber gehen mit Instandhaltung um wie mit einer Zahnzusatzversicherung: ein 
 
 Die profitabelsten Einzelobjekt-Betreiber, die ich kenne, haben eine Gewohnheit gemeinsam: Sie kalkulieren jede Nacht *zuerst* mit abgezogener Rücklage und nennen den Rest Umsatz. Am ersten Tag fühlt sich die Zahl schlechter an — der Betrag „ADR × Nächte" fällt um 5–8% — und an dem Morgen, an dem der Klimakompressor stirbt, unermesslich besser, weil das Geld schon da liegt.
 
-Wenn Sie die Rücklagenzeile gegen Ihre echten gebuchten Nächte und die tatsächliche Reparaturhistorie sehen wollen, ist [RentTools](/onboard) genau dafür gebaut. Und wie die Rücklage mit Reinigung und Kanalgebühren zusammenspielt, steht in [Channel-Manager-Break-Even-Rechnung](/blog/channel-manager-break-even-math).
+Wenn Sie die Rücklagenzeile gegen Ihre echten gebuchten Nächte und die tatsächliche Reparaturhistorie sehen wollen, ist [RentHome Departamentos](/onboard) genau dafür gebaut. Und wie die Rücklage mit Reinigung und Kanalgebühren zusammenspielt, steht in [Channel-Manager-Break-Even-Rechnung](/blog/channel-manager-break-even-math).

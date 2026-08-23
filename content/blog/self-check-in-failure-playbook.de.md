@@ -118,7 +118,7 @@ Ohne Redundanz: 10 × 12 × 0,03 = **3,6 Ausfälle pro Jahr**. Bei durchschnittl
 
 Mit Redundanz (Smart Lock + Safe + Nachbarin) sinkt die vom **Gast wahrgenommene** Ausfallquote auf rund 0,5 %, weil der Rückfall den Vorfall in 8–22 Minuten löst, bevor der Gast verärgert genug ist, um ihn als Bewertungsproblem festzuhalten. Das Safe kostet einmalig 25 €. Die Nachbarin kostet nichts. Der 90-Sekunden-Vorab-Check kostet rund 4 Stunden pro Jahr (90 s × 10 Aufenthalte × 12 Monate / 3600 ≈ 6 Stunden). Ab einem Host-Stundensatz von 5 €/h amortisiert sich die Redundanz im ersten Jahr und addiert sich danach.
 
-Die Rechnung ist eindeutig, und die meisten Hosts überspringen sie trotzdem, weil der Nutzen unsichtbar ist — man kann den Vorfall, der nicht passiert ist, nicht zeigen — und der Schaden ebenfalls unsichtbar bleibt, bis die erste 1-Stern-Bewertung eintrifft. Wenn Sie mehrere Objekte mit verlässlichem Check-in betreiben wollen, [RentTools](/onboard) trackt Check-in-Vorfälle neben dem restlichen Betriebsprotokoll und macht Muster bereits nach dem zweiten oder dritten Fall sichtbar.
+Die Rechnung ist eindeutig, und die meisten Hosts überspringen sie trotzdem, weil der Nutzen unsichtbar ist — man kann den Vorfall, der nicht passiert ist, nicht zeigen — und der Schaden ebenfalls unsichtbar bleibt, bis die erste 1-Stern-Bewertung eintrifft. Wenn Sie mehrere Objekte mit verlässlichem Check-in betreiben wollen, [RentHome Departamentos](/onboard) trackt Check-in-Vorfälle neben dem restlichen Betriebsprotokoll und macht Muster bereits nach dem zweiten oder dritten Fall sichtbar.
 
 ## FAQ
 

@@ -115,7 +115,7 @@ La TVA et les frais de paiement ne se négocient pas, mais vous pouvez rétréci
 - **Reconsidérez les frais intégrés.** Chaque euro de ménage ou de frais voyageurs porte l'empilement complet de ~19 %. Cela ne veut pas dire « supprimez les frais » — cela veut dire : sachez que vous en récupérez ~80 %, et tarifez en conséquence.
 - **Auditez vos programmes actifs.** Genius et Preferred Partner ont chacun un coût mesurable. Faites-les tourner 60 jours, mesurez le gain de réservations et ne gardez que ce qui se rentabilise. Le [calcul du seuil de rentabilité Genius](/blog/booking-com-genius-levels-math) en est un exemple détaillé.
 - **Connaissez votre situation TVA.** Si vous êtes près du seuil d'enregistrement, l'écart de trois points de la TVA sur commission doit entrer dans le calcul, à côté du coût de l'assujettissement. Voyez un comptable — avec le vrai chiffre en main.
-- **Ne payez pas deux fois d'une plateforme à l'autre.** Si vous êtes aussi sur Airbnb, le préalable pour gérer les deux sans [doubles réservations](/blog/avoiding-double-bookings), c'est la synchronisation des calendriers — que [RentTools fait gratuitement](/onboard), de sorte que d'une plateforme à l'autre vous ne comparez que la part, pas le risque opérationnel.
+- **Ne payez pas deux fois d'une plateforme à l'autre.** Si vous êtes aussi sur Airbnb, le préalable pour gérer les deux sans [doubles réservations](/blog/avoiding-double-bookings), c'est la synchronisation des calendriers — que [RentHome Departamentos fait gratuitement](/onboard), de sorte que d'une plateforme à l'autre vous ne comparez que la part, pas le risque opérationnel.
 
 ## FAQ
 

@@ -157,7 +157,7 @@ Cuatro casos, y uno de ellos derrota a la aritmética entera.
 
 Y antes de cerrar, haga números con la tercera vía. Un solo alquiler de tres meses durante el invierno tiene una rotación en lugar de doce, sin comercialización diaria y con una renta mensual que en la mayoría de los mercados bate su tarifa de temporada baja. El [cálculo del alquiler de media estancia](/blog/mid-term-rental-math) suele salir mejor que cerrar y que arañar un 22 % de ocupación.
 
-Elija lo que elija, mantenga los calendarios hablando entre sí. La reserva doble que de verdad duele ocurre en el mes tranquilo, porque a la tercera semana dejó de mirar a diario: un huésped de enero medio olvidado se convierte en un choque de febrero del que se entera por el propio huésped. Eso es lo que [RentTools hace gratis](/onboard): cada plataforma ve las reservas de las demás, incluidas las que aceptó en un mes en el que no estaba muy atento.
+Elija lo que elija, mantenga los calendarios hablando entre sí. La reserva doble que de verdad duele ocurre en el mes tranquilo, porque a la tercera semana dejó de mirar a diario: un huésped de enero medio olvidado se convierte en un choque de febrero del que se entera por el propio huésped. Eso es lo que [RentHome Departamentos hace gratis](/onboard): cada plataforma ve las reservas de las demás, incluidas las que aceptó en un mes en el que no estaba muy atento.
 
 ## FAQ
 

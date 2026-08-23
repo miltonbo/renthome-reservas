@@ -18,15 +18,15 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const SITE_NAME = "RentHome Reservas";
 const SITE_TAGLINE =
-  "Free open-source property manager for short-term rental hosts. Sync Airbnb + Booking.com calendars, automate cleaning, extract guest passports.";
+  "Sistema de RentHome Departamentos para centralizar reservas, calendarios, limpiezas y datos operativos.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — open-source property manager for short-term rentals`,
+    default: `${SITE_NAME} — Gestión de reservas y departamentos`,
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_TAGLINE,
@@ -38,14 +38,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — open-source property manager`,
+    title: `${SITE_NAME} — Gestión de reservas`,
     description: SITE_TAGLINE,
     url: SITE_URL,
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — open-source property manager`,
+    title: `${SITE_NAME} — Gestión de reservas`,
     description: SITE_TAGLINE,
   },
   appleWebApp: {
@@ -109,12 +109,11 @@ const ORGANIZATION_JSON_LD = {
     width: 512,
     height: 512,
   },
-  sameAs: ["https://github.com/miltonbo/renthome-reservas"],
   founder: { "@type": "Person", name: "Ilya Asminkin" },
   contactPoint: {
     "@type": "ContactPoint",
     contactType: "customer support",
-    email: "support@renttools.io",
+    email: "contacto@renthome.local",
     availableLanguage: ["en", "ru"],
   },
 };

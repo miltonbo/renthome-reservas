@@ -191,4 +191,4 @@ La plupart des hôtes activent Genius le jour où ils sont éligibles parce que 
 
 Traitez-le comme toute autre remise promotionnelle : un outil avec un coût mesurable et une contrepartie mesurable. Faites tourner 60 jours. Sortez le rapport de l’extranet. Si vos réservations ont monté de plus de 12 % (Niveau 1) ou 18 % (Niveau 2), gardez. Sinon, sortez. Réévaluez chaque trimestre.
 
-Si vous voulez ce type de mesure tournant automatiquement sur chaque promo active sur Airbnb, Booking et Vrbo — coût promo vs lift de réservations, côte à côte — c’est ce que fait [RentTools](/onboard). Gratuit, self-hosting ou hébergé, sans upsell.
+Si vous voulez ce type de mesure tournant automatiquement sur chaque promo active sur Airbnb, Booking et Vrbo — coût promo vs lift de réservations, côte à côte — c’est ce que fait [RentHome Departamentos](/onboard). Gratuit, self-hosting ou hébergé, sans upsell.

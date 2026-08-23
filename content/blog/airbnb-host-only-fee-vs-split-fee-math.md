@@ -133,7 +133,7 @@ Three operational notes that bite hosts who switch:
 2. **The payout reports take 14 days to look right.** Airbnb's host dashboard segments earnings by booking date, not stay date. For the first two weeks after the switch, half your payouts are still split-fee bookings made before the flip. Don't draw conclusions until day 30.
 3. **Search-rank rebalancing is not instant.** The conversion lift compounds over 3 to 6 weeks as your listing collects more click-throughs at the new price tier and Airbnb's ranking model promotes you. Day-30 numbers will understate the lift.
 
-For the related tracking you need to run this experiment on your own listings, see [free property management tools 2026](/blog/free-property-management-tools-2026) for what to track per-stay. The [free per-listing tracker on RentTools](/onboard) stores stay-level gross and Airbnb-cut so the third column of every table in this post assembles itself.
+For the related tracking you need to run this experiment on your own listings, see [free property management tools 2026](/blog/free-property-management-tools-2026) for what to track per-stay. The [free per-listing tracker on RentHome Departamentos](/onboard) stores stay-level gross and Airbnb-cut so the third column of every table in this post assembles itself.
 
 ## FAQ
 

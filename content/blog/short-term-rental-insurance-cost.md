@@ -114,7 +114,7 @@ You don't need the most expensive policy on the market. You need the right five 
 2. **Match liability to your exposure.** $1M is the floor. Go to $2M if you have a pool, hot tub, or stairs guests use in the dark.
 3. **Add the loss-of-rental-income rider.** For a full-time listing this is usually the highest-value line in the policy.
 4. **Keep AirCover as a backstop, not the plan.** It's free and it does pay guest-caused damage. Let it be the first $50–$800 layer; let the policy be the catastrophe layer.
-5. **Keep your claim evidence tight.** Dated check-in and check-out photos, a clean record of who stayed and when, and receipts for anything valuable. Documentation decides borderline claims on every scheme. If you're wrangling guest records and stay history across platforms by hand, that's exactly the paperwork a tool like [RentTools](/onboard) keeps in one place — the same records you'll need the day you file.
+5. **Keep your claim evidence tight.** Dated check-in and check-out photos, a clean record of who stayed and when, and receipts for anything valuable. Documentation decides borderline claims on every scheme. If you're wrangling guest records and stay history across platforms by hand, that's exactly the paperwork a tool like [RentHome Departamentos](/onboard) keeps in one place — the same records you'll need the day you file.
 
 ## FAQ
 

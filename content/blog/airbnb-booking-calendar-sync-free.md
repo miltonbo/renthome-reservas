@@ -25,7 +25,7 @@ This guide is the result. Free tools, real refresh-interval numbers, an honest a
 - Both Airbnb and Booking.com expose private **iCal export URLs** for free. No partner contract needed.
 - iCal is one-way per URL. Two listings means **two URLs in each direction**: A's export into B, B's export into A.
 - Airbnb refreshes imported calendars every **2 to 4 hours**. Booking.com every **2 to 6 hours**. That gap is where the rare double bookings come from.
-- A free middle layer (the open-source [RentTools](/onboard), or a hand-rolled cron) refreshes faster, but it can't speed up the destination platform's own poll.
+- A free middle layer (the open-source [RentHome Departamentos](/onboard), or a hand-rolled cron) refreshes faster, but it can't speed up the destination platform's own poll.
 - For 1 to 3 listings, iCal handles 99% of cases. For 20+ listings or 90%+ occupancy, look at a paid channel manager.
 
 ## The actual problem
@@ -78,7 +78,7 @@ Booking's own [Partner Hub guide](https://partner.booking.com/en-us/help/calenda
 Three options. None is wrong; the right one depends on how many listings you have.
 
 1. **Direct cross-import.** Paste Airbnb's URL into Booking's import field, and Booking's URL into Airbnb's import field. Done. Each side polls the other on its own schedule. Free. No third tool. Works for two platforms. Stops scaling the moment you add a third (Vrbo, Expedia, Hostaway resellers): you would need to add every URL to every other platform, and most platforms cap import slots at five.
-2. **A free middle layer.** A small open-source tool sits between the platforms. Both Airbnb and Booking import from it; it imports from both of them. Sync becomes one URL per platform, and adding a third platform takes only two new URLs, not four. Refresh on the middle layer can be much faster than the platforms themselves: the [RentTools](/onboard) instance polls every 10 minutes. Still free; you can run it on a $4 droplet if you self-host or use the hosted version.
+2. **A free middle layer.** A small open-source tool sits between the platforms. Both Airbnb and Booking import from it; it imports from both of them. Sync becomes one URL per platform, and adding a third platform takes only two new URLs, not four. Refresh on the middle layer can be much faster than the platforms themselves: the [RentHome Departamentos](/onboard) instance polls every 10 minutes. Still free; you can run it on a $4 droplet if you self-host or use the hosted version.
 3. **A paid channel manager.** Hostaway, Lodgify, Smoobu. Real APIs (when the host's account qualifies) instead of iCal, which means near-real-time sync in both directions. They start at $25 to $50 per property per month and assume a longer contract. Worth it past 20 listings or above 90% occupancy. Below that it's mostly cope.
 
 I run option 2 for my two apartments in Tashkent. The math: at two listings, the middle layer means I add a new platform by adding **two** URLs total, not the four that option 1 would force. Five minutes of setup; pays for itself the next time I list on Vrbo.
@@ -98,7 +98,7 @@ Imagine you wired option 1. Here is what happens when a guest books your apartme
 
 It is rare. It needs simultaneous shoppers on both platforms within the polling gap, which for a small host with low booking volume essentially never happens. But it does happen, and when it does it costs you a refund, a possibly negative review, and 90 minutes of email to two strangers explaining why.
 
-The middle-layer option (number 2) helps half of this. Our hosted instance pulls source feeds every 10 minutes, so RentTools knows about the new Airbnb booking within 10 minutes of it happening. It does **not** speed up Booking.com's poll *of RentTools*. Booking still takes its own 2 to 6 hours.
+The middle-layer option (number 2) helps half of this. Our hosted instance pulls source feeds every 10 minutes, so RentHome Departamentos knows about the new Airbnb booking within 10 minutes of it happening. It does **not** speed up Booking.com's poll *of RentHome Departamentos*. Booking still takes its own 2 to 6 hours.
 
 The only fix for the destination side is API-level connectivity, which means option 3.
 
@@ -107,7 +107,7 @@ This is the actual reason channel managers exist. Not features. Not pretty dashb
 ## FAQ
 
 **Does Airbnb's iCal URL change if I rotate it?**
-Yes. Click **Reset URL** in Airbnb's Sync calendars panel and the old URL stops working immediately. Use it the moment you suspect a URL leaked: a public Slack, a screenshot, a forum reply. RentTools rotates its outbound feed URL on demand for the same reason.
+Yes. Click **Reset URL** in Airbnb's Sync calendars panel and the old URL stops working immediately. Use it the moment you suspect a URL leaked: a public Slack, a screenshot, a forum reply. RentHome Departamentos rotates its outbound feed URL on demand for the same reason.
 
 **How do I know iCal sync is actually working?**
 Cross-check the imported calendar's last-fetch timestamp on both platforms. Airbnb shows it under **Sync calendars → Imported calendars → Last imported**. Booking shows the equivalent under each imported feed. If a timestamp is more than 12 hours old, something is wrong on the source side: URL changed, source platform throttling, or the source URL was rotated.
@@ -118,7 +118,7 @@ Yes. Option 1, direct cross-import, works fine for two platforms. The moment you
 **Is iCal really free?**
 Yes. Airbnb and Booking.com both expose it as a self-service feature on every host account. If a tool is charging you a monthly fee just for iCal sync, you are paying for the convenience layer, not the protocol.
 
-**What does RentTools cost?**
+**What does RentHome Departamentos cost?**
 The hosted instance is free, currently. Self-host is also free if you have a Linux box. We pay our own hosting and Gemini API costs. For more on the underlying double-booking risks the calendar sync is meant to defuse, read [avoiding double bookings](/blog/avoiding-double-bookings).
 
 **Should I bother if I only list on Airbnb?**

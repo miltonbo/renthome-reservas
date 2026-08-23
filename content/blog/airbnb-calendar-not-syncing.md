@@ -105,7 +105,7 @@ This timestamp is the whole game. Ninety percent of "my calendar isn't syncing" 
 
 Here's the honest part. Even with all seven causes ruled out and every feed healthy, the destination platform's own poll is the floor. Booking.com pulls every 2–6 hours, and nothing you do changes that.
 
-A middle layer helps with half the problem. An open-source tool like [RentTools](/onboard) — or a cron job you write yourself — polls the *source* feeds every 10 minutes, so your hub learns about a new Airbnb booking within ten minutes instead of hours. What it can't do is make Booking.com pull *from the hub* any faster than Booking.com wants to. The only thing that beats the poll cycle entirely is real-time API connectivity, which Airbnb and Booking.com sell only to certified PMS vendors at $100–300 a month.
+A middle layer helps with half the problem. An open-source tool like [RentHome Departamentos](/onboard) — or a cron job you write yourself — polls the *source* feeds every 10 minutes, so your hub learns about a new Airbnb booking within ten minutes instead of hours. What it can't do is make Booking.com pull *from the hub* any faster than Booking.com wants to. The only thing that beats the poll cycle entirely is real-time API connectivity, which Airbnb and Booking.com sell only to certified PMS vendors at $100–300 a month.
 
 For one to three listings, don't lose sleep over the refresh window. The stale-feed causes above — a reset URL nobody updated, a feed the platform quietly dropped — cause far more double bookings at small scale than the 2–6 hour poll ever will. If you want the full setup walkthrough rather than the troubleshooting, start with [how to sync Airbnb and Booking.com calendars for free](/blog/airbnb-booking-calendar-sync-free).
 
@@ -132,7 +132,7 @@ Yes — it's the exact mechanism. If your Booking.com import of Airbnb's calenda
 **Why is there no error when iCal sync fails?**
 Because iCal is a pull protocol with no push channel and no standard health signal. The destination fetches a URL on a timer; if the fetch fails, it keeps the last good data and retries later. There's nothing in the standard that tells the destination to alert you, so it doesn't.
 
-**How often does RentTools refresh feeds?**
+**How often does RentHome Departamentos refresh feeds?**
 Every 10 minutes on the source side. That means the hub knows about a new booking within ten minutes, versus the hours a direct platform-to-platform import takes. It still can't force the destination platform to pull from the hub faster than its own 2–6 hour cycle — no iCal tool can.
 
 ## One opinionated take

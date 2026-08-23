@@ -79,7 +79,7 @@ Piso de dos habitaciones en Tashkent, media de 90 $ por noche, 65 % de ocupació
 
 «Pérdidas por mal huésped» suma reembolso, limpieza extra y noches de sustitución de una sola estancia problemática por periodo. La fila del medio — inmediata más todos los requisitos — gana para casi cualquier anfitrión. Mismo boost que la inmediata pura, dos tercios del beneficio de filtrado de la solicitud, y cero penalización en tasa de respuesta por estar cinco días a la semana tecleando «aceptado» a consultas.
 
-Mida esto usted mismo por anuncio — en [RentTools](/onboard) o en una hoja. Seis meses de sus propios datos baten cualquier referencia externa, la mía incluida.
+Mida esto usted mismo por anuncio — en [RentHome Departamentos](/onboard) o en una hoja. Seis meses de sus propios datos baten cualquier referencia externa, la mía incluida.
 
 La solicitud de reserva solo gana en dos perfiles de anuncio: alojamientos de gama alta por encima de 400 $ la noche, donde un solo mal huésped ocasiona 2.000 $ de daños, y unidades con normas estructurales (sin mascotas en absoluto, sin menores de 12 años, sin reservas de fin de semana) que la interfaz de «Requisitos» no expresa con limpieza.
 

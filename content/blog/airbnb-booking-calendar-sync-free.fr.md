@@ -25,7 +25,7 @@ Voici le résultat. Outils gratuits, vrais intervalles de rafraîchissement, ré
 - Airbnb et Booking.com exposent tous les deux des **URL d’export iCal** privées, gratuitement. Pas besoin de contrat partenaire.
 - iCal est unidirectionnel par URL. Deux annonces, c’est **deux URL dans chaque sens** : l’export d’A vers B, l’export de B vers A.
 - Airbnb rafraîchit les calendriers importés toutes les **2 à 4 heures**. Booking.com toutes les **2 à 6 heures**. C’est dans cet écart que naissent les rares doubles réservations.
-- Une couche intermédiaire gratuite ([RentTools](/onboard) en open source, ou un cron maison) rafraîchit plus vite, mais elle ne peut pas accélérer le polling de la plateforme de destination.
+- Une couche intermédiaire gratuite ([RentHome Departamentos](/onboard) en open source, ou un cron maison) rafraîchit plus vite, mais elle ne peut pas accélérer le polling de la plateforme de destination.
 - Pour 1 à 3 annonces, iCal couvre 99 % des cas. Pour 20+ annonces ou un taux d’occupation au-delà de 90 %, regardez du côté d’un Channel Manager payant.
 
 ## Le vrai problème
@@ -78,7 +78,7 @@ Le [guide Partner Hub de Booking](https://partner.booking.com/en-us/help/calenda
 Trois options. Aucune n’est fausse ; le bon choix dépend du nombre d’annonces.
 
 1. **Import croisé direct.** Collez l’URL Airbnb dans le champ d’import de Booking, et l’URL Booking dans le champ d’import d’Airbnb. Terminé. Chacun interroge l’autre à son rythme. Gratuit. Sans tiers. Marche pour deux plateformes. Cesse de bien tenir dès qu’on en ajoute une troisième (Vrbo, Expedia, revendeurs Hostaway) : il faudrait ajouter chaque URL sur chaque autre plateforme, et la plupart plafonnent à cinq imports.
-2. **Une couche intermédiaire gratuite.** Un petit outil open source s’intercale entre les plateformes. Airbnb et Booking importent depuis lui ; lui importe depuis chacun. La synchro devient une URL par plateforme, et ajouter un troisième canal ne demande que deux nouvelles URL, pas quatre. Le rafraîchissement de la couche intermédiaire peut être bien plus rapide que celui des plateformes : l’instance [RentTools](/onboard) interroge toutes les 10 minutes. Toujours gratuit ; vous pouvez la tourner sur un droplet à 4 $ en self-hosting, ou utiliser la version hébergée.
+2. **Une couche intermédiaire gratuite.** Un petit outil open source s’intercale entre les plateformes. Airbnb et Booking importent depuis lui ; lui importe depuis chacun. La synchro devient une URL par plateforme, et ajouter un troisième canal ne demande que deux nouvelles URL, pas quatre. Le rafraîchissement de la couche intermédiaire peut être bien plus rapide que celui des plateformes : l’instance [RentHome Departamentos](/onboard) interroge toutes les 10 minutes. Toujours gratuit ; vous pouvez la tourner sur un droplet à 4 $ en self-hosting, ou utiliser la version hébergée.
 3. **Un Channel Manager payant.** Hostaway, Lodgify, Smoobu. Vraies API (quand le compte de l’hôte est éligible) au lieu d’iCal, donc synchro quasi temps réel dans les deux sens. À partir de 25 à 50 $ par bien et par mois, avec contrat long. Justifié au-delà de 20 annonces ou 90 % d’occupation. En dessous, c’est surtout du soulagement psychologique.
 
 Je tourne sous l’option 2 pour mes deux appartements à Tachkent. Le calcul : à deux annonces, la couche intermédiaire me permet d’ajouter une nouvelle plateforme avec **deux** URL au total, pas les quatre que demande l’option 1. Cinq minutes de réglage ; rentabilisé dès que je publie sur Vrbo.
@@ -98,7 +98,7 @@ Imaginez l’option 1. Voici ce qui se passe quand un voyageur réserve votre ap
 
 C’est rare. Il faut deux acheteurs simultanés sur les deux plateformes dans la fenêtre de polling, ce qui, pour un petit hôte à faible volume, n’arrive quasiment jamais. Mais ça arrive, et quand ça arrive, ça vous coûte un remboursement, peut-être un avis négatif, et 90 minutes d’e-mails à deux inconnus pour expliquer.
 
-L’option 2 (couche intermédiaire) en règle la moitié. Notre instance hébergée tire les flux sources toutes les 10 minutes : RentTools connaît la nouvelle réservation Airbnb dans les 10 minutes. Elle n’accélère **pas** le polling de Booking.com *vers RentTools*. Booking met toujours ses 2 à 6 heures.
+L’option 2 (couche intermédiaire) en règle la moitié. Notre instance hébergée tire les flux sources toutes les 10 minutes : RentHome Departamentos connaît la nouvelle réservation Airbnb dans les 10 minutes. Elle n’accélère **pas** le polling de Booking.com *vers RentHome Departamentos*. Booking met toujours ses 2 à 6 heures.
 
 Le seul correctif côté destination, c’est la connectivité par API — donc l’option 3.
 
@@ -107,7 +107,7 @@ C’est la vraie raison d’être des Channel Managers. Pas les fonctionnalités
 ## FAQ
 
 **L’URL iCal Airbnb change-t-elle si je la réinitialise ?**
-Oui. Cliquez sur **Réinitialiser l’URL** dans le panneau Synchroniser les calendriers et l’ancienne URL cesse immédiatement de fonctionner. Faites-le dès que vous suspectez une fuite : un Slack public, une capture d’écran, un message de forum. RentTools fait pivoter son URL sortante à la demande pour la même raison.
+Oui. Cliquez sur **Réinitialiser l’URL** dans le panneau Synchroniser les calendriers et l’ancienne URL cesse immédiatement de fonctionner. Faites-le dès que vous suspectez une fuite : un Slack public, une capture d’écran, un message de forum. RentHome Departamentos fait pivoter son URL sortante à la demande pour la même raison.
 
 **Comment vérifier que la synchro iCal fonctionne vraiment ?**
 Croisez les horodatages de dernière récupération sur les deux plateformes. Airbnb les affiche dans **Synchroniser les calendriers → Calendriers importés → Dernière importation**. Booking affiche l’équivalent sous chaque flux importé. Au-delà de 12 heures, quelque chose cloche côté source : URL changée, plateforme source qui throttle, ou URL réinitialisée.
@@ -118,7 +118,7 @@ Oui. L’option 1, l’import croisé direct, suffit pour deux plateformes. Vous
 **iCal est-il vraiment gratuit ?**
 Oui. Airbnb et Booking.com l’exposent en self-service sur chaque compte hôte. Si un outil vous facture un abonnement mensuel rien que pour la synchro iCal, vous payez la couche de confort, pas le protocole.
 
-**Combien coûte RentTools ?**
+**Combien coûte RentHome Departamentos ?**
 L’instance hébergée est gratuite, à ce jour. Le self-hosting est gratuit aussi si vous avez une machine Linux. Nous payons notre propre hébergement et nos coûts d’API Gemini. Pour le contexte sur les risques de double réservation que la synchro vise à désamorcer, lisez [éviter les doubles réservations](/blog/avoiding-double-bookings).
 
 **Faut-il s’embêter si je ne suis que sur Airbnb ?**

@@ -529,7 +529,7 @@ export default function AdminSeoOverridesPage() {
                           value={draft.ogImage ?? ""}
                           onChange={(e) => setDraft(row.id, "ogImage", e.target.value || null)}
                           maxLength={URL_MAX}
-                          placeholder="https://renttools.io/og/about.png"
+                          placeholder="http://localhost:3000/og/about.png"
                           className="h-9 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-3 font-mono text-xs text-[var(--ink)] outline-none transition-colors focus:border-[var(--ink)] focus:ring-1 focus:ring-[var(--ink)]/30"
                         />
                         <label
@@ -546,7 +546,7 @@ export default function AdminSeoOverridesPage() {
                             setDraft(row.id, "canonical", e.target.value || null)
                           }
                           maxLength={URL_MAX}
-                          placeholder="/about or https://renttools.io/about"
+                          placeholder="/about or http://localhost:3000/about"
                           className="h-9 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-3 font-mono text-xs text-[var(--ink)] outline-none transition-colors focus:border-[var(--ink)] focus:ring-1 focus:ring-[var(--ink)]/30"
                         />
                         <div className="mt-2 flex items-center justify-end gap-2">

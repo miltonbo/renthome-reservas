@@ -169,7 +169,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         kind: "added",
-        text: "status.renttools.io now reports live uptime and incident history.",
+        text: "localhost:3000/api/health now reports live uptime and incident history.",
       },
       {
         kind: "improved",

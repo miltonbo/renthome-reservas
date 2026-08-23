@@ -103,7 +103,7 @@ Both major platforms support buffer days. Neither calls them "buffer days". The 
 
 A common configuration mistake: setting the buffer on both platforms manually. This double-counts. Airbnb sees its own 1-day buffer plus Booking's iCal'd 1-day buffer plus its own subsequent 1-day buffer, and you end up with 3 nights blocked instead of 1. Set the buffer on the canonical side. Let iCal carry it. Trust the propagation.
 
-If you self-host with [RentTools](/onboard) or another middle-layer tool, the same rule applies. Set the buffer once, in the canonical place, and let the syncing layer do its job.
+If you self-host with [RentHome Departamentos](/onboard) or another middle-layer tool, the same rule applies. Set the buffer once, in the canonical place, and let the syncing layer do its job.
 
 ## FAQ
 

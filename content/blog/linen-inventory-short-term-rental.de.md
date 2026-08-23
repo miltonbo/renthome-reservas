@@ -34,7 +34,7 @@ Wäsche-Inventar ist eines der Probleme, bei denen die falsche Frage — „wie 
 3. **Anzahl der Bäder** für Handtuch- und Badmatten-Zähler.
 4. **Wechselrhythmus** — Anreisen pro Monat bei 80 % Auslastung. Höher = schnellerer Verschleißzyklus = größerer Ersatz-Puffer.
 
-Diese vier Zahlen pro Listing in der Tabelle führen, die Ihr Geschäft trägt. Ohne Tabelle stellt Ihnen [der Open-Source-RentTools-Onboarding-Flow](/onboard) eine in sieben Minuten auf.
+Diese vier Zahlen pro Listing in der Tabelle führen, die Ihr Geschäft trägt. Ohne Tabelle stellt Ihnen [der Open-Source-RentHome Departamentos-Onboarding-Flow](/onboard) eine in sieben Minuten auf.
 
 ## Die Drei-Set-Untergrenze (die Mathematik)
 

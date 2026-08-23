@@ -128,7 +128,7 @@ Setzen Sie überall dieselbe Regel. Setzen Sie unterschiedliche **Erwartungen**,
 
 Der Grund, warum die meisten Hosts beim Früh-Check-in danebenliegen, ist das Timing: Die Entscheidung fällt um 06:40, wenn Sie halb schlafen, und die richtige Antwort hängt von Daten ab, in die Sie nicht geschaut haben. Die Lösung: den Kalender entscheiden lassen, nicht Ihr Gedächtnis im Morgengrauen.
 
-Die Regel, die Sie wollen: **Ist die Vornacht unbelegt, schicken Sie eine Vor-Anreise-Nachricht mit dem Früh-Check-in-Angebot; steht ein Wechsel am selben Tag an, schicken Sie die Gepäck-Abstell-Nachricht.** Diese eine Bedingung macht aus einer nervösen Ad-hoc-Entscheidung eine Vorlagennachricht, die immer stimmt. Same-Day-Anreise-Abfragen, der Vornacht-Status und bedingte Vor-Anreise-Vorlagen sind genau die Logik, die [RentTools](/onboard) plattformübergreifend auf einmal fährt, kostenlos.
+Die Regel, die Sie wollen: **Ist die Vornacht unbelegt, schicken Sie eine Vor-Anreise-Nachricht mit dem Früh-Check-in-Angebot; steht ein Wechsel am selben Tag an, schicken Sie die Gepäck-Abstell-Nachricht.** Diese eine Bedingung macht aus einer nervösen Ad-hoc-Entscheidung eine Vorlagennachricht, die immer stimmt. Same-Day-Anreise-Abfragen, der Vornacht-Status und bedingte Vor-Anreise-Vorlagen sind genau die Logik, die [RentHome Departamentos](/onboard) plattformübergreifend auf einmal fährt, kostenlos.
 
 ## FAQ
 

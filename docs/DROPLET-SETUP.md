@@ -90,8 +90,8 @@ automate steps 3–5.)
 ```bash
 ssh app@<DROPLET_IP>
 cd /home/app
-git clone https://github.com/<your-account>/RentTools.io.git
-cd RentTools.io
+git clone <URL_PRIVADA_DEL_REPOSITORIO> renthome-reservas
+cd renthome-reservas
 cp .env.example .env.production
 # edit .env.production — fill in JWT_SECRET, CRON_SECRET, GOOGLE_GEMINI_API_KEY,
 # DATABASE_URL=file:./data/prod.db
@@ -311,7 +311,7 @@ Steady-state target on the $6 droplet (1 GB RAM, 25 GB SSD):
 | Disk used | < 3 GB | n/a | 80% triggers alert |
 | Load 1m | < 0.3 | < 0.8 | n/a |
 
-> **The renttools.io instance is NOT on this plan.** It runs the $4 tier —
+> **La instancia de RentHome Departamentos usa el plan definido por el administrador.**
 > 458 MB RAM and an **8.7 GB** disk — so read the disk row above as a
 > ceiling of roughly 6.5 GB usable once the 2 GB swapfile is counted, not
 > 25 GB. `node_modules` alone is ~1.3 GB there, which puts steady state

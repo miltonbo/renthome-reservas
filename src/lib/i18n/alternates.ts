@@ -9,7 +9,7 @@ import type { Locale } from "@/lib/i18n/translations";
 export const SUPPORTED_LOCALES: readonly Locale[] = ["en", "ru", "de", "fr", "es"];
 export const DEFAULT_LOCALE: Locale = "en";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 /**
  * Build the per-locale URL map for a given default-locale path.

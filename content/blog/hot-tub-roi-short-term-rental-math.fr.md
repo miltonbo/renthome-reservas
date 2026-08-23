@@ -160,7 +160,7 @@ Avant l'installation, deux combinaisons où la rentabilité vaut toujours d'êtr
 1. **Chalets et gîtes en climat froid ou d'intersaison** — Alpes, Lake District, Catskills, montagnes du centre du Portugal, Pyrénées, Vermont, intérieur de la Colombie-Britannique. Le saut d'occupation y est le plus gros levier de revenu qu'aucun équipement n'offre.
 2. **Biens vendus comme escapades romantiques ou pour petites tribus** — le spa *est* le différenciateur principal de l'annonce et débloque une catégorie de séjours qui paient 30 à 50 % au-dessus de la médiane régionale.
 
-Si vous voulez voir l'effet sur les réservations et le chiffre d'affaires à côté de la date d'installation et de la ligne d'exploitation — ce que la nouvelle photo de couverture avec spa a fait au taux de clic, de combien la prime à la nuit a réellement augmenté, à quel mois la cuve s'est remboursée — c'est précisément ce que [RentTools](/onboard) a été conçu pour faire ressortir. La courbe tarifaire sous cet équipement est traitée dans [la tarification dynamique pour la location courte durée](/blog/dynamic-pricing-short-term-rental).
+Si vous voulez voir l'effet sur les réservations et le chiffre d'affaires à côté de la date d'installation et de la ligne d'exploitation — ce que la nouvelle photo de couverture avec spa a fait au taux de clic, de combien la prime à la nuit a réellement augmenté, à quel mois la cuve s'est remboursée — c'est précisément ce que [RentHome Departamentos](/onboard) a été conçu pour faire ressortir. La courbe tarifaire sous cet équipement est traitée dans [la tarification dynamique pour la location courte durée](/blog/dynamic-pricing-short-term-rental).
 
 ## FAQ
 

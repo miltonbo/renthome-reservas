@@ -191,4 +191,4 @@ La mayoría activa Genius el día que califica porque el correo parece un logro.
 
 Trátalo como cualquier otro descuento promocional: una herramienta con coste medible y alza medible. Córrelo 60 días. Saca el informe de la extranet. Si tus reservas subieron más de un 12 % (Nivel 1) o un 18 % (Nivel 2), quédate. Si no, sal. Reevalúa cada trimestre.
 
-Si quieres que esta clase de medición corra sola sobre cada promo activa en Airbnb, Booking y Vrbo —coste de la promo vs alza en reservas, lado a lado—, eso hace [RentTools](/onboard). Gratis, autoalojado o gestionado, sin upsell.
+Si quieres que esta clase de medición corra sola sobre cada promo activa en Airbnb, Booking y Vrbo —coste de la promo vs alza en reservas, lado a lado—, eso hace [RentHome Departamentos](/onboard). Gratis, autoalojado o gestionado, sin upsell.

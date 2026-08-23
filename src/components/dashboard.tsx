@@ -442,7 +442,7 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
   // Cross-platform echo collapse. A host who runs the normal multi-
   // platform setup syncs their master calendar (usually Airbnb) INTO
   // Booking / Trip.com / Agoda, so every confirmed booking is
-  // reflected back out in EVERY platform's exported iCal. RentTools
+  // reflected back out in EVERY platform's exported iCal. RentHome Departamentos
   // imports all those feeds and ends up with N copies of the same
   // booking — and detectDoubleBookings() then flags (N-1) false
   // "double booking" conflicts for every single reservation.

@@ -172,4 +172,4 @@ Le frais de départ tardif est le levier de politique le plus négligé en STR. 
 
 Choisissez un modèle, écrivez-le sur les trois plateformes, et appliquez-le pareil chaque fois. L’hôte qui offre la première heure à chaque fois et facture la deuxième à chaque fois a une réputation 5 étoiles. Celui qui offre parfois trois heures et facture parfois 50 $ pour une a 4,7. Même revenu. Résultat différent.
 
-Si vous voulez ce type de logique — vérifs d’arrivée le jour même, calcul de tampon ménage, rappels tardifs auto envoyés à 21 h la veille — c’est [RentTools](/onboard). Gratuit, self-hosting ou hébergé, sans upsell.
+Si vous voulez ce type de logique — vérifs d’arrivée le jour même, calcul de tampon ménage, rappels tardifs auto envoyés à 21 h la veille — c’est [RentHome Departamentos](/onboard). Gratuit, self-hosting ou hébergé, sans upsell.

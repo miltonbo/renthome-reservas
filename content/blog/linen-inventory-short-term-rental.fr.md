@@ -34,7 +34,7 @@ L’inventaire de linge est un de ces problèmes où la mauvaise question — «
 3. **Nombre de salles de bain** pour serviettes + tapis de bain.
 4. **Cadence de rotation** — combien de check-ins par mois à 80 % d’occupation. Plus la cadence est haute, plus le cycle d’usure est rapide, plus le buffer doit être gros.
 
-Suivez ces quatre nombres par bien dans le tableur qui fait tourner vos opérations. Si vous n’en avez pas, [le flux d’onboarding open source RentTools](/onboard) vous en monte un en sept minutes.
+Suivez ces quatre nombres par bien dans le tableur qui fait tourner vos opérations. Si vous n’en avez pas, [le flux d’onboarding open source RentHome Departamentos](/onboard) vous en monte un en sept minutes.
 
 ## Le minimum de trois sets (le calcul)
 

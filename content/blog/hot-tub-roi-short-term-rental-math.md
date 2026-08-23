@@ -160,7 +160,7 @@ Before installing, the two combinations where the math is always worth running:
 1. **Cold or shoulder-climate cabins and cottages** — Alps, Lake District, Catskills, central Portugal mountains, Pyrenees, Vermont, BC interior. The occupancy lift is the largest single revenue lever any amenity offers.
 2. **Properties marketed for romantic getaways and small groups** — the tub *is* the listing's main differentiator and unlocks a category of stays that pay 30–50% above the regional median.
 
-If you want the booking and revenue effects tracked alongside the install date and operating-cost line — what the cover photo that now shows the tub did to your click-through rate, what the per-night premium actually moved by, when the tub paid itself off — that is the kind of thing [RentTools](/onboard) is built to surface. The pricing curve underneath the amenity is covered in [dynamic pricing for short-term rentals](/blog/dynamic-pricing-short-term-rental).
+If you want the booking and revenue effects tracked alongside the install date and operating-cost line — what the cover photo that now shows the tub did to your click-through rate, what the per-night premium actually moved by, when the tub paid itself off — that is the kind of thing [RentHome Departamentos](/onboard) is built to surface. The pricing curve underneath the amenity is covered in [dynamic pricing for short-term rentals](/blog/dynamic-pricing-short-term-rental).
 
 ## FAQ
 

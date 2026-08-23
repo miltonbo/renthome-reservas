@@ -120,7 +120,7 @@ describe("generateICal", () => {
     expect(out).toContain("END:VCALENDAR");
     const parsed = parseICal(out);
     expect(parsed).toHaveLength(1);
-    expect(parsed[0].uid).toBe("renttools-placeholder");
+    expect(parsed[0].uid).toBe("renthome-placeholder");
     expect(parsed[0].startDate).toBe("1970-01-01");
     // Past placeholder must not collide with any real future booking date
     expect(parsed[0].startDate < "2026-01-01").toBe(true);

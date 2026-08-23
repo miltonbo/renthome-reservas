@@ -172,4 +172,4 @@ La tarifa de salida tardía es la palanca de política más infrautilizada en al
 
 Elige un modelo, escríbelo en las tres plataformas y aplícalo igual cada vez. El Anfitrión que regala la primera hora cada vez y cobra la segunda cada vez tiene reputación de cinco estrellas. El que ocasionalmente regala tres horas y ocasionalmente cobra 50 $ por una tiene 4,7. Mismo ingreso. Distinto desenlace.
 
-Si quieres este tipo de lógica de política —búsquedas de llegadas del mismo día, cuentas de buffer, recordatorios de salida tardía auto-enviados a las 21:00 de la víspera—, eso es [RentTools](/onboard). Gratis, autoalojado o gestionado, sin upsell.
+Si quieres este tipo de lógica de política —búsquedas de llegadas del mismo día, cuentas de buffer, recordatorios de salida tardía auto-enviados a las 21:00 de la víspera—, eso es [RentHome Departamentos](/onboard). Gratis, autoalojado o gestionado, sin upsell.

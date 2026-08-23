@@ -175,4 +175,4 @@ The 2-night minimum is the most over-set value in short-term rentals. It is a ho
 
 Run the math on your own property once a quarter. If you cannot find your worst booking of the last 90 days from memory, your minimum is fine. If you can — that 1-night Tuesday you swore you'd never accept again — ask yourself how many *good* 1-night bookings you didn't see, because the platform never showed your listing to them. The good 1-night bookings outnumber the bad ones by ten to one. The bad ones are just the only ones you remember.
 
-If this is the kind of math you want running automatically against your own calendar — average LOS, occupancy by minimum-night setting, gap-night counts — that is what [RentTools](/onboard) does. Free, self-host or hosted, no upsell.
+If this is the kind of math you want running automatically against your own calendar — average LOS, occupancy by minimum-night setting, gap-night counts — that is what [RentHome Departamentos](/onboard) does. Free, self-host or hosted, no upsell.

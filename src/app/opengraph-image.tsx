@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "nodejs";
-export const alt = "RentTools — open-source property manager for short-term rentals";
+export const alt = "RentHome Departamentos — Gestión de reservas y departamentos";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -40,7 +40,7 @@ export default async function Image() {
             RT
           </div>
           <div style={{ fontSize: "32px", fontWeight: 600, letterSpacing: "-0.02em" }}>
-            RentTools
+            RentHome Departamentos
           </div>
         </div>
 
@@ -54,7 +54,7 @@ export default async function Image() {
               textTransform: "uppercase",
             }}
           >
-            Open source · Free hosted version
+            RentHome Departamentos
           </div>
           <div
             style={{
@@ -65,7 +65,7 @@ export default async function Image() {
               maxWidth: "1000px",
             }}
           >
-            Self-host your short-term rental calendar, cleaning schedule, and guest documents.
+            Reservas, calendarios, limpiezas y operación en un solo lugar.
           </div>
         </div>
 
@@ -78,8 +78,8 @@ export default async function Image() {
             color: "#a0a0a8",
           }}
         >
-          <div>renttools.io</div>
-          <div>github.com/Gribadan/RentTools.io</div>
+          <div>Santa Cruz de la Sierra</div>
+          <div>RentHome Departamentos</div>
         </div>
       </div>
     ),

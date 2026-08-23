@@ -175,4 +175,4 @@ El 2 noches mínimo es el valor más sobreajustado en alquiler corto. Es resaca 
 
 Corre las cuentas en tu propiedad una vez al trimestre. Si no recuerdas tu peor reserva de los últimos 90 días, tu mínimo va bien. Si la recuerdas —ese martes de 1 noche que juraste no aceptar nunca más— pregúntate cuántas *buenas* reservas de 1 noche no viste, porque la plataforma nunca te las mostró. Las buenas de 1 noche superan a las malas diez a uno. Las malas son solo las únicas que recuerdas.
 
-Si quieres este tipo de cuenta corriendo automáticamente sobre tu calendario —LOS medio, ocupación por mínimo, conteos de huérfanas—, eso es [RentTools](/onboard). Gratis, autoalojado o gestionado, sin upsell.
+Si quieres este tipo de cuenta corriendo automáticamente sobre tu calendario —LOS medio, ocupación por mínimo, conteos de huérfanas—, eso es [RentHome Departamentos](/onboard). Gratis, autoalojado o gestionado, sin upsell.

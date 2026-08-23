@@ -108,7 +108,7 @@ Of the four thresholds, this is the one that costs hosts the badge they have alr
 
 The cheapest fix is calendar hygiene six to twelve months out. Block every dated commitment — travel, family events, personal property use, planned maintenance — on the calendar as soon as you know about it. Set platform-side pricing so off-rate inquiries never arrive. Turn on Vrbo's push notifications and pair them with a co-host or partner who can accept on your behalf during travel. Done well, the four metrics maintain themselves.
 
-For a deeper look at how the inquiry queue and calendar interact across multiple platforms, see [avoiding double bookings](/blog/avoiding-double-bookings) — the same calendar discipline that prevents double bookings also keeps the Vrbo acceptance rate intact. If you want one dashboard that surfaces acceptance rate, rating, and cancellation rate across Vrbo, Airbnb, and Booking.com without juggling tabs, that is what [RentTools](/onboard) tracks.
+For a deeper look at how the inquiry queue and calendar interact across multiple platforms, see [avoiding double bookings](/blog/avoiding-double-bookings) — the same calendar discipline that prevents double bookings also keeps the Vrbo acceptance rate intact. If you want one dashboard that surfaces acceptance rate, rating, and cancellation rate across Vrbo, Airbnb, and Booking.com without juggling tabs, that is what [RentHome Departamentos](/onboard) tracks.
 
 ## When chasing Premier Host stops being worth it
 
@@ -144,7 +144,7 @@ Yes, once the activity threshold is met (3 bookings + 45 nights, or 5 bookings).
 No. Vrbo's auto-reply feature sends a "thanks for inquiring, we will get back to you" templated message that does not count as an acceptance. The actual accept/decline action must fire from your account within 24 hours. The safest setup is to leave auto-reply off (Vrbo's quiet design) and instead make sure push notifications wake the phone, paired with a co-host for travel weekends.
 
 **Does Premier Host stack with the equivalent program on Airbnb or Booking.com?**
-Each platform's program is independent and none of them cross-recognise. You can hold Premier Host on Vrbo, Superhost on Airbnb, and Genius status on Booking.com all simultaneously, but each is calculated only from its own platform's data. Running all three requires meeting all three sets of thresholds, which is a discipline-stacking exercise more than a single-strategy decision. The cross-platform dashboard view in [RentTools](/onboard) is built specifically to monitor the binding constraint across all three at once.
+Each platform's program is independent and none of them cross-recognise. You can hold Premier Host on Vrbo, Superhost on Airbnb, and Genius status on Booking.com all simultaneously, but each is calculated only from its own platform's data. Running all three requires meeting all three sets of thresholds, which is a discipline-stacking exercise more than a single-strategy decision. The cross-platform dashboard view in [RentHome Departamentos](/onboard) is built specifically to monitor the binding constraint across all three at once.
 
 ## One opinionated take
 

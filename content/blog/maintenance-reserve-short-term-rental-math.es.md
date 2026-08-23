@@ -167,4 +167,4 @@ Los anfitriones tratan el mantenimiento como un seguro dental: un gasto que espe
 
 Los operadores de un solo piso más rentables que conozco tienen una costumbre en común: cotizan cada noche *primero* descontando la provisión, y llaman al resto facturación. El día uno el número parece peor — el total «ADR × noches» baja un 5–8 % — y la mañana en que muere el compresor del aire parece muchísimo mejor, porque el dinero ya está ahí.
 
-Si quiere ver la línea de provisión cruzada con sus noches reales y su historial de reparaciones, [RentTools](/onboard) está hecho exactamente para eso. Y si quiere ver cómo encaja la provisión con la limpieza y las comisiones de canal, la cuenta completa está en [el punto de equilibrio de un channel manager](/blog/channel-manager-break-even-math).
+Si quiere ver la línea de provisión cruzada con sus noches reales y su historial de reparaciones, [RentHome Departamentos](/onboard) está hecho exactamente para eso. Y si quiere ver cómo encaja la provisión con la limpieza y las comisiones de canal, la cuenta completa está en [el punto de equilibrio de un channel manager](/blog/channel-manager-break-even-math).

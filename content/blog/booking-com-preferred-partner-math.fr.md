@@ -121,7 +121,7 @@ La règle est plus simple que le programme ne le laisse croire :
 3. **Surveillez le basculement saisonnier.** L'erreur d'août de l'introduction est le piège classique : un programme rentable tout l'hiver devient un poids mort en haute saison. Si votre occupation varie fort selon les saisons, coupez Preferred sur vos mois complets et rallumez-le en intersaison. La sortie se fait dans les réglages de commission de l'Extranet ; le retour dépend d'une nouvelle invitation de Booking.com — ne basculez donc pas si brutalement que vous risquez de perdre l'éligibilité.
 4. **Ne cumulez pas Preferred et Genius sans le calcul d'empilement.** Si vous tournez déjà sur [Genius](/blog/booking-com-genius-levels-math) et êtes presque plein, ce sont deux coûts qui courent après un stock (inexistant) de nuits vides. Choisissez le levier selon la situation : Preferred pour un logement à fort ADR avec des trous, Genius pour un milieu de gamme concurrentiel qui a besoin de la remise pour gagner le clic.
 
-Si vous voulez le mesurer automatiquement — le surcoût de commission Preferred face à la hausse de réservations réellement produite, à côté de vos remises Genius et longue durée sur un même écran — c'est exactement la comptabilité des promos multiplateforme que fait [RentTools](/onboard). Gratuit, auto-hébergé ou hébergé, sans upsell.
+Si vous voulez le mesurer automatiquement — le surcoût de commission Preferred face à la hausse de réservations réellement produite, à côté de vos remises Genius et longue durée sur un même écran — c'est exactement la comptabilité des promos multiplateforme que fait [RentHome Departamentos](/onboard). Gratuit, auto-hébergé ou hébergé, sans upsell.
 
 ## FAQ
 

@@ -172,4 +172,4 @@ Die Später-Auscheck-Gebühr ist der am meisten übersehene Politik-Hebel in der
 
 Ein Modell wählen, in alle drei Plattform-Listings schreiben, jedes Mal gleich durchsetzen. Der Host, der die erste Stunde immer gratis und die zweite immer berechnet, hat einen 5-Sterne-Ruf. Der Host, der gelegentlich drei Stunden gratis gibt und gelegentlich 50 $ für eine Stunde berechnet, hat 4,7. Gleicher Umsatz. Anderes Ergebnis.
 
-Wer diese Politik-Logik — Same-Day-Anreise-Lookups, Reinigungs-Puffer-Mathematik, Später-Auscheck-Erinnerungen automatisch um 21:00 am Vorabend — automatisch laufen lassen will, das ist [RentTools](/onboard). Kostenlos, selbst gehostet oder verwaltet, kein Upsell.
+Wer diese Politik-Logik — Same-Day-Anreise-Lookups, Reinigungs-Puffer-Mathematik, Später-Auscheck-Erinnerungen automatisch um 21:00 am Vorabend — automatisch laufen lassen will, das ist [RentHome Departamentos](/onboard). Kostenlos, selbst gehostet oder verwaltet, kein Upsell.

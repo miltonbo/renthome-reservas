@@ -98,7 +98,7 @@ A short operational checklist for the units where the math says go mid-term:
 2. **Size the deposit for a month, not a night.** A month of wear is a month of risk. AirCover and platform deposits still apply, but you only inspect at the end, so the deposit and your documentation have to carry more weight.
 3. **Know the payout schedule.** Airbnb pays long-term hosts monthly: the first payout lands about 24 hours after check-in for month one, then on the monthly anniversary for each subsequent month. Budget for the gap — you are not getting the whole stay up front.
 4. **Cap the discount at what the vacancy is worth.** 25% is a common monthly discount, but the right number is "whatever beats my expected nightly net for that month." For the discount-slider math at different occupancy levels, see [length-of-stay discount math](/blog/length-of-stay-discount-math) — it's the companion to this post.
-5. **Track both modes in one place.** The unit you flip to mid-term still has a nightly listing to keep warm for the months between long-stay guests. One calendar, one occupancy number, both pricing modes visible at once is exactly what [RentTools](/onboard) is for.
+5. **Track both modes in one place.** The unit you flip to mid-term still has a nightly listing to keep warm for the months between long-stay guests. One calendar, one occupancy number, both pricing modes visible at once is exactly what [RentHome Departamentos](/onboard) is for.
 
 ## FAQ
 

@@ -25,7 +25,7 @@ Esta guía es el resultado. Herramientas gratis, intervalos de refresco reales y
 - Tanto Airbnb como Booking.com exponen **URLs de exportación iCal privadas** gratis. Sin contrato de partner.
 - iCal es unidireccional por URL. Dos anuncios significa **dos URLs en cada dirección**: la de A en B y la de B en A.
 - Airbnb refresca los calendarios importados cada **2 a 4 horas**. Booking.com cada **2 a 6 horas**. Ese hueco es de donde salen las raras reservas duplicadas.
-- Una capa intermedia gratuita (la versión open-source de [RentTools](/onboard) o un cron casero) refresca más rápido, pero no acelera el sondeo de la plataforma de destino.
+- Una capa intermedia gratuita (la versión open-source de [RentHome Departamentos](/onboard) o un cron casero) refresca más rápido, pero no acelera el sondeo de la plataforma de destino.
 - Para 1 a 3 anuncios, iCal cubre el 99 % de los casos. Para 20+ anuncios o 90 %+ de ocupación, mira un Channel Manager de pago.
 
 ## El problema real
@@ -78,7 +78,7 @@ La propia [guía de Partner Hub de Booking](https://partner.booking.com/es-es/ay
 Tres opciones. Ninguna es errónea; la correcta depende de cuántos anuncios tengas.
 
 1. **Importación cruzada directa.** Pega la URL de Airbnb en el campo de importación de Booking, y la de Booking en el de Airbnb. Hecho. Cada lado consulta al otro a su ritmo. Gratis. Sin tercera herramienta. Funciona para dos plataformas. Deja de escalar en cuanto añades una tercera (Vrbo, Expedia, revendedores Hostaway): tendrías que añadir cada URL en cada plataforma, y la mayoría limita los espacios de importación a cinco.
-2. **Una capa intermedia gratuita.** Una herramienta open-source pequeña se sienta entre las plataformas. Tanto Airbnb como Booking importan de ella; ella importa de las dos. La sincronización pasa a ser una URL por plataforma, y añadir una tercera plataforma solo cuesta dos URLs nuevas, no cuatro. El refresco en la capa intermedia puede ser mucho más rápido que el de las plataformas: la instancia de [RentTools](/onboard) sondea cada 10 minutos. Sigue siendo gratis; lo puedes correr en un droplet de 4 $ si lo autoalojas o usar la versión gestionada.
+2. **Una capa intermedia gratuita.** Una herramienta open-source pequeña se sienta entre las plataformas. Tanto Airbnb como Booking importan de ella; ella importa de las dos. La sincronización pasa a ser una URL por plataforma, y añadir una tercera plataforma solo cuesta dos URLs nuevas, no cuatro. El refresco en la capa intermedia puede ser mucho más rápido que el de las plataformas: la instancia de [RentHome Departamentos](/onboard) sondea cada 10 minutos. Sigue siendo gratis; lo puedes correr en un droplet de 4 $ si lo autoalojas o usar la versión gestionada.
 3. **Un Channel Manager de pago.** Hostaway, Lodgify, Smoobu. APIs reales (cuando la cuenta del Anfitrión califica) en vez de iCal, lo que significa sincronización casi en tiempo real en ambos sentidos. Empiezan en 25–50 $ por propiedad y mes y asumen un contrato más largo. Compensan a partir de 20 anuncios o por encima del 90 % de ocupación. Por debajo es casi siempre paño caliente.
 
 Yo uso la opción 2 para mis dos pisos en Tashkent. La cuenta: con dos anuncios, la capa intermedia me deja añadir una nueva plataforma con **dos** URLs en total, no las cuatro que la opción 1 forzaría. Cinco minutos de configuración; se amortizan la próxima vez que anuncie en Vrbo.
@@ -98,7 +98,7 @@ Imagina que cableaste la opción 1. Esto pasa cuando un Huésped reserva tu piso
 
 Es raro. Hace falta que coincidan compradores en ambas plataformas dentro del hueco, lo que para un Anfitrión pequeño con poco volumen casi nunca pasa. Pero pasa, y cuando pasa te cuesta un reembolso, una reseña posiblemente negativa y 90 minutos de correo a dos desconocidos explicando por qué.
 
-La opción de capa intermedia (la 2) ayuda a la mitad. Nuestra instancia gestionada tira de los feeds origen cada 10 minutos, así que RentTools se entera de la nueva reserva de Airbnb en 10 minutos. Lo que **no** acelera es el sondeo de Booking.com *de RentTools*. Booking sigue tardando sus 2–6 horas.
+La opción de capa intermedia (la 2) ayuda a la mitad. Nuestra instancia gestionada tira de los feeds origen cada 10 minutos, así que RentHome Departamentos se entera de la nueva reserva de Airbnb en 10 minutos. Lo que **no** acelera es el sondeo de Booking.com *de RentHome Departamentos*. Booking sigue tardando sus 2–6 horas.
 
 Lo único que arregla el lado destino es la conectividad por API, lo que implica la opción 3.
 
@@ -107,7 +107,7 @@ Esa es la razón real por la que existen los Channel Managers. No las funciones.
 ## FAQ
 
 **¿La URL iCal de Airbnb cambia si la roto?**
-Sí. Pulsa **Restablecer URL** en el panel de sincronización de Airbnb y la antigua deja de funcionar al instante. Úsalo en cuanto sospeches una filtración: un Slack público, una captura, una respuesta en un foro. RentTools rota la URL saliente bajo demanda por la misma razón.
+Sí. Pulsa **Restablecer URL** en el panel de sincronización de Airbnb y la antigua deja de funcionar al instante. Úsalo en cuanto sospeches una filtración: un Slack público, una captura, una respuesta en un foro. RentHome Departamentos rota la URL saliente bajo demanda por la misma razón.
 
 **¿Cómo sé si la sincronización iCal está funcionando?**
 Cruza la marca de última actualización del calendario importado en ambas plataformas. Airbnb lo enseña en **Sincronizar calendarios → Calendarios importados → Última importación**. Booking enseña el equivalente en cada feed importado. Si una marca pasa de las 12 horas, algo va mal en el origen: URL cambiada, plataforma origen limitando o URL rotada.
@@ -118,7 +118,7 @@ Sí. La opción 1, importación cruzada directa, va bien para dos plataformas. E
 **¿iCal es de verdad gratis?**
 Sí. Tanto Airbnb como Booking.com lo exponen como autoservicio en cualquier cuenta de Anfitrión. Si una herramienta te cobra una mensualidad solo por sincronización iCal, estás pagando la capa de comodidad, no el protocolo.
 
-**¿Cuánto cuesta RentTools?**
+**¿Cuánto cuesta RentHome Departamentos?**
 La instancia gestionada es gratis a día de hoy. El autoalojamiento también es gratis si tienes una caja Linux. Pagamos nuestro propio hosting y los costes de la API de Gemini. Para más sobre los riesgos de doble reserva que la sincronización pretende mitigar, lee [evitar dobles reservas](/blog/avoiding-double-bookings).
 
 **¿Vale la pena si solo anuncio en Airbnb?**

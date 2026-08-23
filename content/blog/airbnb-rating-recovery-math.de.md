@@ -112,7 +112,7 @@ Drei Hebel, nach abnehmender Wirkung.
 
 **Geschwindigkeit verdünnt, was sich nicht löschen lässt.** Für die Bewertungen, die Sie nicht löschen lassen können — die fairen — ist das einzige Werkzeug mehr saubere Bewertungen, schneller. Eine vierzeilige Nachricht nach dem Aufenthalt am vierten Tag konvertiert 35–50 % der Gäste, die sonst geschwiegen hätten. Verdoppeln Sie Ihre Bewertungsquote, halbieren Sie Ihre Erholungszeit. Kein anderer Regler leistet das.
 
-**Hören Sie auf, über Ihre Decke hinaus zu optimieren.** Hat Ihr Inserat eine strukturelle Grenze — laute Straße, kein Aufzug, dünne Wände —, halten Sie keine 4,95, und das Jagen danach macht nur jeden 4-Stern zur Krise. Wählen Sie die Note, die Sie mit normalem Gastgeben halten, sammeln Sie den Ballast aus Bewertungszahl an und lassen Sie den Durchschnitt seine Arbeit tun. Ein Dashboard, das Durchschnittsnote, Bewertungsgeschwindigkeit und Superhost-Abstand über jedes Inserat auf einem Bildschirm zeigt — statt sich durch Airbnbs Tabs Inserat für Inserat zu klicken —, ist genau das, was [RentTools](/onboard) auf eine Fläche bringt.
+**Hören Sie auf, über Ihre Decke hinaus zu optimieren.** Hat Ihr Inserat eine strukturelle Grenze — laute Straße, kein Aufzug, dünne Wände —, halten Sie keine 4,95, und das Jagen danach macht nur jeden 4-Stern zur Krise. Wählen Sie die Note, die Sie mit normalem Gastgeben halten, sammeln Sie den Ballast aus Bewertungszahl an und lassen Sie den Durchschnitt seine Arbeit tun. Ein Dashboard, das Durchschnittsnote, Bewertungsgeschwindigkeit und Superhost-Abstand über jedes Inserat auf einem Bildschirm zeigt — statt sich durch Airbnbs Tabs Inserat für Inserat zu klicken —, ist genau das, was [RentHome Departamentos](/onboard) auf eine Fläche bringt.
 
 ## FAQ
 

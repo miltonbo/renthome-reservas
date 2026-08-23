@@ -111,7 +111,7 @@ La solution n'est jamais de rendre le logement moins confortable — un voyageur
 
 Ce qui ne marche pas, c'est demander. La taxe sur le comportement est un problème d'incitations, et les problèmes d'incitations ne cèdent pas aux mots polis. Ils cèdent à un thermostat qui, tout simplement, ne descend pas à 18 °C porte ouverte.
 
-La pièce que la plupart manquent : vous ne pouvez pas piloter cette ligne si vous ne la voyez pas. Un bien, vous finirez par remarquer une facture bizarre. Trois biens sur trois courbes d'occupation différentes, et « quelle unité a tiré trop de HVAC le mois dernier, était-ce le voyageur porte-ouverte ou juste un coup de froid ? » devient une question à laquelle une pile de factures ne répond pas — et c'est exactement cet état opérationnel par bien que [RentTools](/onboard) garde au même endroit, gratuitement, à côté du calendrier qui vous dit combien de rotations — et combien de machines de linge — vont fondre sur chaque unité.
+La pièce que la plupart manquent : vous ne pouvez pas piloter cette ligne si vous ne la voyez pas. Un bien, vous finirez par remarquer une facture bizarre. Trois biens sur trois courbes d'occupation différentes, et « quelle unité a tiré trop de HVAC le mois dernier, était-ce le voyageur porte-ouverte ou juste un coup de froid ? » devient une question à laquelle une pile de factures ne répond pas — et c'est exactement cet état opérationnel par bien que [RentHome Departamentos](/onboard) garde au même endroit, gratuitement, à côté du calendrier qui vous dit combien de rotations — et combien de machines de linge — vont fondre sur chaque unité.
 
 ## FAQ
 

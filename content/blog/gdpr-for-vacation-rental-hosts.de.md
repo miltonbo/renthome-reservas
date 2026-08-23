@@ -51,7 +51,7 @@ Unsere [/privacy-Seite](/privacy) ist das Beispiel, das ich denke, dass kleine H
 - Welche Daten: Pass-Scan, Buchungstermine, Kommunikationshistorie.
 - Warum: gesetzliche Gästeanmeldung, Streitbeilegung, Aufenthaltslogistik.
 - Wie lange: eine konkrete Tageszahl, nicht „nach Bedarf".
-- Wer noch: die Plattformen (Airbnb, Booking) und ggf. das genutzte Tooling ([RentTools](/onboard), wenn Sie es nutzen).
+- Wer noch: die Plattformen (Airbnb, Booking) und ggf. das genutzte Tooling ([RentHome Departamentos](/onboard), wenn Sie es nutzen).
 - Wie löschen: eine E-Mail-Adresse, die Sie tatsächlich prüfen.
 
 Disclaimer-Absätze weglassen. Den „Ihre Privatsphäre ist uns wichtig"-Satz weglassen. Aufsichtsbehörden nennen das performativ. Die Fakten benennen.
@@ -90,7 +90,7 @@ Der größte DSGVO-Fehler, den ich Hosts machen sehe, ist der WhatsApp-Ordner mi
 Ein Auftragsverarbeiter ist jeder neben Ihnen, der Gastdaten verarbeitet, weil er bei der Aufgabe hilft. Beispiele:
 
 - Die **Buchungsplattformen** (Airbnb, Booking, Vrbo). Die sind gemeinsame Verantwortliche, keine Auftragsverarbeiter. Ihre Datenschutzerklärungen decken ihre Seite.
-- Ihr **PMS oder Sync-Tool**. Bei Hostaway, Lodgify, Smoobu oder RentTools ist das ein Auftragsverarbeiter. Auflisten.
+- Ihr **PMS oder Sync-Tool**. Bei Hostaway, Lodgify, Smoobu oder RentHome Departamentos ist das ein Auftragsverarbeiter. Auflisten.
 - Ihr **Cloud-Hosting**. Bei Selbst-Hosting auf einem Droplet ist der Cloud-Anbieter technisch ein Auftragsverarbeiter. Auflisten.
 - Ihr **E-Mail-Anbieter**. Die Inbox, in der Gäste Scans senden. Gmail, Outlook, Fastmail. Auflisten.
 - Ein **Zahlungsabwickler**. Stripe, Wise, das Händlerportal Ihrer Bank. Auflisten.

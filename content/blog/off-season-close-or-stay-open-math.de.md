@@ -157,7 +157,7 @@ Vier Fälle, und einer schlägt die Rechnung komplett.
 
 Und rechnen Sie vor dem Schließen die dritte Option durch. Eine einzige Drei-Monats-Vermietung über den Winter hat einen Wechsel statt zwölf, kein tägliches Marketing und eine Monatsmiete, die in den meisten Märkten den Nebensaison-Nachtpreis schlägt. Die [Rechnung zur mittelfristigen Vermietung](/blog/mid-term-rental-math) sieht meist besser aus als Schließen und als das Erkämpfen von 22 % Auslastung.
 
-Was Sie auch wählen: Die Kalender müssen voneinander wissen. Die Doppelbuchung, die wirklich weh tut, passiert im ruhigen Monat, weil Sie ab Woche drei aufgehört haben, täglich nachzusehen — ein halb vergessener Januargast wird zur Februar-Kollision, von der Sie durch den Gast selbst erfahren. Genau das [macht RentTools kostenlos](/onboard): Jede Plattform sieht die Buchungen der anderen, auch die aus einem Monat, in dem Sie nicht besonders aufmerksam waren.
+Was Sie auch wählen: Die Kalender müssen voneinander wissen. Die Doppelbuchung, die wirklich weh tut, passiert im ruhigen Monat, weil Sie ab Woche drei aufgehört haben, täglich nachzusehen — ein halb vergessener Januargast wird zur Februar-Kollision, von der Sie durch den Gast selbst erfahren. Genau das [macht RentHome Departamentos kostenlos](/onboard): Jede Plattform sieht die Buchungen der anderen, auch die aus einem Monat, in dem Sie nicht besonders aufmerksam waren.
 
 ## FAQ
 

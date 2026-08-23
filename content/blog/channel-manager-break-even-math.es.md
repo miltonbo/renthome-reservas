@@ -93,7 +93,7 @@ Elige la fila de tu escala. **C** es la factura mensual del Channel Manager. **B
 | Tiempo ahorrado con bandeja unificada | ~1,5 h/mes |
 | Coste-tiempo a 25 $/h | 37,50 $/mes |
 
-**Break-even a 1 propiedad: −73 $/mes.** Un plan gratis de Smoobu o una instancia gratis de [RentTools](/onboard) más una auditoría matinal de 2 minutos cubren el 99 %. A una propiedad, el manager de pago es pérdida clara.
+**Break-even a 1 propiedad: −73 $/mes.** Un plan gratis de Smoobu o una instancia gratis de [RentHome Departamentos](/onboard) más una auditoría matinal de 2 minutos cubren el 99 %. A una propiedad, el manager de pago es pérdida clara.
 
 ### Tres propiedades
 
@@ -157,12 +157,12 @@ Tres perfiles donde las cuentas dicen quédate gratis, incluso a 3+ propiedades:
 
 1. **Listado en una sola plataforma.** Si el 95 % de las reservas vienen de Airbnb y Booking-vía-iCal es respaldo, la tasa de fallo se acerca a la de 1 propiedad. El manager de pago compra una sincronización que apenas usas.
 2. **Anfitriones siempre atentos.** Quien responde cada mensaje en 10 minutos desde el móvil hace manualmente lo que hace la mensajería automática. La línea de coste-trabajo va a casi cero. Coste-vs-riesgo encoge el break-even.
-3. **Alternativas autoalojadas.** Correr una instancia gratis de [RentTools](/onboard) o autoalojar en un [droplet de 4 $](/blog/self-hosting-property-manager-droplet) te da casi toda la sincronización y bandeja sin tarifa por propiedad. Pagas en tiempo, no en dinero. Por debajo de 5 propiedades, el coste-tiempo es manejable. Por encima, no.
+3. **Alternativas autoalojadas.** Correr una instancia gratis de [RentHome Departamentos](/onboard) o autoalojar en un [droplet de 4 $](/blog/self-hosting-property-manager-droplet) te da casi toda la sincronización y bandeja sin tarifa por propiedad. Pagas en tiempo, no en dinero. Por debajo de 5 propiedades, el coste-tiempo es manejable. Por encima, no.
 
 El tercer perfil es la mayoría del público de este artículo. La escalera realista para un Anfitrión que crece:
 
 - **Propiedad 1:** importación cruzada iCal gratis, 5 minutos al día.
-- **Propiedad 2:** importación cruzada iCal gratis + cuenta gratis de [RentTools](/onboard) o plan free de Smoobu para la bandeja.
+- **Propiedad 2:** importación cruzada iCal gratis + cuenta gratis de [RentHome Departamentos](/onboard) o plan free de Smoobu para la bandeja.
 - **Propiedad 3:** momento de decidir. O pasas a pago, o aceptas la mayor tasa de doble reserva como coste de seguir gratis.
 - **Propiedad 4–7:** manager de pago, casi seguro. Elige por calidad del fallo.
 - **Propiedad 8+:** manager de pago, sin duda. La pregunta es cuál.

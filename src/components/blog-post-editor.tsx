@@ -306,7 +306,7 @@ export function BlogPostEditor({ post, candidates }: Props) {
   };
 
   const previewUrl = `/${locale === "en" ? "" : `${locale}/`}blog/${slug || post.slug}`;
-  const previewFullUrl = `https://renttools.io${previewUrl}`;
+  const previewFullUrl = `http://localhost:3000${previewUrl}`;
   const previewExcerpt = excerpt.trim().length > 0
     ? excerpt
     : "Set an excerpt to control how this post appears in Google and on social cards.";
@@ -380,7 +380,7 @@ export function BlogPostEditor({ post, candidates }: Props) {
                 </p>
                 <div className="rounded-md border border-border/50 bg-background/40 p-3">
                   <div className="truncate text-[13px] text-muted-foreground">
-                    renttools.io{previewUrl} <span className="text-muted-foreground/50">›</span>
+                    localhost:3000{previewUrl} <span className="text-muted-foreground/50">›</span>
                   </div>
                   <div className="mt-1 line-clamp-1 text-[18px] leading-snug text-blue-700 dark:text-blue-300">
                     {title || "Untitled post"}
@@ -414,7 +414,7 @@ export function BlogPostEditor({ post, candidates }: Props) {
                   </div>
                   <div className="space-y-1 p-3">
                     <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
-                      renttools.io
+                      localhost:3000
                     </div>
                     <div className="line-clamp-2 text-sm font-medium leading-snug">
                       {title || "Untitled post"}

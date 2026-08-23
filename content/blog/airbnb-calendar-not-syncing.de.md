@@ -105,7 +105,7 @@ Dieser Zeitstempel ist das ganze Spiel. Neun von zehn „Mein Kalender synchroni
 
 Jetzt der ehrliche Teil. Selbst wenn alle sieben Ursachen ausgeschlossen sind und jeder Feed gesund ist, ist der eigene Abruf der Zielplattform die Untergrenze. Booking.com zieht alle 2–6 Stunden, und daran ändern Sie nichts.
 
-Eine Zwischenschicht hilft bei der Hälfte des Problems. Ein Open-Source-Tool wie [RentTools](/onboard) — oder ein Cronjob, den Sie selbst schreiben — fragt die *Quell*-Feeds alle 10 Minuten ab, sodass Ihre Nabe von einer neuen Airbnb-Buchung in zehn Minuten erfährt statt in Stunden. Was es nicht kann: Booking.com dazu bringen, *aus der Nabe* schneller zu ziehen, als Booking.com will. Das Einzige, was den Abruf-Zyklus ganz schlägt, ist Echtzeit-API-Anbindung, die Airbnb und Booking.com nur an zertifizierte PMS-Anbieter für 100–300 $ im Monat verkaufen.
+Eine Zwischenschicht hilft bei der Hälfte des Problems. Ein Open-Source-Tool wie [RentHome Departamentos](/onboard) — oder ein Cronjob, den Sie selbst schreiben — fragt die *Quell*-Feeds alle 10 Minuten ab, sodass Ihre Nabe von einer neuen Airbnb-Buchung in zehn Minuten erfährt statt in Stunden. Was es nicht kann: Booking.com dazu bringen, *aus der Nabe* schneller zu ziehen, als Booking.com will. Das Einzige, was den Abruf-Zyklus ganz schlägt, ist Echtzeit-API-Anbindung, die Airbnb und Booking.com nur an zertifizierte PMS-Anbieter für 100–300 $ im Monat verkaufen.
 
 Bei einer bis drei Unterkünften müssen Sie wegen des Aktualisierungsfensters nicht schlecht schlafen. Die Veraltungs-Ursachen oben — eine zurückgesetzte, nicht aktualisierte URL, ein Feed, den die Plattform lautlos verworfen hat — verursachen bei kleinem Maßstab weit mehr Doppelbuchungen als der 2–6-Stunden-Abruf je. Wollen Sie die volle Einrichtung statt der Fehlersuche, beginnen Sie mit [Airbnb- und Booking.com-Kalender kostenlos synchronisieren](/blog/airbnb-booking-calendar-sync-free).
 
@@ -132,7 +132,7 @@ Ja — das ist genau der Mechanismus. Ist Ihr Booking.com-Import des Airbnb-Kale
 **Warum gibt es keinen Fehler, wenn die iCal-Synchronisation scheitert?**
 Weil iCal ein Abruf-Protokoll ohne Push-Kanal und ohne Standard-Gesundheitssignal ist. Das Ziel ruft eine URL nach Takt ab; scheitert der Abruf, behält es die letzten guten Daten und versucht es später. Im Standard gibt es nichts, was das Ziel zwingt, Sie zu alarmieren — also tut es das nicht.
 
-**Wie oft aktualisiert RentTools die Feeds?**
+**Wie oft aktualisiert RentHome Departamentos die Feeds?**
 Alle 10 Minuten auf der Quellseite. Das heißt, die Nabe erfährt von einer neuen Buchung in zehn Minuten statt in den Stunden, die ein direkter Plattform-zu-Plattform-Import braucht. Die Zielplattform dazu zwingen, schneller als ihr eigener 2–6-Stunden-Zyklus aus der Nabe zu ziehen, kann es trotzdem nicht — das kann kein iCal-Tool.
 
 ## Eine Meinung mit Haltung

@@ -175,4 +175,4 @@ Das 2-Nächte-Minimum ist der am meisten überset zte Wert in der Kurzzeitvermie
 
 Quartalsweise eigene Mathematik fahren. Wer seine schlechteste Buchung der letzten 90 Tage nicht aus dem Gedächtnis nennen kann, dessen Minimum ist okay. Wer es kann — der 1-Nacht-Dienstag, den Sie nie wieder annehmen wollten — sollte fragen, wie viele *gute* 1-Nacht-Buchungen Sie nicht gesehen haben, weil die Plattform Ihr Listing nicht zeigte. Die guten 1-Nacht-Buchungen schlagen die schlechten zehn zu eins. Die schlechten sind nur die, die Sie sich merken.
 
-Wer diese Mathematik automatisch gegen den eigenen Kalender laufen lassen will — mittlerer LOS, Auslastung pro Mindestnächte-Einstellung, Lücken-Nächte-Zähler — das ist [RentTools](/onboard). Kostenlos, selbst gehostet oder verwaltet, kein Upsell.
+Wer diese Mathematik automatisch gegen den eigenen Kalender laufen lassen will — mittlerer LOS, Auslastung pro Mindestnächte-Einstellung, Lücken-Nächte-Zähler — das ist [RentHome Departamentos](/onboard). Kostenlos, selbst gehostet oder verwaltet, kein Upsell.

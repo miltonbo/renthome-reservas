@@ -111,7 +111,7 @@ La solución nunca es hacer el piso menos cómodo — un huésped que se hiela e
 
 Lo que no funciona es pedir. El impuesto al comportamiento es un problema de incentivos, y los problemas de incentivos no ceden ante notas educadas. Ceden ante un termostato que, sin más, no baja a 18 °C con la puerta abierta.
 
-La pieza que la mayoría pasa por alto: no puede gestionar esta línea si no la ve. Con un piso, tarde o temprano notará una factura rara. Con tres pisos en tres curvas de ocupación distintas, «¿qué unidad tiró de más en clima el mes pasado, fue el huésped de puerta abierta o solo una ola de frío?» se vuelve una pregunta que un montón de facturas no responde — y ese es justo el estado operativo por piso que [RentTools](/onboard) guarda en un mismo sitio, gratis, junto al calendario que le dice cuántas rotaciones — y cuántas cargas de colada — están a punto de caer sobre cada unidad.
+La pieza que la mayoría pasa por alto: no puede gestionar esta línea si no la ve. Con un piso, tarde o temprano notará una factura rara. Con tres pisos en tres curvas de ocupación distintas, «¿qué unidad tiró de más en clima el mes pasado, fue el huésped de puerta abierta o solo una ola de frío?» se vuelve una pregunta que un montón de facturas no responde — y ese es justo el estado operativo por piso que [RentHome Departamentos](/onboard) guarda en un mismo sitio, gratis, junto al calendario que le dice cuántas rotaciones — y cuántas cargas de colada — están a punto de caer sobre cada unidad.
 
 ## FAQ
 

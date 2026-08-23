@@ -110,7 +110,7 @@ Connaître son plancher ne sert à rien si la décision tombe à 23 h, quand une
 
 Chaque plateforme a un champ de prix minimum. Mettez-y votre plancher *d'une nuit* — le plus élevé — et le calendrier refusera tout simplement de vendre une nuit en dessous. Posez les remises longue durée par-dessus, pour que les séjours plus longs puissent légitimement tarifer vers leurs planchers plus bas sans que vous ne touchiez à rien. Résultat : le système dit non tout seul à la nuit unique à 39 $ qui perd de l'argent, et oui aux quatre nuits rentables à 50 $, sans aucune math de votre part à 23 h.
 
-Là où ça se complique, c'est que votre plancher n'est pas un chiffre unique — il est par saison et par plateforme, et le coût par nuit change vraiment entre juillet et janvier. Suivre cela à la main sur Airbnb, Booking.com et Vrbo, c'est exactement la comptabilité multiplateforme qui se périme la semaine où vous cessez de la surveiller. Réunir les coûts et les tarifs de chaque annonce au même endroit pour que le plancher soit toujours à jour, c'est précisément ce que [RentTools](/onboard) est fait pour gérer — gratuitement et sur toutes les plateformes à la fois.
+Là où ça se complique, c'est que votre plancher n'est pas un chiffre unique — il est par saison et par plateforme, et le coût par nuit change vraiment entre juillet et janvier. Suivre cela à la main sur Airbnb, Booking.com et Vrbo, c'est exactement la comptabilité multiplateforme qui se périme la semaine où vous cessez de la surveiller. Réunir les coûts et les tarifs de chaque annonce au même endroit pour que le plancher soit toujours à jour, c'est précisément ce que [RentHome Departamentos](/onboard) est fait pour gérer — gratuitement et sur toutes les plateformes à la fois.
 
 ## FAQ
 

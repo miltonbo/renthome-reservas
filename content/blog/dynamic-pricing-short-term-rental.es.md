@@ -128,7 +128,7 @@ Fuera de esos tres, en cuanto tienes 3 listings activos, el punto muerto del din
 
 Tres listings entre Lisboa y Taskent, todos en PriceLabs a 19,99 $ cada uno. Miro el calendario una vez por semana — normalmente martes por la noche, diez minutos. Anulo el modelo en fechas que conozco mejor (congreso local, maratón, vacaciones escolares de mercados emisores) y dejo correr el resto. Subí el precio base un 8 % en marzo de 2026 tras dieciocho semanas seguidas por encima del 85 % de ocupación; el modelo recalibró al instante, las dos semanas siguientes se reservaron a la nueva tarifa sin baja de ocupación. La cuota son 720 $/año. La subida, medida contra mi propio manual de 2023, está en 11–12 %, lo que sobre 30 000 $/año por listing son más de 3 500 $/año de ingreso nuevo por listing. La cuota es error de redondeo.
 
-Si RentTools es tu punto de partida para sincronizar calendarios entre plataformas, los precios dinámicos son la siguiente capa lógica cuando las reservas ya van estables — [empieza por la sincronización de calendario](/onboard) y añade herramienta de precios cuando tengas 90 días limpios de histórico que darle.
+Si RentHome Departamentos es tu punto de partida para sincronizar calendarios entre plataformas, los precios dinámicos son la siguiente capa lógica cuando las reservas ya van estables — [empieza por la sincronización de calendario](/onboard) y añade herramienta de precios cuando tengas 90 días limpios de histórico que darle.
 
 ## FAQ
 

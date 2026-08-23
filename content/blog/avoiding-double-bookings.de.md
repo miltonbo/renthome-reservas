@@ -49,7 +49,7 @@ Jede Plattform hat ihre eigene. Die konfigurierbaren zum Zeitpunkt:
 2. **Booking.com** — Extranet erlaubt manuelle Aktualisierung pro Feed; automatische Aktualisierung läuft alle 2 bis 6 Stunden. Es gibt keine UI, sie schneller zu machen.
 3. **Vrbo** — am langsamsten der großen drei. Bis zu 12 Stunden in Extremfällen. URL rotieren, falls ein Feed über 24 Stunden hängt.
 
-Was Sie ändern können, ist Ihr eigener ausgehender Poll. Mit einer Zwischenschicht wie dem [Open-Source-RentTools](/onboard) den eingehenden Poll auf das niedrigste Intervall stellen — 10 Minuten ist vernünftig; darunter verschwendet Airbnbs Bandbreite, ohne etwas zu kaufen, weil die Zielplattform weiterhin langsam pollt.
+Was Sie ändern können, ist Ihr eigener ausgehender Poll. Mit einer Zwischenschicht wie dem [Open-Source-RentHome Departamentos](/onboard) den eingehenden Poll auf das niedrigste Intervall stellen — 10 Minuten ist vernünftig; darunter verschwendet Airbnbs Bandbreite, ohne etwas zu kaufen, weil die Zielplattform weiterhin langsam pollt.
 
 Zum Hintergrund, warum das iCal-Protokoll bei „alle paar Stunden" deckelt und kein Push bietet, lesen Sie [unsere Schritt-für-Schritt-Anleitung, wie Airbnb- und Booking.com-Kalender synchronisieren](/blog/airbnb-booking-calendar-sync-free).
 
@@ -76,7 +76,7 @@ Drei Wege:
 
 1. **Booking.com als kanonisch.** Sperre im Booking-Extranet. Airbnb importiert Bookings iCal, Sperre propagiert im Airbnb-Poll-Fenster (2 bis 4 Stunden). Funktioniert, weil Bookings Extranet-Kalender die dichteste UI der drei hat.
 2. **Airbnb als kanonisch.** Sperre in Airbnb. Booking importiert. Gleiche Logik, andere Richtung.
-3. **Externer Kalender als kanonisch.** Google Kalender (oder Ihre [RentTools](/onboard)-Instanz) für persönliche Sperren. Beide Plattformen importieren. Nützlich bei vielen persönlichen Sperren (Renovierung, Nebensaison, Familie).
+3. **Externer Kalender als kanonisch.** Google Kalender (oder Ihre [RentHome Departamentos](/onboard)-Instanz) für persönliche Sperren. Beide Plattformen importieren. Nützlich bei vielen persönlichen Sperren (Renovierung, Nebensaison, Familie).
 
 Was Sie wählen, schreiben Sie sich auf den Handy-Hintergrund, kleben einen Zettel hin, tätowieren es. Wenn der nächste Freund fragt, ob die Wohnung am Wochenende frei ist, lautet die Antwort „Ich sperre es jetzt in $KANONISCH." Nicht „Moment, ich sperre es in beiden."
 
@@ -98,7 +98,7 @@ Sie finden ein Problem etwa alle 200 bis 400 Buchungen. Fast immer ein vorüberg
 
 Diesen Check bei Langzeitbuchungen nicht überspringen; ein Konflikt schmerzt dort am meisten, weil ein 3-Wochen-Gast nicht trivial umziehen kann.
 
-Sie können einen Teil automatisieren. RentTools schickt einen „keine Konflikte gefunden, bis morgen"-Vor-Anreise-Check per E-Mail. Viele Channel Manager machen Ähnliches. Manuell ist okay bei unter 20 Buchungen pro Monat — ein paar Minuten pro Woche.
+Sie können einen Teil automatisieren. RentHome Departamentos schickt einen „keine Konflikte gefunden, bis morgen"-Vor-Anreise-Check per E-Mail. Viele Channel Manager machen Ähnliches. Manuell ist okay bei unter 20 Buchungen pro Monat — ein paar Minuten pro Woche.
 
 ## FAQ
 

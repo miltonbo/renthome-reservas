@@ -41,7 +41,7 @@ Drei konkrete Dinge gehen schief beim Wachsen:
 
 Ein zweckgebautes Reinigungs-Modul löst jedes davon, indem es das Datenmodell umkehrt. Statt eines 2D-Rasters, das man quer liest, sieht die Reinigungskraft eine Liste *ihrer* Aufgaben für *heute*, sortiert nach Anreisezeit. Der Host sieht ein Dashboard aller Wechsel über alle Reinigungskräfte. Gleiche Daten, zwei Sichten.
 
-Sie brauchen kein 200-$/Monat-Tool dafür. Auch unsere kostenlose [RentTools](/onboard)-Instanz hat einen Reinigungskraft-Rollen-Flow, und das ist keine einzigartige Idee. Smoobu, Hostaway, Lodgify: jedes bezahlte PMS hat dasselbe Primitiv. Die Pointe ist, *irgendetwas* Zweckgebautes statt eines Sheets zu nutzen.
+Sie brauchen kein 200-$/Monat-Tool dafür. Auch unsere kostenlose [RentHome Departamentos](/onboard)-Instanz hat einen Reinigungskraft-Rollen-Flow, und das ist keine einzigartige Idee. Smoobu, Hostaway, Lodgify: jedes bezahlte PMS hat dasselbe Primitiv. Die Pointe ist, *irgendetwas* Zweckgebautes statt eines Sheets zu nutzen.
 
 ## Was ein Reinigungsplan tracken muss
 
@@ -75,7 +75,7 @@ Das richtige Muster ist eine **dedizierte Reinigungskraft-Rolle**. Drei Regeln, 
 
 Authentifizierung überdenken Hosts. Die Reinigungskraft braucht kein Passwort. Ein persistenter Magic-Link-Cookie auf dem Handy reicht; sie bookmarked `https://ihrtool.example/cleaner/abc-token-xyz`, der Cookie hält sie ein Jahr eingeloggt, Rotation invalidiert den Link in dem Moment, in dem die Zusammenarbeit endet.
 
-Bei Selbsthosting ist das ungefähr ein Nachmittag Arbeit. Bei einem gehosteten PMS (RentTools, Smoobu, Hostaway) ist der Flow ab Werk dabei.
+Bei Selbsthosting ist das ungefähr ein Nachmittag Arbeit. Bei einem gehosteten PMS (RentHome Departamentos, Smoobu, Hostaway) ist der Flow ab Werk dabei.
 
 ## Fotos und Notizen: wann fragen, was erfassen
 
@@ -126,7 +126,7 @@ Außerhalb des Themas hier, aber meine Meinung: pro Wechsel für Studios, pro St
 Status bleibt offen über das Reinigungsfenster hinaus; der Host wird gepingt. Von dort ist es ein Telefonat. Das Tool kann ein No-Show nicht lösen; es kann nur sichtbar machen, dass eines passiert ist, schnell.
 
 **Gibt es eine kostenlose Option für den Reinigungskraft-Flow?**
-Ja. Open-Source-PMS-Instanzen zum Selbsthosten (RentTools, KalSync etc.) haben Reinigungskraft-Rollen-Sichten. Auch kostenlose Tarife kleiner kommerzieller PMS-Anbieter. Die kostenlose Option ist nicht der Engpass; die Akzeptanz der Reinigungskraft meist schon.
+Ja. Open-Source-PMS-Instanzen zum Selbsthosten (RentHome Departamentos, KalSync etc.) haben Reinigungskraft-Rollen-Sichten. Auch kostenlose Tarife kleiner kommerzieller PMS-Anbieter. Die kostenlose Option ist nicht der Engpass; die Akzeptanz der Reinigungskraft meist schon.
 
 ## Eine Meinung
 

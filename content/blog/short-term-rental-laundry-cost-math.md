@@ -134,7 +134,7 @@ In-house fails on **hardware and heat.** Dryers die more than washers, they die 
 
 Services fail on **calendar coupling.** A late pickup in February is nothing. A late delivery on the first Saturday of August, when you have three turnovers and the linen is in a van somewhere, is a real outage — and you can't escalate it, because their peak is your peak. Hosts who outsource and keep one full spare rotation in the closet never notice this. Hosts who outsource to get rid of the closet find out the hard way.
 
-Both models fail the same way when nobody tracks whose turn it is. If your cleaner, your service, and your calendar aren't looking at the same schedule, the failure isn't laundry — it's coordination, and it shows up as a bed that nobody made. That's the part [RentTools handles for free](/onboard): every turnover on one calendar, so the person doing the laundry knows which night it has to be back by.
+Both models fail the same way when nobody tracks whose turn it is. If your cleaner, your service, and your calendar aren't looking at the same schedule, the failure isn't laundry — it's coordination, and it shows up as a bed that nobody made. That's the part [RentHome Departamentos handles for free](/onboard): every turnover on one calendar, so the person doing the laundry knows which night it has to be back by.
 
 ## FAQ
 

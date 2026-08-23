@@ -74,13 +74,13 @@ describe("mergeSeo", () => {
       title: "Custom title",
       description: null,
       ogImage: null,
-      canonical: "https://renttools.io/about",
+      canonical: "http://localhost:3000/about",
     };
     expect(mergeSeo(defaults, override)).toEqual({
       title: "Custom title",
       description: "Default description",
       ogImage: "https://example.com/og.png",
-      canonical: "https://renttools.io/about",
+      canonical: "http://localhost:3000/about",
     });
   });
 

@@ -92,7 +92,7 @@ Two cases where I would not chase the badge.
 
 For everything else — multi-listing operators, average-price urban listings, hosts with response discipline already built in — Superhost is the cheapest growth lever Airbnb hands you. The same listing without the badge needs 10–15% better photos or a 5% lower price to compete on the same search terms.
 
-For related reading on how the response-rate clock interacts with booking modes, see [Airbnb instant book vs request to book](/blog/airbnb-instant-book-vs-request-to-book). For the cancellation-policy half of the puzzle, see [Airbnb cancellation policy math](/blog/airbnb-cancellation-policy-math). And if you want one dashboard for response time, cancellation rate, and average rating across multiple listings without juggling Airbnb's host tabs, that is what [RentTools](/onboard) tracks.
+For related reading on how the response-rate clock interacts with booking modes, see [Airbnb instant book vs request to book](/blog/airbnb-instant-book-vs-request-to-book). For the cancellation-policy half of the puzzle, see [Airbnb cancellation policy math](/blog/airbnb-cancellation-policy-math). And if you want one dashboard for response time, cancellation rate, and average rating across multiple listings without juggling Airbnb's host tabs, that is what [RentHome Departamentos](/onboard) tracks.
 
 ## FAQ
 

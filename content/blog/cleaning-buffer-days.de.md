@@ -103,7 +103,7 @@ Beide großen Plattformen unterstützen Puffertage. Keine nennt sie „Puffertag
 
 Häufiger Konfigurationsfehler: Den Puffer auf beiden Plattformen manuell setzen. Das doppelt zählt. Airbnb sieht seinen eigenen 1-Tages-Puffer plus Bookings iCal-importierten 1-Tages-Puffer plus seinen eigenen Folge-1-Tages-Puffer, und Sie haben 3 Nächte blockiert statt 1. Den Puffer auf der kanonischen Seite setzen. iCal trägt es. Der Propagation vertrauen.
 
-Wer mit [RentTools](/onboard) oder einem anderen Mittler-Tool selbst hostet, beim selben Prinzip bleiben. Den Puffer einmal, am kanonischen Ort, setzen und die Synchronisationsschicht ihren Job machen lassen.
+Wer mit [RentHome Departamentos](/onboard) oder einem anderen Mittler-Tool selbst hostet, beim selben Prinzip bleiben. Den Puffer einmal, am kanonischen Ort, setzen und die Synchronisationsschicht ihren Job machen lassen.
 
 ## FAQ
 

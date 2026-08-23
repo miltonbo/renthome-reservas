@@ -167,4 +167,4 @@ Hosts treat maintenance the way they treat dental insurance: an expense they hop
 
 The hosts running the most profitable single-listing operations I know have one habit in common: they price every night with the reserve removed *first*, and call the rest income. The math feels worse on day one — your ADR-times-nights number drops by 5 to 8 percent — and immeasurably better on the morning the HVAC compressor dies, because the money is already there.
 
-If you want the reserve line surfaced against your real nights booked and actual repair history, that is what [RentTools](/onboard) is built to track. And if you want to see how the reserve interacts with cleaning costs and channel fees, the full operator math is in [channel manager break-even math](/blog/channel-manager-break-even-math).
+If you want the reserve line surfaced against your real nights booked and actual repair history, that is what [RentHome Departamentos](/onboard) is built to track. And if you want to see how the reserve interacts with cleaning costs and channel fees, the full operator math is in [channel manager break-even math](/blog/channel-manager-break-even-math).

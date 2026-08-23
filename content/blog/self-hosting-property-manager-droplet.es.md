@@ -45,7 +45,7 @@ NO autoalojes si:
 3. Esperas 99,999 % de uptime. Un único droplet es un único punto de fallo. Un reboot, un blip de red, un disco lleno —tú llevas la recuperación—.
 4. Consideras «mirar logs» un castigo. Autoalojar es mayoritariamente mirar logs.
 
-El término medio honesto: prueba primero una instancia gestionada gratis ([RentTools](/onboard) es un ejemplo; hay otros). Si encaja, quédate. Si quieres más control, el droplet de 4 $ es el siguiente paso. Si te quedas pequeño, un PMS gestionado es el siguiente.
+El término medio honesto: prueba primero una instancia gestionada gratis ([RentHome Departamentos](/onboard) es un ejemplo; hay otros). Si encaja, quédate. Si quieres más control, el droplet de 4 $ es el siguiente paso. Si te quedas pequeño, un PMS gestionado es el siguiente.
 
 ## La pregunta del tamaño del droplet
 

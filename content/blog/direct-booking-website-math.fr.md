@@ -111,7 +111,7 @@ Je ne fais pas du tout-direct et je ne pense pas que la plupart des hôtes devra
 4. **Partager l'économie aux tarifs côté hôte/Booking.** Offrez au client fidèle **5 % de remise** sur le tarif direct. Il bat quand même les frais de service de l'OTA, et je touche quand même plus que ce que la plateforme aurait versé. Les deux côtés gagnent ; seule la plateforme perd la commission.
 5. **Jamais de pub pour chasser des inconnus en direct.** C'est la ligne rouge. L'acquisition à froid est le travail de la plateforme, et elle y est meilleure que mon budget pub ne le sera jamais.
 
-La synchro de calendrier sous tout ça — flux OTA plus réservations directes plus jours tampons de ménage, le tout au même endroit pour que le canal direct ne provoque pas de double réservation — c'est exactement ce que fait [RentTools](/onboard), gratuit et open source. Le site de réservation directe est optionnel ; le calendrier qui l'empêche d'exploser ne l'est pas.
+La synchro de calendrier sous tout ça — flux OTA plus réservations directes plus jours tampons de ménage, le tout au même endroit pour que le canal direct ne provoque pas de double réservation — c'est exactement ce que fait [RentHome Departamentos](/onboard), gratuit et open source. Le site de réservation directe est optionnel ; le calendrier qui l'empêche d'exploser ne l'est pas.
 
 ## FAQ
 

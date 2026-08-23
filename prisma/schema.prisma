@@ -388,7 +388,7 @@ model OnboardingDraft {
   propertyName    String    @default("")
   // Durable URL slug for the property-to-be. Minted when the draft is
   // first persisted so feed URLs handed to the user during onboarding
-  // (https://renttools.io/api/calendar/feed/<slug>/for-airbnb.ics)
+  // (http://localhost:3000/api/calendar/feed/<slug>/for-airbnb.ics)
   // remain valid after signup — the materialised Property inherits this
   // slug verbatim. Without it, post-signup feed URLs would change and
   // silently break anywhere the user already pasted them.

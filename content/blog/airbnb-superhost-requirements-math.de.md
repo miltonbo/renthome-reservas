@@ -92,7 +92,7 @@ Zwei Fälle, in denen ich das Abzeichen nicht jagen würde.
 
 Für alles andere — Mehrfach-Gastgeber, mittelpreisige Stadtinserate, Gastgeber mit etablierter Antwortdisziplin — bleibt Superhost der günstigste Wachstumshebel, den Airbnb hergibt. Dasselbe Inserat ohne Abzeichen braucht 10 bis 15 % bessere Fotos oder 5 % niedrigeren Preis, um in denselben Suchergebnissen zu bestehen.
 
-Zur Frage, wie der Antwortquoten-Timer mit den Buchungsmodi zusammenhängt, siehe [Airbnb Instant Book vs Buchungsanfrage](/de/blog/airbnb-instant-book-vs-request-to-book). Zur Stornierungs-Hälfte siehe [Airbnb Stornierungsrichtlinien-Rechnung](/de/blog/airbnb-cancellation-policy-math). Und wenn Sie ein einziges Dashboard für Antwortzeit, Stornoquote und Durchschnittsbewertung über mehrere Inserate hinweg wollen, ohne durch Airbnb-Tabs zu jonglieren, ist das genau das, was [RentTools](/onboard) abbildet.
+Zur Frage, wie der Antwortquoten-Timer mit den Buchungsmodi zusammenhängt, siehe [Airbnb Instant Book vs Buchungsanfrage](/de/blog/airbnb-instant-book-vs-request-to-book). Zur Stornierungs-Hälfte siehe [Airbnb Stornierungsrichtlinien-Rechnung](/de/blog/airbnb-cancellation-policy-math). Und wenn Sie ein einziges Dashboard für Antwortzeit, Stornoquote und Durchschnittsbewertung über mehrere Inserate hinweg wollen, ohne durch Airbnb-Tabs zu jonglieren, ist das genau das, was [RentHome Departamentos](/onboard) abbildet.
 
 ## FAQ
 

@@ -51,7 +51,7 @@ Notre [page /privacy](/privacy) est l’exemple que les petits hôtes peuvent pr
 - Quelles données : scan de passeport, dates de séjour, historique de communication.
 - Pourquoi : déclaration légale des voyageurs, résolution de litiges, logistique du séjour.
 - Combien de temps : un nombre de jours précis, pas « selon les besoins ».
-- Qui d’autre : les plateformes (Airbnb, Booking) et tout outil utilisé ([RentTools](/onboard), si vous l’utilisez).
+- Qui d’autre : les plateformes (Airbnb, Booking) et tout outil utilisé ([RentHome Departamentos](/onboard), si vous l’utilisez).
 - Comment supprimer : une adresse e-mail que vous consultez réellement.
 
 Sautez les paragraphes de disclaimer. Sautez le « votre vie privée nous tient à cœur ». Les autorités appellent ça performatif. Énoncez les faits.
@@ -90,7 +90,7 @@ La plus grosse erreur RGPD que je vois chez les hôtes, c’est le dossier Whats
 Un sous-traitant est toute personne autre que vous qui manipule les données voyageurs parce qu’elle vous aide à faire le travail. Exemples :
 
 - Les **plateformes** (Airbnb, Booking, Vrbo). Ce sont des co-responsables, pas des sous-traitants. Leurs politiques couvrent leur côté.
-- Votre **PMS ou outil de synchro**. Hostaway, Lodgify, Smoobu, RentTools : sous-traitant. Listez.
+- Votre **PMS ou outil de synchro**. Hostaway, Lodgify, Smoobu, RentHome Departamentos : sous-traitant. Listez.
 - Votre **hébergeur cloud**. Si vous self-hostez sur un droplet, le fournisseur cloud est techniquement sous-traitant. Listez.
 - Votre **fournisseur e-mail**. La boîte où les voyageurs envoient les scans. Gmail, Outlook, Fastmail. Listez.
 - Un **processeur de paiement**. Stripe, Wise, le portail bancaire. Listez.

@@ -45,7 +45,7 @@ Sie sollten NICHT selbst hosten, wenn:
 3. Sie 99,999 % Verfügbarkeit erwarten. Single-Droplet heißt Single-Point-of-Failure. Reboot, Netzwerk-Aussetzer, voll gelaufene Festplatte — Sie regeln die Wiederherstellung.
 4. Sie „Logs anschauen" als Strafe sehen. Selbst-Hosten ist meist Logs anschauen.
 
-Ehrlicher Mittelweg: erst eine kostenlose gehostete Instanz probieren ([RentTools](/onboard) ist ein Beispiel; es gibt andere). Passt es, bleiben. Wenn mehr Kontrolle gewünscht, ist das 4-$-Droplet der nächste Schritt. Wenn das überschritten ist, kommt ein verwaltetes PMS.
+Ehrlicher Mittelweg: erst eine kostenlose gehostete Instanz probieren ([RentHome Departamentos](/onboard) ist ein Beispiel; es gibt andere). Passt es, bleiben. Wenn mehr Kontrolle gewünscht, ist das 4-$-Droplet der nächste Schritt. Wenn das überschritten ist, kommt ein verwaltetes PMS.
 
 ## Die Droplet-Größenfrage
 

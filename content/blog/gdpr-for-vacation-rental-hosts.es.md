@@ -51,7 +51,7 @@ Nuestra [página /privacy](/privacy) es el ejemplo que creo que los Anfitriones 
 - Qué datos: escaneo de pasaporte, fechas de reserva, historial de comunicación.
 - Por qué: registro legal de Huéspedes, resolución de disputas, logística.
 - Cuánto tiempo: un número específico de días, no «lo necesario».
-- Quién más: las plataformas (Airbnb, Booking) y cualquier herramienta que uses ([RentTools](/onboard), si la usas).
+- Quién más: las plataformas (Airbnb, Booking) y cualquier herramienta que uses ([RentHome Departamentos](/onboard), si la usas).
 - Cómo borrar: un email que de verdad miras.
 
 Quítate los párrafos disclaimer. Quítate el «tu privacidad es importante para nosotros». Las autoridades llaman a eso performativo. Expón los hechos.
@@ -90,7 +90,7 @@ El error RGPD más grande que veo es la carpeta de WhatsApp con escaneos de pasa
 Un encargado es cualquiera además de ti que maneje datos de Huésped porque te ayuda a hacer el trabajo. Ejemplos:
 
 - Las **plataformas de reserva** (Airbnb, Booking, Vrbo). Son corresponsables, no encargados. Sus políticas cubren su lado.
-- Tu **PMS o herramienta de sincronización**. Si usas Hostaway, Lodgify, Smoobu o RentTools, eso es encargado. Lístalo.
+- Tu **PMS o herramienta de sincronización**. Si usas Hostaway, Lodgify, Smoobu o RentHome Departamentos, eso es encargado. Lístalo.
 - Tu **hosting cloud**. Si autoalojas en un droplet, el proveedor cloud es técnicamente encargado. Lístalo.
 - Tu **proveedor de email**. La bandeja a la que los Huéspedes mandan escaneos. Gmail, Outlook, Fastmail. Lístalo.
 - Una **pasarela de pago**. Stripe, Wise, el portal merchant de tu banco. Lístalo.

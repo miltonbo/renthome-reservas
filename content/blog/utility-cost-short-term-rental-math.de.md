@@ -111,7 +111,7 @@ Die Lösung heißt nie, die Wohnung weniger komfortabel zu machen — ein friere
 
 Was nicht funktioniert, ist Bitten. Die Gästeverhaltens-Steuer ist ein Anreizproblem, und Anreizprobleme weichen höflichen Zetteln nicht. Sie weichen einem Thermostat, das schlicht nicht auf 18 °C bei offener Tür geht.
 
-Den Teil, den die meisten übersehen: Sie können diese Position nicht steuern, wenn Sie sie nicht sehen. Bei einem Objekt fällt Ihnen irgendwann eine seltsame Rechnung auf. Bei drei Objekten auf drei verschiedenen Auslastungskurven wird „welche Einheit hat letzten Monat zu viel HVAC gezogen, und war das der Offene-Tür-Gast oder einfach ein Kälteeinbruch?" zu einer Frage, die Sie aus einem Stapel Rechnungen nicht beantworten können — und genau diesen objektbezogenen Betriebszustand hält [RentTools](/onboard) an einem Ort, kostenlos, neben dem Kalender, der Ihnen sagt, wie viele Wechsel — und wie viele Wäscheladungen — gleich auf jede Einheit treffen.
+Den Teil, den die meisten übersehen: Sie können diese Position nicht steuern, wenn Sie sie nicht sehen. Bei einem Objekt fällt Ihnen irgendwann eine seltsame Rechnung auf. Bei drei Objekten auf drei verschiedenen Auslastungskurven wird „welche Einheit hat letzten Monat zu viel HVAC gezogen, und war das der Offene-Tür-Gast oder einfach ein Kälteeinbruch?" zu einer Frage, die Sie aus einem Stapel Rechnungen nicht beantworten können — und genau diesen objektbezogenen Betriebszustand hält [RentHome Departamentos](/onboard) an einem Ort, kostenlos, neben dem Kalender, der Ihnen sagt, wie viele Wechsel — und wie viele Wäscheladungen — gleich auf jede Einheit treffen.
 
 ## FAQ
 

@@ -121,7 +121,7 @@ The rule is simpler than the programme makes it look:
 3. **Watch the seasonal flip.** The August mistake in the opening is the canonical trap: a programme that paid all winter becomes dead weight in peak season. If your occupancy swings hard by season, toggle Preferred off for your sold-out months and back on for the shoulders. Leaving the programme is done from the Extranet's commission settings; re-joining depends on Booking.com re-extending the invite, so don't toggle so aggressively that you risk falling out of eligibility.
 4. **Don't double up with Genius without doing the stacking math.** If you're already running [Genius](/blog/booking-com-genius-levels-math) and you're near full, adding Preferred is two costs chasing one (nonexistent) pool of empty nights. Pick the lever that matches your situation: Preferred for a high-ADR listing with gaps, Genius for a competitive mid-market listing that needs the discount to convert.
 
-If you want this measured automatically — Preferred commission delta versus the booking lift it's actually producing, alongside your Genius and length-of-stay promos on the same screen — that's the kind of cross-platform promo accounting [RentTools](/onboard) does. Free, self-host or hosted, no upsell.
+If you want this measured automatically — Preferred commission delta versus the booking lift it's actually producing, alongside your Genius and length-of-stay promos on the same screen — that's the kind of cross-platform promo accounting [RentHome Departamentos](/onboard) does. Free, self-host or hosted, no upsell.
 
 ## FAQ
 

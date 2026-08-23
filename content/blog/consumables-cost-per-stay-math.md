@@ -121,7 +121,7 @@ Everything above is a rounding error next to the failure mode this line actually
 
 So treat consumables the way you treat linen — as inventory with a reorder point, not as a thing you buy when you remember. Pick a par level (say, four spare rolls of toilet paper, two refill jugs of soap, a sleeve of coffee per listing), set a trigger ("when the cupboard hits one spare, reorder the bulk pack"), and put the restock decision on a schedule instead of a memory. The hosts who never run out aren't more diligent — they took the decision out of their own hands.
 
-That's also the part that quietly breaks at scale. One listing, you eyeball the cupboard. Three listings on three different turnover rates, and "did the studio get restocked after last week's four back-to-back checkouts?" becomes a question you can't answer from memory — which is exactly the kind of per-listing operational state [RentTools](/onboard) is built to track for free, alongside the calendar that tells you how many turnovers are about to hit each unit. The supplies are cheap. Knowing which cupboard is about to be empty is the part worth automating.
+That's also the part that quietly breaks at scale. One listing, you eyeball the cupboard. Three listings on three different turnover rates, and "did the studio get restocked after last week's four back-to-back checkouts?" becomes a question you can't answer from memory — which is exactly the kind of per-listing operational state [RentHome Departamentos](/onboard) is built to track for free, alongside the calendar that tells you how many turnovers are about to hit each unit. The supplies are cheap. Knowing which cupboard is about to be empty is the part worth automating.
 
 ## FAQ
 

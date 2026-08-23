@@ -66,7 +66,7 @@ describe("generateFeed — Direct linked extensions", () => {
     if ("error" in result) throw new Error(result.error);
 
     const events = parseICal(result.ical).filter(
-      (event) => event.uid !== "renttools-placeholder",
+      (event) => event.uid !== "renthome-placeholder",
     );
     expect(events).toEqual([
       expect.objectContaining({
@@ -82,7 +82,7 @@ describe("generateFeed — Direct linked extensions", () => {
     if ("error" in result) throw new Error(result.error);
 
     const events = parseICal(result.ical).filter(
-      (event) => event.uid !== "renttools-placeholder",
+      (event) => event.uid !== "renthome-placeholder",
     );
     expect(events).toEqual([
       expect.objectContaining({
@@ -100,7 +100,7 @@ describe("generateFeed — Direct linked extensions", () => {
     const result = await generateFeed(12, "airbnb");
     if ("error" in result) throw new Error(result.error);
     const events = parseICal(result.ical).filter(
-      (event) => event.uid !== "renttools-placeholder",
+      (event) => event.uid !== "renthome-placeholder",
     );
     expect(events).toEqual([
       expect.objectContaining({

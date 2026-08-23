@@ -138,7 +138,7 @@ export async function auditProperty(propertyId: number): Promise<PropertyAuditRe
       severity: "warning",
       category: "settings",
       message:
-        "No calendar links connected. Bookings on Airbnb / Booking won't sync into RentTools, and the iCal feed has nothing to merge from other platforms.",
+        "No calendar links connected. Bookings on Airbnb / Booking won't sync into RentHome Departamentos, and the iCal feed has nothing to merge from other platforms.",
     });
   }
   if (!property.feedToken) {
@@ -156,7 +156,7 @@ export async function auditProperty(propertyId: number): Promise<PropertyAuditRe
       findings.push({
         severity: "error",
         category: "feed",
-        message: `Last sync from ${link.platform} failed: ${link.lastError}. Other-platform bookings on this URL aren't reaching RentTools.`,
+        message: `Last sync from ${link.platform} failed: ${link.lastError}. Other-platform bookings on this URL aren't reaching RentHome Departamentos.`,
         details: { platform: link.platform, failureCount: link.failureCount },
       });
     }

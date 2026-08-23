@@ -10,7 +10,7 @@ import { DEFAULT_LOCALE, localePath } from "@/lib/i18n/alternates";
 import type { Locale } from "@/lib/i18n/translations";
 
 const PAGE_SIZE = 12;
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 // Tag pages with fewer than this many posts get `noindex` and are kept
 // off the sitemap. Thin tag pages are an SEO liability — Google flags
@@ -85,8 +85,8 @@ export async function generateMetadata({
   // threshold. So canonical always points at the EN URL regardless of
   // the URL we're being rendered under (Stripe model). On non-default
   // locale URLs, noindex is hard-set to keep the duplicate out of SERPs.
-  const title = `${tag.displayName} — RentTools blog`;
-  const description = `Posts tagged ${tag.displayName} on the RentTools blog.`;
+  const title = `${tag.displayName} — RentHome Departamentos blog`;
+  const description = `Posts tagged ${tag.displayName} on the RentHome Departamentos blog.`;
   const base: Metadata = {
     title,
     description,
@@ -102,7 +102,7 @@ export async function generateMetadata({
       title,
       description,
       url: `${SITE_URL}/blog/tag/${tag.slug}`,
-      siteName: "RentTools",
+      siteName: "RentHome Departamentos",
     },
     twitter: { card: "summary_large_image", title, description },
   };
@@ -115,23 +115,23 @@ export async function generateMetadata({
 const TAG_UNTRANSLATED_BANNER: Record<Locale, { line1: string; line2: string }> = {
   en: {
     line1: "Tag pages are English-only.",
-    line2: "Post titles and bodies on the RentTools blog ship in English.",
+    line2: "Post titles and bodies on the RentHome Departamentos blog ship in English.",
   },
   ru: {
     line1: "Страницы по тегам пока только на английском.",
-    line2: "Заголовки и тексты статей в блоге RentTools — на английском.",
+    line2: "Заголовки и тексты статей в блоге RentHome Departamentos — на английском.",
   },
   de: {
     line1: "Tag-Seiten gibt es derzeit nur auf Englisch.",
-    line2: "Titel und Texte im RentTools-Blog erscheinen auf Englisch.",
+    line2: "Titel und Texte im RentHome Departamentos-Blog erscheinen auf Englisch.",
   },
   fr: {
     line1: "Les pages de tags sont uniquement en anglais.",
-    line2: "Les titres et le contenu des articles du blog RentTools sont publiés en anglais.",
+    line2: "Les titres et le contenu des articles du blog RentHome Departamentos sont publiés en anglais.",
   },
   es: {
     line1: "Las páginas de etiquetas solo están en inglés por ahora.",
-    line2: "Los títulos y textos del blog de RentTools se publican en inglés.",
+    line2: "Los títulos y textos del blog de RentHome Departamentos se publican en inglés.",
   },
 };
 
@@ -281,7 +281,7 @@ export default async function BlogTagPage({
             <p className="mt-3 text-sm text-[var(--ink-3)]">
               {total === 0
                 ? "No posts yet under this tag."
-                : `${total} ${total === 1 ? "post" : "posts"} on the RentTools blog tagged ${tag.displayName}.`}
+                : `${total} ${total === 1 ? "post" : "posts"} on the RentHome Departamentos blog tagged ${tag.displayName}.`}
             </p>
           </div>
         </section>
@@ -393,7 +393,7 @@ export default async function BlogTagPage({
 
       <footer className="mt-16 border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 px-6 py-6 text-xs text-[var(--ink-4)] sm:flex-row">
-          <p>© 2026 RentTools · MIT License</p>
+          <p>© 2026 RentHome Departamentos · MIT License</p>
           <nav className="flex gap-4">
             <Link href={localePath("/", localeForLinks)} className="hover:text-[var(--ink)]">Home</Link>
             <Link href={localePath("/blog", localeForLinks)} className="hover:text-[var(--ink)]">Blog</Link>

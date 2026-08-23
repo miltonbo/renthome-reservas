@@ -101,7 +101,7 @@ After those two summers of bleeding $300 holes, here is the setup that stopped i
 4. **Never drop the base minimum to chase orphans.** The minimum is doing real work everywhere except the gaps. I touch only the gaps.
 5. **Watch the low-ADR shoulder season.** Off-peak, a 1-night fill can flirt with break-even after a turnover. Those I let sit unless the cleaning is already scheduled for an adjacent date.
 
-Where it still breaks: the manual sweep is exactly the kind of recurring chore that gets skipped the week you're busy, which is the week the orphans pile up. The honest answer is that gap detection should not be a calendar I remember to check — it should be a calendar that surfaces the gap and offers to patch it. A unified view of every channel in one place, flagging the dead two-night holes the moment a booking creates them, is most of what makes this revenue recoverable instead of theoretical. That surfacing is exactly what [RentTools](/onboard) is built to do, free and open-source: one calendar, every channel, the orphans called out instead of hidden.
+Where it still breaks: the manual sweep is exactly the kind of recurring chore that gets skipped the week you're busy, which is the week the orphans pile up. The honest answer is that gap detection should not be a calendar I remember to check — it should be a calendar that surfaces the gap and offers to patch it. A unified view of every channel in one place, flagging the dead two-night holes the moment a booking creates them, is most of what makes this revenue recoverable instead of theoretical. That surfacing is exactly what [RentHome Departamentos](/onboard) is built to do, free and open-source: one calendar, every channel, the orphans called out instead of hidden.
 
 ## FAQ
 

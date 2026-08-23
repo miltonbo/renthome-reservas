@@ -160,7 +160,7 @@ Antes de instalar, dos combinaciones donde las cuentas siempre merecen revisarse
 1. **Casitas y cabañas en climas fríos o de temporada media** — Alpes, Lake District, Catskills, montañas del centro de Portugal, Pirineos, Vermont, interior de Columbia Británica. El salto de ocupación aquí es la palanca aislada de ingresos más fuerte que ofrece cualquier equipamiento.
 2. **Inmuebles vendidos como escapadas románticas o para grupos pequeños** — el jacuzzi *es* el diferenciador principal del anuncio y desbloquea una categoría de estancias que paga 30–50 % por encima de la mediana regional.
 
-Si quiere ver los efectos de reservas e ingresos junto a la fecha de instalación y la línea de operativo — qué hizo la nueva portada con el jacuzzi al CTR, cuánto se movió en realidad la prima por noche, en qué mes se devolvió la cuba — para eso está hecho [RentTools](/onboard). La curva de precios bajo este equipamiento se aborda en [tarificación dinámica para alquiler vacacional](/blog/dynamic-pricing-short-term-rental).
+Si quiere ver los efectos de reservas e ingresos junto a la fecha de instalación y la línea de operativo — qué hizo la nueva portada con el jacuzzi al CTR, cuánto se movió en realidad la prima por noche, en qué mes se devolvió la cuba — para eso está hecho [RentHome Departamentos](/onboard). La curva de precios bajo este equipamiento se aborda en [tarificación dinámica para alquiler vacacional](/blog/dynamic-pricing-short-term-rental).
 
 ## FAQ
 

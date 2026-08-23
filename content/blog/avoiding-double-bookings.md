@@ -49,7 +49,7 @@ Each platform has its own. The configurable ones at the time of writing:
 2. **Booking.com** — extranet allows manual refresh on a per-feed basis; automatic refresh runs every 2 to 6 hours. There is no UI to make it faster.
 3. **Vrbo** — slowest of the major three. Up to 12 hours observed in extreme cases. Rotate the URL if a feed appears stuck for 24+ hours.
 
-What you can change is your own outbound polling. If you use a middle layer like the [open-source RentTools](/onboard), set its inbound poll to the lowest interval it allows — 10 minutes is reasonable; under that wastes Airbnb's bandwidth without buying you anything because the destination platform still polls slow.
+What you can change is your own outbound polling. If you use a middle layer like the [open-source RentHome Departamentos](/onboard), set its inbound poll to the lowest interval it allows — 10 minutes is reasonable; under that wastes Airbnb's bandwidth without buying you anything because the destination platform still polls slow.
 
 For the underlying mechanics of why the iCal protocol caps at "every few hours" rather than offering push, read [our walkthrough of how Airbnb and Booking.com calendars actually sync](/blog/airbnb-booking-calendar-sync-free).
 
@@ -76,7 +76,7 @@ Three ways to do that:
 
 1. **Booking.com as canonical.** Block the date in Booking's extranet. Airbnb imports Booking's iCal, so the block propagates within Airbnb's poll window (2 to 4 hours). Works because Booking's extranet calendar is the densest UI of the three majors.
 2. **Airbnb as canonical.** Block the date in Airbnb. Booking imports Airbnb's iCal. Same logic, opposite direction.
-3. **An external calendar as canonical.** Use a Google Calendar (or your [RentTools](/onboard) instance) for personal blocks. Both Airbnb and Booking import from it. Useful when you have many personal blocks (renovations, off-season, family use).
+3. **An external calendar as canonical.** Use a Google Calendar (or your [RentHome Departamentos](/onboard) instance) for personal blocks. Both Airbnb and Booking import from it. Useful when you have many personal blocks (renovations, off-season, family use).
 
 Whichever you pick, set a phone wallpaper, write it on a sticky note, tattoo it. The next time a friend texts asking if your apartment is free for a weekend, the answer is "I'll block it on $CANONICAL right now". Not "let me block it on both, hold on".
 
@@ -98,7 +98,7 @@ You will find a problem roughly once every 200 to 400 bookings. Almost always it
 
 Do not skip this on long-stay bookings; those are the ones where a clash hurts most because you cannot trivially relocate a 3-week guest.
 
-You can also automate part of the audit. RentTools sends a "no conflicts found, see you in 24 hours" pre-arrival check via email. Plenty of channel managers do similar. Manual is fine if you have under 20 bookings a month — the time cost is minutes per week.
+You can also automate part of the audit. RentHome Departamentos sends a "no conflicts found, see you in 24 hours" pre-arrival check via email. Plenty of channel managers do similar. Manual is fine if you have under 20 bookings a month — the time cost is minutes per week.
 
 ## FAQ
 

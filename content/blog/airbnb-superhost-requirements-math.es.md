@@ -92,7 +92,7 @@ Dos casos en los que yo no iría a por el distintivo.
 
 Para todo lo demás —multi-anuncio, ciudades a precio medio, anfitriones con disciplina de respuesta ya montada— Superanfitrión sigue siendo la palanca de crecimiento más barata que Airbnb te tiende. El mismo anuncio sin el distintivo necesita fotos un 10 a 15 % mejores o un precio un 5 % más bajo para competir en las mismas búsquedas.
 
-Sobre cómo el reloj de respuesta interactúa con los modos de reserva, ver [reserva inmediata vs reserva por solicitud en Airbnb](/es/blog/airbnb-instant-book-vs-request-to-book). Para la mitad de cancelaciones de la ecuación, ver [matemática de las políticas de cancelación de Airbnb](/es/blog/airbnb-cancellation-policy-math). Y si quieres un panel único para tiempo de respuesta, tasa de cancelación y valoración media en varios anuncios sin malabares con las pestañas de Airbnb, eso es justo lo que hace [RentTools](/onboard).
+Sobre cómo el reloj de respuesta interactúa con los modos de reserva, ver [reserva inmediata vs reserva por solicitud en Airbnb](/es/blog/airbnb-instant-book-vs-request-to-book). Para la mitad de cancelaciones de la ecuación, ver [matemática de las políticas de cancelación de Airbnb](/es/blog/airbnb-cancellation-policy-math). Y si quieres un panel único para tiempo de respuesta, tasa de cancelación y valoración media en varios anuncios sin malabares con las pestañas de Airbnb, eso es justo lo que hace [RentHome Departamentos](/onboard).
 
 ## FAQ
 

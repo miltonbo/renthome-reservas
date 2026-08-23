@@ -128,7 +128,7 @@ Mettez la même politique partout. Mettez des **attentes** différentes sur ce q
 
 Si la plupart des hôtes se trompent sur l'arrivée anticipée, c'est une question de moment : la décision tombe à 06:40, quand vous êtes à moitié endormi, et la bonne réponse dépend de données que vous n'avez pas regardées. Le remède, c'est de laisser le calendrier décider, pas votre mémoire à l'aube.
 
-La règle qu'il vous faut : **si la nuit précédente est libre, envoyez un message de pré-arrivée proposant l'arrivée anticipée ; s'il y a une rotation le jour même, envoyez le message de dépôt de bagages.** Cette seule condition transforme une décision nerveuse prise sur le vif en un message type toujours juste. Les vérifications d'arrivée le jour même, le statut de la nuit précédente et les modèles de pré-arrivée conditionnels sont exactement la logique que [RentTools](/onboard) fait tourner sur toutes les plateformes à la fois, gratuitement.
+La règle qu'il vous faut : **si la nuit précédente est libre, envoyez un message de pré-arrivée proposant l'arrivée anticipée ; s'il y a une rotation le jour même, envoyez le message de dépôt de bagages.** Cette seule condition transforme une décision nerveuse prise sur le vif en un message type toujours juste. Les vérifications d'arrivée le jour même, le statut de la nuit précédente et les modèles de pré-arrivée conditionnels sont exactement la logique que [RentHome Departamentos](/onboard) fait tourner sur toutes les plateformes à la fois, gratuitement.
 
 ## FAQ
 

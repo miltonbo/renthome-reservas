@@ -110,7 +110,7 @@ Den eigenen Boden zu kennen, nützt nichts, wenn die Entscheidung um 23 Uhr fäl
 
 Jede Plattform hat ein Feld für den Mindestpreis. Setzen Sie ihn auf Ihren *Eine-Nacht*-Boden — den höchsten — und der Kalender weigert sich schlicht, eine Nacht darunter zu verkaufen. Legen Sie Langzeit-Rabatte darüber, damit längere Aufenthalte legitim zu ihren niedrigeren Böden hin preisen können, ohne dass Sie etwas anfassen. Das Ergebnis: Das System sagt automatisch Nein zur verlustreichen 39 $-Einzelnacht und Ja zu den profitablen vier Nächten zu 50 $ — ohne 23-Uhr-Mathematik von Ihnen.
 
-Knifflig wird es, weil Ihr Boden keine einzelne Zahl ist — er ist pro Saison und pro Plattform, und die Kosten pro Nacht ändern sich tatsächlich zwischen Juli und Januar. Das von Hand über Airbnb, Booking.com und Vrbo zu führen, ist genau die plattformübergreifende Buchhaltung, die in der Woche veraltet, in der Sie aufhören hinzuschauen. Die Kosten und Preise jedes Inserats an einem Ort zusammenzuführen, damit der Boden stets aktuell ist, ist genau das, wofür [RentTools](/onboard) gebaut ist — kostenlos und über alle Plattformen zugleich.
+Knifflig wird es, weil Ihr Boden keine einzelne Zahl ist — er ist pro Saison und pro Plattform, und die Kosten pro Nacht ändern sich tatsächlich zwischen Juli und Januar. Das von Hand über Airbnb, Booking.com und Vrbo zu führen, ist genau die plattformübergreifende Buchhaltung, die in der Woche veraltet, in der Sie aufhören hinzuschauen. Die Kosten und Preise jedes Inserats an einem Ort zusammenzuführen, damit der Boden stets aktuell ist, ist genau das, wofür [RentHome Departamentos](/onboard) gebaut ist — kostenlos und über alle Plattformen zugleich.
 
 ## FAQ
 

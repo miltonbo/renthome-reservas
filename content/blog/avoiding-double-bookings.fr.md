@@ -49,7 +49,7 @@ Chaque plateforme a le sien. Configurables au moment où j’écris :
 2. **Booking.com** — l’extranet permet un rafraîchissement manuel par flux ; le rafraîchissement automatique tourne toutes les 2 à 6 heures. Pas d’UI pour accélérer.
 3. **Vrbo** — le plus lent des trois grands. Jusqu’à 12 heures observées dans les cas extrêmes. Faites pivoter l’URL si un flux semble figé au-delà de 24 h.
 
-Ce que vous pouvez changer, c’est votre propre polling sortant. Si vous utilisez une couche intermédiaire comme [RentTools open source](/onboard), réglez son polling entrant au plus court intervalle disponible — 10 minutes est raisonnable ; en dessous, vous gaspillez la bande passante d’Airbnb sans rien gagner, parce que la plateforme de destination interroge toujours lentement.
+Ce que vous pouvez changer, c’est votre propre polling sortant. Si vous utilisez une couche intermédiaire comme [RentHome Departamentos open source](/onboard), réglez son polling entrant au plus court intervalle disponible — 10 minutes est raisonnable ; en dessous, vous gaspillez la bande passante d’Airbnb sans rien gagner, parce que la plateforme de destination interroge toujours lentement.
 
 Pour comprendre pourquoi le protocole iCal plafonne à « toutes les quelques heures » et n’offre pas de push, lisez [notre tour d’horizon de la synchro Airbnb / Booking.com](/blog/airbnb-booking-calendar-sync-free).
 
@@ -76,7 +76,7 @@ Trois façons :
 
 1. **Booking.com comme canonique.** Bloquez la date dans l’extranet Booking. Airbnb importe l’iCal de Booking, donc le blocage se propage dans la fenêtre de polling Airbnb (2 à 4 h). Marche bien parce que le calendrier extranet Booking est l’UI la plus dense des trois.
 2. **Airbnb comme canonique.** Bloquez sur Airbnb. Booking importe l’iCal d’Airbnb. Même logique, sens inverse.
-3. **Un calendrier externe comme canonique.** Utilisez un Google Calendar (ou votre instance [RentTools](/onboard)) pour les blocages personnels. Airbnb et Booking importent depuis lui. Utile quand vous avez beaucoup de blocages personnels (rénovations, hors-saison, usage familial).
+3. **Un calendrier externe comme canonique.** Utilisez un Google Calendar (ou votre instance [RentHome Departamentos](/onboard)) pour les blocages personnels. Airbnb et Booking importent depuis lui. Utile quand vous avez beaucoup de blocages personnels (rénovations, hors-saison, usage familial).
 
 Quel que soit votre choix, mettez-le en fond d’écran, écrivez-le sur un Post-it, tatouez-le. La prochaine fois qu’un ami vous demande si l’appart est libre pour un week-end, la réponse, c’est : « je le bloque sur $CANONIQUE tout de suite ». Pas « laisse-moi le bloquer sur les deux, attends ».
 
@@ -98,7 +98,7 @@ Vous trouverez un problème environ une fois toutes les 200 à 400 réservations
 
 Ne sautez pas l’audit sur les longs séjours ; c’est là qu’un conflit fait le plus mal, parce qu’on ne déloge pas trivialement un voyageur de 3 semaines.
 
-Vous pouvez aussi automatiser une partie. RentTools envoie un mail pré-arrivée « aucun conflit, à demain ». Beaucoup de Channel Managers font pareil. Le manuel suffit en dessous de 20 réservations par mois — le coût en temps se compte en minutes par semaine.
+Vous pouvez aussi automatiser une partie. RentHome Departamentos envoie un mail pré-arrivée « aucun conflit, à demain ». Beaucoup de Channel Managers font pareil. Le manuel suffit en dessous de 20 réservations par mois — le coût en temps se compte en minutes par semaine.
 
 ## FAQ
 

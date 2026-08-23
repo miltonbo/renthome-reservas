@@ -133,7 +133,7 @@ export function getPublicOrigin(request: Request): string {
 /**
  * Derive the redirect URI for the Google OAuth flow. Must match a URI
  * registered in the GCP OAuth client exactly — we register
- *   https://renttools.io/api/auth/google/callback
+ *   http://localhost:3000/api/auth/google/callback
  *   http://localhost:3000/api/auth/google/callback
  */
 export function deriveRedirectUri(request: Request): string {

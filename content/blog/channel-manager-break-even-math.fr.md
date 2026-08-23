@@ -93,7 +93,7 @@ Choisissez la ligne qui correspond à votre échelle. **C** = facture mensuelle 
 | Temps économisé avec inbox unifiée | ~1,5 h/mois |
 | Coût-temps à 25 $/h | 37,50 $/mois |
 
-**Seuil à 1 bien : -73 $/mois.** Un Smoobu gratuit ou une instance [RentTools](/onboard) gratuite plus un audit matinal de 2 minutes couvre 99 % de tout ça. À un bien, le manager payant est une perte nette.
+**Seuil à 1 bien : -73 $/mois.** Un Smoobu gratuit ou une instance [RentHome Departamentos](/onboard) gratuite plus un audit matinal de 2 minutes couvre 99 % de tout ça. À un bien, le manager payant est une perte nette.
 
 ### Trois biens
 
@@ -157,12 +157,12 @@ Trois profils d’hôtes pour qui le calcul dit « restez gratuit », même au-d
 
 1. **Mono-plateforme.** Si 95 % des réservations viennent d’Airbnb et que Booking-via-iCal est un filet de secours, le taux de défaillance est proche de celui d’un seul bien. Le manager payant achète une synchro que vous n’utilisez quasi pas.
 2. **Hôte toujours présent.** Un hôte qui répond à chaque message en 10 minutes depuis son téléphone fait à la main ce que la messagerie auto fait automatiquement. La ligne « coût-temps » descend à zéro. Le coût pur vs risque rétrécit le seuil.
-3. **Alternatives self-hosted.** Faire tourner [RentTools](/onboard) gratuit ou s’héberger sur un [droplet à 4 $](/blog/self-hosting-property-manager-droplet) vous donne l’essentiel des fonctions de synchro et d’inbox sans tarif par bien. Vous payez en temps, pas en argent. Sous 5 biens, le coût-temps reste gérable. Au-delà, non.
+3. **Alternatives self-hosted.** Faire tourner [RentHome Departamentos](/onboard) gratuit ou s’héberger sur un [droplet à 4 $](/blog/self-hosting-property-manager-droplet) vous donne l’essentiel des fonctions de synchro et d’inbox sans tarif par bien. Vous payez en temps, pas en argent. Sous 5 biens, le coût-temps reste gérable. Au-delà, non.
 
 Le troisième profil est l’essentiel du lectorat de cet article. L’échelle réaliste pour un hôte qui grandit :
 
 - **Bien 1 :** import croisé iCal gratuit, 5 minutes par jour.
-- **Bien 2 :** import croisé iCal gratuit + un compte [RentTools](/onboard) gratuit ou Smoobu gratuit pour l’inbox.
+- **Bien 2 :** import croisé iCal gratuit + un compte [RentHome Departamentos](/onboard) gratuit ou Smoobu gratuit pour l’inbox.
 - **Bien 3 :** moment de décision. Soit passer payant, soit accepter le taux de double réservation plus haut comme prix du gratuit.
 - **Biens 4 à 7 :** manager payant, presque à coup sûr. Choisissez sur la qualité de défaillance.
 - **Biens 8+ :** manager payant, à coup sûr. La question, c’est lequel.

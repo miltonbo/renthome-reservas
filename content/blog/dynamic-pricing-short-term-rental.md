@@ -128,7 +128,7 @@ Outside those three, by the time you have 3 listings actively booked, a dynamic 
 
 Three listings in Lisbon + Tashkent, on PriceLabs at $19.99 each. I look at the calendar once a week — usually Tuesday evening — for ten minutes. I override the model on dates I know better than it does (local conference, marathon, school holiday in inbound markets) and let it run the rest. I lifted base price by 8% in March 2026 after eighteen straight weeks of >85% occupancy; the model immediately recalibrated and the next two weeks booked at the higher rate without a dip in fill. The fee is $720/year. The lift, measured against my manual baseline from 2023, is 11–12%, which on $30,000/year per listing is more than $3,500/year of new revenue per listing. The fee is rounding error.
 
-If RentTools is your starting point for keeping calendars in sync across platforms, dynamic pricing is the next logical layer once you have steady bookings — [start with the calendar sync](/onboard) and add a pricing tool when you have 90 days of clean booking history to feed it.
+If RentHome Departamentos is your starting point for keeping calendars in sync across platforms, dynamic pricing is the next logical layer once you have steady bookings — [start with the calendar sync](/onboard) and add a pricing tool when you have 90 days of clean booking history to feed it.
 
 ## FAQ
 

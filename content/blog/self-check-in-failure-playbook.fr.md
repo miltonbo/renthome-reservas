@@ -118,7 +118,7 @@ Sans redondance : 10 × 12 × 0,03 = **3,6 pannes par an**. À 80 € de compens
 
 Avec redondance (serrure connectée + boîte à clé + voisin), le taux de panne **tel que le voyageur l'expérimente** chute à environ 0,5 %, car le repli résout l'incident en 8 à 22 minutes avant que le voyageur ne soit assez contrarié pour le faire passer dans un avis. La boîte coûte 25 € une fois. Le voisin ne coûte rien. La vérification de 90 secondes en pré-arrivée coûte environ 4 heures par an (90 s × 10 séjours × 12 mois / 3600 ≈ 6 heures). Avec un taux horaire d'hôte supérieur à 5 €, la redondance s'amortit dès la première année et capitalise les années suivantes.
 
-Le calcul est sans appel et la plupart des hôtes le sautent quand même, parce que le bénéfice est invisible — vous ne pouvez pas montrer l'incident qui n'a pas eu lieu — et que le coût est invisible aussi, jusqu'à ce que tombe le premier avis 1 étoile. Pour la vision opérationnelle plus large dès lors que vous commencez à gérer plusieurs check-ins de façon fiable, [RentTools](/onboard) suit les incidents de check-in à côté du reste du journal d'exploitation et fait apparaître les schémas dès le deuxième ou troisième cas.
+Le calcul est sans appel et la plupart des hôtes le sautent quand même, parce que le bénéfice est invisible — vous ne pouvez pas montrer l'incident qui n'a pas eu lieu — et que le coût est invisible aussi, jusqu'à ce que tombe le premier avis 1 étoile. Pour la vision opérationnelle plus large dès lors que vous commencez à gérer plusieurs check-ins de façon fiable, [RentHome Departamentos](/onboard) suit les incidents de check-in à côté du reste du journal d'exploitation et fait apparaître les schémas dès le deuxième ou troisième cas.
 
 ## FAQ
 

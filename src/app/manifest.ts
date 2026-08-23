@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/i18n/translations";
  * PWA manifest. Per-locale because the `name` / `short_name` /
  * `description` / `lang` fields surface in the OS install dialog and
  * the eventual home-screen label. A Russian visitor installing the
- * app from /ru/ should see "RentTools" with a Russian description,
+ * app from /ru/ should see "RentHome Departamentos" with a Russian description,
  * and the OS tags the installed app `lang="ru"` (which influences
  * IME selection + screen-reader voice on some platforms).
  *
@@ -18,33 +18,33 @@ import type { Locale } from "@/lib/i18n/translations";
 
 const LOCALIZED: Record<Locale, { name: string; description: string; lang: string }> = {
   en: {
-    name: "RentTools",
+    name: "RentHome Departamentos",
     description:
-      "Free, open-source property manager for short-term rental hosts. Sync Airbnb + Booking.com, automate cleaning.",
+      "RentHome Departamentos reservation, calendar and cleaning management.",
     lang: "en",
   },
   ru: {
-    name: "RentTools",
+    name: "RentHome Departamentos",
     description:
-      "Бесплатный менеджер для хостов краткосрочной аренды с открытым кодом. Синхронизация Airbnb и Booking.com, автоматизация уборок.",
+      "Управление бронированиями, календарями и уборкой RentHome Departamentos.",
     lang: "ru",
   },
   de: {
-    name: "RentTools",
+    name: "RentHome Departamentos",
     description:
-      "Kostenlose Open-Source-Verwaltung für Kurzzeitvermieter. Airbnb und Booking.com synchronisieren, Reinigung automatisieren.",
+      "Reservierungs-, Kalender- und Reinigungsverwaltung von RentHome Departamentos.",
     lang: "de",
   },
   fr: {
-    name: "RentTools",
+    name: "RentHome Departamentos",
     description:
-      "Gestionnaire open source gratuit pour les hôtes de location courte durée. Synchronisez Airbnb et Booking.com, automatisez le ménage.",
+      "Gestion des réservations, calendriers et ménages de RentHome Departamentos.",
     lang: "fr",
   },
   es: {
-    name: "RentTools",
+    name: "RentHome Departamentos",
     description:
-      "Gestor de código abierto y gratuito para anfitriones de alquiler vacacional. Sincronice Airbnb y Booking.com y automatice las limpiezas.",
+      "Gestión de reservas, calendarios y limpiezas de RentHome Departamentos.",
     lang: "es",
   },
 };

@@ -134,7 +134,7 @@ Lavar en casa falla por **máquina y calor.** Las secadoras mueren más que las 
 
 Los servicios fallan por **acoplamiento al calendario.** Una recogida tarde en febrero no es nada. Una entrega tarde el primer sábado de agosto, con tres rotaciones por delante y su ropa metida en una furgoneta en algún sitio, es una avería de verdad, y no puede escalarla: su pico es el mismo que el de usted. Los anfitriones que externalizan y aun así guardan una rotación completa de repuesto en el armario no se enteran nunca. Los que externalizan para deshacerse del armario se enteran por las malas.
 
-Los dos modelos fallan igual cuando nadie lleva la cuenta de a quién le toca. Si su limpiador, su lavandería y su calendario no miran el mismo plan, el problema no es la colada, es la coordinación, y se ve en forma de una cama que nadie ha hecho. Justo eso es lo que [RentTools le resuelve gratis](/onboard): todas las rotaciones en un calendario, para que quien lleva la colada sepa para qué noche tiene que estar de vuelta.
+Los dos modelos fallan igual cuando nadie lleva la cuenta de a quién le toca. Si su limpiador, su lavandería y su calendario no miran el mismo plan, el problema no es la colada, es la coordinación, y se ve en forma de una cama que nadie ha hecho. Justo eso es lo que [RentHome Departamentos le resuelve gratis](/onboard): todas las rotaciones en un calendario, para que quien lleva la colada sepa para qué noche tiene que estar de vuelta.
 
 ## FAQ
 

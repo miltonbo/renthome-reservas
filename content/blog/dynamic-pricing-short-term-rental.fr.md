@@ -128,7 +128,7 @@ Hors de ces trois cas, dès que 3 biens tournent, le seuil de rentabilité du dy
 
 Trois biens à Lisbonne et Tachkent, sur PriceLabs à 19,99 $ chacun. Je regarde le calendrier une fois par semaine — d’habitude mardi soir, dix minutes. Je passe au-dessus du modèle sur les dates que je connais mieux que lui (congrès local, marathon, vacances scolaires des marchés émetteurs) et je le laisse gérer le reste. J’ai relevé le prix de base de 8 % en mars 2026 après dix-huit semaines consécutives à >85 % d’occupation ; le modèle a recalibré aussitôt, les deux semaines suivantes se sont louées au nouveau tarif sans baisse de remplissage. L’abonnement est de 720 $/an. Le gain, mesuré contre mon manuel de 2023, est de 11 à 12 %, soit sur 30 000 $/an par bien plus de 3 500 $/an de revenu nouveau par bien. L’abonnement est une erreur d’arrondi.
 
-Si RentTools est votre point de départ pour synchroniser les calendriers entre plateformes, la tarification dynamique est la couche logique suivante une fois les réservations stabilisées — [commencez par la synchro calendrier](/onboard) et ajoutez un outil de prix quand vous avez 90 jours propres d’historique à lui fournir.
+Si RentHome Departamentos est votre point de départ pour synchroniser les calendriers entre plateformes, la tarification dynamique est la couche logique suivante une fois les réservations stabilisées — [commencez par la synchro calendrier](/onboard) et ajoutez un outil de prix quand vous avez 90 jours propres d’historique à lui fournir.
 
 ## FAQ
 

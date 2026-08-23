@@ -157,7 +157,7 @@ Four cases, and one of them beats the math outright.
 
 And before you close, price the third option. A single three-month mid-term let over the winter has one turnover instead of twelve, no per-night marketing, and a rate that beats your low-season ADR on a monthly basis in most markets. The [mid-term rental math](/blog/mid-term-rental-math) usually looks better than both closing and grinding out 22% occupancy.
 
-Whichever you pick, keep the calendars talking to each other. The double-booking that actually hurts is the one in a quiet month, because you stopped checking daily around week three — a January guest you half-forgot turning into a February clash you find out about from the guest. That's what [RentTools does for free](/onboard): every platform sees the others' bookings, including the ones you booked in a month you weren't paying attention.
+Whichever you pick, keep the calendars talking to each other. The double-booking that actually hurts is the one in a quiet month, because you stopped checking daily around week three — a January guest you half-forgot turning into a February clash you find out about from the guest. That's what [RentHome Departamentos does for free](/onboard): every platform sees the others' bookings, including the ones you booked in a month you weren't paying attention.
 
 ## FAQ
 

@@ -18,7 +18,7 @@ import { SUPPORTED_LOCALES, DEFAULT_LOCALE, localePath } from "@/lib/i18n/altern
 import { toOgLocale } from "@/lib/i18n/locale-tags";
 import type { Locale } from "@/lib/i18n/translations";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 // Build per-post hreflang siblings. Posts are stored per-locale (a row
 // per (slug, locale) pair). Pointing hreflang at a URL whose row doesn't
@@ -312,10 +312,10 @@ export async function generateMetadata({
     authors: post.author?.username ? [{ name: post.author.username }] : undefined,
     openGraph: {
       type: "article",
-      title: `${post.title} · RentTools`,
+      title: `${post.title} · RentHome Departamentos`,
       description: post.excerpt,
       url,
-      siteName: "RentTools",
+      siteName: "RentHome Departamentos",
       locale: toOgLocale(post.locale as Locale),
       publishedTime: post.publishedAt?.toISOString(),
       modifiedTime: post.updatedAt?.toISOString() ?? post.publishedAt?.toISOString(),
@@ -325,7 +325,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${post.title} · RentTools`,
+      title: `${post.title} · RentHome Departamentos`,
       description: post.excerpt,
       images: ogImage ? [ogImage.url] : undefined,
     },
@@ -443,12 +443,12 @@ export default async function BlogPostPage({
     image: imageNode,
     author: {
       "@type": "Person",
-      name: post.author?.username ?? "RentTools",
+      name: post.author?.username ?? "RentHome Departamentos",
       url: `${SITE_URL}/blog`,
     },
     publisher: {
       "@type": "Organization",
-      name: "RentTools",
+      name: "RentHome Departamentos",
       url: SITE_URL,
       // MUST be a raster image (PNG/JPG/GIF). Google's structured-data
       // spec for the Organization.logo property explicitly rejects SVG.
@@ -719,7 +719,7 @@ export default async function BlogPostPage({
 
       <footer className="border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-[var(--ink-4)] sm:flex-row sm:px-6">
-          <p>© 2026 RentTools · MIT License</p>
+          <p>© 2026 RentHome Departamentos · MIT License</p>
           <nav className="flex gap-4">
             <Link href="/" className="hover:text-[var(--ink)]">
               {t.footerHome}

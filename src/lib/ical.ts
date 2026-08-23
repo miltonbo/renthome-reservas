@@ -90,12 +90,12 @@ export function addDays(dateStr: string, days: number): string {
  */
 export function generateICal(
   events: ICalEvent[],
-  calendarName: string = "RentTools Sync"
+  calendarName: string = "RentHome Departamentos Sync"
 ): string {
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//RentTool//CalendarSync//EN",
+    "PRODID:-//RentHome//CalendarSync//EN",
     `X-WR-CALNAME:${calendarName}`,
     "METHOD:PUBLISH",
   ];
@@ -104,8 +104,8 @@ export function generateICal(
   // VCALENDAR with zero VEVENTs. Emit a single far-past placeholder so the
   // feed always validates while the property has no real bookings to share.
   const eventsToEmit: ICalEvent[] = events.length > 0 ? events : [{
-    uid: "renttools-placeholder",
-    summary: "RentTools placeholder",
+    uid: "renthome-placeholder",
+    summary: "RentHome Departamentos placeholder",
     startDate: "1970-01-01",
     endDate: "1970-01-02",
   }];
@@ -184,7 +184,7 @@ export function generateBufferedEvents(
 
   const label = `Blocked (${sourcePlatform}${bufferBefore || bufferAfter ? " +buffer" : ""})`;
   return merged.map((m, i) => ({
-    uid: `renttool-${sourcePlatform}-${m.start}-${m.end}-${i}`,
+    uid: `renthome-${sourcePlatform}-${m.start}-${m.end}-${i}`,
     summary: label,
     startDate: m.start,
     endDate: m.end,
@@ -210,7 +210,7 @@ export function generateBufferOnlyEvents(
     if (bufferBefore > 0) {
       const start = addDays(event.startDate, -bufferBefore);
       result.push({
-        uid: `renttool-buffer-before-${event.startDate}-${event.uid}`,
+        uid: `renthome-buffer-before-${event.startDate}-${event.uid}`,
         summary: label,
         startDate: start,
         endDate: event.startDate, // exclusive end = up to (not including) booking start
@@ -223,7 +223,7 @@ export function generateBufferOnlyEvents(
       const start = addDays(event.endDate, 1); // day after checkout
       const end = addDays(event.endDate, 1 + bufferAfter);
       result.push({
-        uid: `renttool-buffer-after-${event.endDate}-${event.uid}`,
+        uid: `renthome-buffer-after-${event.endDate}-${event.uid}`,
         summary: label,
         startDate: start,
         endDate: end,

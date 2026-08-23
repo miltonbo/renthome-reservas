@@ -1,4 +1,4 @@
-# RentTools API
+# RentHome Departamentos API
 
 All endpoints are JSON unless noted. Base URL: `/`.
 

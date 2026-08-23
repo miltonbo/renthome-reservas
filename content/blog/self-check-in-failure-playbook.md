@@ -118,7 +118,7 @@ Without redundancy: 10 × 12 × 0.03 = **3.6 failures per year**. At an average 
 
 With redundancy (smart lock + lockbox + neighbour): the failure rate that *the guest experiences* drops to roughly 0.5%, because the fallback resolves the incident in 8–22 minutes before the guest is upset enough to file it as a review issue. The lockbox costs $25 once. The neighbour costs zero. The 90-second pre-arrival check costs about 4 hours per year (90 seconds × 10 stays × 12 months / 3600 = 6 hours). At any host rate above $5/hour, the redundancy pays for itself in the first year and compounds every year after.
 
-The math is overwhelming and most hosts still skip it because the upside is invisible — you cannot point to the incident that didn't happen — while the downside is invisible too, until the first 1-star review lands. For the broader operational picture once you start running multi-property check-ins reliably, [RentTools](/onboard) tracks check-in incidents alongside the rest of your operations log in a way that surfaces patterns after the second or third occurrence.
+The math is overwhelming and most hosts still skip it because the upside is invisible — you cannot point to the incident that didn't happen — while the downside is invisible too, until the first 1-star review lands. For the broader operational picture once you start running multi-property check-ins reliably, [RentHome Departamentos](/onboard) tracks check-in incidents alongside the rest of your operations log in a way that surfaces patterns after the second or third occurrence.
 
 ## FAQ
 

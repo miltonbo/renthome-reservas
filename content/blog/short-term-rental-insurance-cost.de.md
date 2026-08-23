@@ -114,7 +114,7 @@ Sie brauchen nicht die teuerste Police am Markt. Sie brauchen die richtigen fün
 2. **Passen Sie die Haftung an Ihr Risiko an.** 1 Mio. $ ist der Boden. Gehen Sie auf 2 Mio. $ bei Pool, Whirlpool oder einer Treppe, die Gäste im Dunkeln nutzen.
 3. **Ergänzen Sie den Mietausfall-Baustein.** Für ein voll ausgelastetes Inserat ist das meist die wertvollste Zeile der Police.
 4. **Behalten Sie AirCover als Rückfallebene, nicht als Plan.** Es ist kostenlos und zahlt für durch Gäste verursachte Schäden. Lassen Sie es die erste Schicht von 50–800 $ sein; lassen Sie die Police die Katastrophenschicht sein.
-5. **Halten Sie Ihre Schadennachweise sauber.** Datierte Fotos beim Ein- und Auszug, eine saubere Aufzeichnung, wer wann da war, Belege für alles Wertvolle. Dokumentation entscheidet Grenzfälle bei jeder Regelung. Wenn Sie Gästedaten und Aufenthaltshistorie über Plattformen hinweg von Hand zusammentragen, ist genau das der Papierkram, den ein Werkzeug wie [RentTools](/onboard) an einem Ort hält — dieselben Aufzeichnungen, die Sie am Tag der Schadenmeldung brauchen.
+5. **Halten Sie Ihre Schadennachweise sauber.** Datierte Fotos beim Ein- und Auszug, eine saubere Aufzeichnung, wer wann da war, Belege für alles Wertvolle. Dokumentation entscheidet Grenzfälle bei jeder Regelung. Wenn Sie Gästedaten und Aufenthaltshistorie über Plattformen hinweg von Hand zusammentragen, ist genau das der Papierkram, den ein Werkzeug wie [RentHome Departamentos](/onboard) an einem Ort hält — dieselben Aufzeichnungen, die Sie am Tag der Schadenmeldung brauchen.
 
 ## FAQ
 

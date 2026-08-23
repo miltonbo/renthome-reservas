@@ -10,7 +10,7 @@ import type { Locale } from "@/lib/i18n/translations";
 // legacy AdminPanel surfaced; SettingsPanel still renders its copy
 // until the removal sweep ships, matching ticks 4 + 5.
 //
-// status.renttools.io is now a BetterStack-hosted status page (uptime +
+// localhost:3000/api/health is now a BetterStack-hosted status page (uptime +
 // incident history). It's deliberately off-box so it stays reachable
 // when the droplet itself is down — these /api/* health endpoints
 // below are the on-box spot-checks, the external page is the public
@@ -118,23 +118,6 @@ export default function AdminStatusPage() {
           <p className="mt-1 font-mono text-xs text-[var(--ink-4)]">/api/calendar/health</p>
         </a>
 
-        <a
-          href="https://status.renttools.io"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group block rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-4 transition-all hover:border-[var(--line-2)] hover:bg-[var(--bg-3)]"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-[var(--ink)]">
-              {t.externalTitle}
-            </h3>
-            <svg className="h-4 w-4 text-[var(--ink-4)] transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-            </svg>
-          </div>
-          <p className="mt-1 font-mono text-xs text-[var(--ink-4)]">status.renttools.io</p>
-          <p className="mt-1.5 text-xs text-[var(--ink-4)]">{t.externalDesc}</p>
-        </a>
       </div>
     </div>
   );

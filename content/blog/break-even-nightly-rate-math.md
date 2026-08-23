@@ -110,7 +110,7 @@ Knowing your floor is useless if the decision lands at 11pm when a same-day requ
 
 Every platform has a minimum-price field. Set it to your *one-night* floor — the highest one — and the calendar will simply refuse to sell a night below it. Layer length-of-stay discounts on top so longer stays can legitimately price down toward their lower floors without you touching anything. The result: the system says no to the loss-making $39 one-nighter automatically, and says yes to the profitable $50 four-nighter, with no 11pm math from you.
 
-Where it gets fiddly is that your floor isn't one number — it's per-season and per-platform, and the per-night cost genuinely changes between July and January. Tracking that across Airbnb, Booking.com, and Vrbo by hand is exactly the kind of cross-platform bookkeeping that drifts out of date the week you stop watching it. Pulling every listing's costs and rates into one place so the floor is always current is the sort of thing [RentTools](/onboard) is built to handle, free, across every platform at once.
+Where it gets fiddly is that your floor isn't one number — it's per-season and per-platform, and the per-night cost genuinely changes between July and January. Tracking that across Airbnb, Booking.com, and Vrbo by hand is exactly the kind of cross-platform bookkeeping that drifts out of date the week you stop watching it. Pulling every listing's costs and rates into one place so the floor is always current is the sort of thing [RentHome Departamentos](/onboard) is built to handle, free, across every platform at once.
 
 ## FAQ
 

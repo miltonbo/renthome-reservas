@@ -5,14 +5,12 @@
 
 /**
  * True when the request host is a staging / preview / local mirror that
- * should be hidden from search engines. The canonical production hosts
- * (`renttools.io`, `www.renttools.io`) return false. Used by robots.ts
- * to decide whether to emit `Disallow: /` for everything.
+ * should be hidden from search engines. Any custom domain without a
+ * staging/dev marker is treated as production.
  */
 export function isStagingHost(rawHost: string | null | undefined): boolean {
   if (!rawHost) return false;
   const host = rawHost.toLowerCase().split(":")[0];
-  if (host === "renttools.io" || host === "www.renttools.io") return false;
   return (
     host.startsWith("staging.") ||
     host.includes(".staging.") ||

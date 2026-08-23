@@ -108,7 +108,7 @@ Datos reales del apartamento de la introducción. 18 meses, 138 estancias.
 
 Ganó la configuración de 20 $ — unos 3 400 $ más en neto frente a «sin recargo», con apenas un 4,3 % menos de reservas. El nivel de 30 $ no salió rentable: los 340 $ extra de bruto se neutralizaron con una caída de conversión más pronunciada y tres tardes de responder «el precio se duplicó al pagar».
 
-Lleve usted mismo sus números por anuncio — seis meses de datos propios le ganan a cualquier benchmark, incluido el mío. El [seguimiento gratuito por inmueble en RentTools](/onboard) guarda la cantidad de huéspedes y el bruto por estancia, así que la columna derecha se rellena sola.
+Lleve usted mismo sus números por anuncio — seis meses de datos propios le ganan a cualquier benchmark, incluido el mío. El [seguimiento gratuito por inmueble en RentHome Departamentos](/onboard) guarda la cantidad de huéspedes y el bruto por estancia, así que la columna derecha se rellena sola.
 
 Para profundizar: [matemática del descuento por estancia larga](/blog/length-of-stay-discount-math) y [tarifa de limpieza frente a precio todo incluido](/blog/airbnb-cleaning-fee-vs-all-in-pricing).
 

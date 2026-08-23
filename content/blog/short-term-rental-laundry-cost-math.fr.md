@@ -134,7 +134,7 @@ En interne, ça casse sur **le matériel et la chaleur.** Les sèche-linge meure
 
 Les prestataires cassent sur **le couplage au calendrier.** Un ramassage en retard en février, ce n'est rien. Une livraison en retard le premier samedi d'août, avec trois rotations à assurer et votre linge quelque part dans une camionnette, c'est une vraie panne — et vous ne pouvez pas escalader, puisque leur pic est le vôtre. Les hôtes qui externalisent et gardent malgré tout une rotation complète dans le placard ne s'en aperçoivent jamais. Ceux qui externalisent pour se débarrasser du placard l'apprennent à leurs dépens.
 
-Les deux modèles cassent de la même façon quand personne ne suit qui fait quoi. Si votre agent, votre blanchisserie et votre calendrier ne regardent pas le même planning, le problème n'est pas le linge, c'est la coordination — et ça se voit sous la forme d'un lit que personne n'a fait. C'est exactement ce que [RentTools prend en charge gratuitement](/onboard) : toutes les rotations dans un seul calendrier, pour que la personne au linge sache pour quelle nuit il doit être revenu.
+Les deux modèles cassent de la même façon quand personne ne suit qui fait quoi. Si votre agent, votre blanchisserie et votre calendrier ne regardent pas le même planning, le problème n'est pas le linge, c'est la coordination — et ça se voit sous la forme d'un lit que personne n'a fait. C'est exactement ce que [RentHome Departamentos prend en charge gratuitement](/onboard) : toutes les rotations dans un seul calendrier, pour que la personne au linge sache pour quelle nuit il doit être revenu.
 
 ## FAQ
 

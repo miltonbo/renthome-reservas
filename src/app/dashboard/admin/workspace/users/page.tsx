@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
   };
 
   const impersonate = async (id: number, username: string) => {
-    if (!window.confirm(`View RentTools as ${username}? You'll see exactly what they see; click "Exit impersonation" in the top banner to return to your admin session.`)) {
+    if (!window.confirm(`View RentHome Departamentos as ${username}? You'll see exactly what they see; click "Exit impersonation" in the top banner to return to your admin session.`)) {
       return;
     }
     const res = await fetch(`/api/admin/users/${id}/impersonate`, { method: "POST" });

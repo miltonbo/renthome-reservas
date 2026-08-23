@@ -114,7 +114,7 @@ Vous n'avez pas besoin de la police la plus chère du marché. Vous avez besoin 
 2. **Alignez la responsabilité sur votre exposition.** 1 M$ est le plancher. Passez à 2 M$ avec une piscine, un spa, ou un escalier que les voyageurs empruntent dans le noir.
 3. **Ajoutez l'extension perte de revenus locatifs.** Pour une annonce à pleine occupation, c'est en général la ligne la plus précieuse de la police.
 4. **Gardez AirCover comme filet, pas comme plan.** C'est gratuit et cela paie bien les dommages causés par le voyageur. Faites-en la première tranche de 50–800 $ ; faites de la police la tranche catastrophe.
-5. **Tenez vos preuves de sinistre au carré.** Photos datées à l'arrivée et au départ, un relevé net de qui a séjourné et quand, les factures de tout ce qui a de la valeur. La documentation tranche les dossiers limites dans tous les dispositifs. Si vous rassemblez à la main les fiches voyageurs et l'historique des séjours entre plateformes, c'est justement cette paperasse qu'un outil comme [RentTools](/onboard) garde au même endroit — les mêmes relevés dont vous aurez besoin le jour de la déclaration.
+5. **Tenez vos preuves de sinistre au carré.** Photos datées à l'arrivée et au départ, un relevé net de qui a séjourné et quand, les factures de tout ce qui a de la valeur. La documentation tranche les dossiers limites dans tous les dispositifs. Si vous rassemblez à la main les fiches voyageurs et l'historique des séjours entre plateformes, c'est justement cette paperasse qu'un outil comme [RentHome Departamentos](/onboard) garde au même endroit — les mêmes relevés dont vous aurez besoin le jour de la déclaration.
 
 ## FAQ
 

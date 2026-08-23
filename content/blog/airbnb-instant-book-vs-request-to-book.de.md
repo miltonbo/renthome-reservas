@@ -79,7 +79,7 @@ Eine Zwei-Zimmer-Wohnung in Taschkent, durchschnittlich 90 $ pro Nacht, 65 % Aus
 
 „Verlust durch schlechte Gäste" zählt Erstattung, Zusatzreinigung und Ersatznächte aus einem problematischen Aufenthalt pro Periode. Die mittlere Zeile — Sofortbuchung plus alle Anforderungen — gewinnt bei nahezu jedem Gastgeber. Gleicher Boost wie die reine Sofortbuchung, zwei Drittel des Screening-Nutzens der Buchungsanfrage und null Strafe auf die Antwortrate, die entsteht, wenn Sie fünf Tage die Woche „bestätigt" auf Anfragen tippen.
 
-Verfolgen Sie das pro Inserat selbst — in [RentTools](/onboard) oder in einer Tabelle. Sechs Monate eigener Daten schlagen jeden fremden Benchmark, meinen eingeschlossen.
+Verfolgen Sie das pro Inserat selbst — in [RentHome Departamentos](/onboard) oder in einer Tabelle. Sechs Monate eigener Daten schlagen jeden fremden Benchmark, meinen eingeschlossen.
 
 Die Buchungsanfrage gewinnt nur für zwei Inseratsprofile: Luxuseinheiten über 400 $ pro Nacht, in denen ein einziger schlechter Gast 2 000 $ Schaden anrichtet, und Einheiten mit strukturellen Regeln (keine Haustiere überhaupt, keine Kinder unter 12, keine Wochenendbuchungen), die das „Anforderungen"-UI nicht sauber abbildet.
 

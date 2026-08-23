@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const FEED_LIMIT = 50;
 
 // DB read at request time — don't prerender against the empty CI DB.
@@ -56,7 +56,7 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>RentTools Blog</title>
+    <title>RentHome Departamentos Blog</title>
     <link>${SITE_URL}/blog</link>
     <atom:link href="${SITE_URL}/blog/rss.xml" rel="self" type="application/rss+xml" />
     <description>Practical guides on calendar sync, double-booking prevention, cleaning automation, and GDPR for short-term rental hosts.</description>

@@ -98,7 +98,7 @@ Una lista operativa breve para los pisos donde el cálculo dice media estancia:
 2. **Dimensione la fianza para un mes, no para una noche.** Un mes de desgaste es un mes de riesgo. AirCover y las fianzas de plataforma siguen aplicando, pero usted solo inspecciona al final, así que la fianza y sus fotos deben cargar con más peso.
 3. **Conozca el calendario de pagos.** Airbnb paga a los anfitriones de larga estancia de forma mensual: el primer pago llega unas 24 horas tras la entrada del primer mes, y luego en la fecha de aniversario mensual de cada mes siguiente. Prevea el desfase — no recibe toda la estancia por adelantado.
 4. **Limite el descuento a lo que vale el vacío.** El 25 % es un descuento mensual habitual, pero la cifra correcta es «la que supera mi neto por noche esperado para ese mes». Para el cálculo del control deslizante de descuentos a distintos niveles de ocupación, vea los [descuentos por estancia larga](/blog/length-of-stay-discount-math) — el compañero de este artículo.
-5. **Lleve ambos modos en un solo sitio.** El piso que pasa a media estancia sigue manteniendo un anuncio por noche caliente para los meses entre huéspedes largos. Un calendario, una cifra de ocupación, ambos modos de precio visibles a la vez — para eso sirve exactamente [RentTools](/onboard).
+5. **Lleve ambos modos en un solo sitio.** El piso que pasa a media estancia sigue manteniendo un anuncio por noche caliente para los meses entre huéspedes largos. Un calendario, una cifra de ocupación, ambos modos de precio visibles a la vez — para eso sirve exactamente [RentHome Departamentos](/onboard).
 
 ## Preguntas frecuentes
 

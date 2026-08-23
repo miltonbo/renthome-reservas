@@ -191,4 +191,4 @@ Most hosts opt into Genius the day they qualify because the email looks like an 
 
 Treat it like every other promotional discount: as a tool with a measurable cost and a measurable upside. Run it for 60 days. Pull the report from the Extranet. If your bookings rose by more than 12% (Level 1) or 18% (Level 2), keep it. If they didn't, opt out. Re-evaluate quarterly.
 
-If you want this kind of measurement running automatically on every promotion you have active across Airbnb, Booking, and Vrbo — promo cost vs. booking lift, side by side — that's what [RentTools](/onboard) does. Free, self-host or hosted, no upsell.
+If you want this kind of measurement running automatically on every promotion you have active across Airbnb, Booking, and Vrbo — promo cost vs. booking lift, side by side — that's what [RentHome Departamentos](/onboard) does. Free, self-host or hosted, no upsell.

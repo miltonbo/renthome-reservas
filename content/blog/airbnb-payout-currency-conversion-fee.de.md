@@ -98,7 +98,7 @@ Sie brauchen keine Tabelle, um herauszufinden, ob Sie das kostet. Sie brauchen d
 
 Die Lücke zwischen Schritt 3 und Schritt 1, in Prozent, ist Ihr echter Spread. Unter ~0,5 % sind Sie schon abgeglichen oder tauschen schon selbst — Schluss hier, alles gut. Bei 2–4 % zahlen Sie der Plattform für etwas, das Wise für einen Bruchteil macht, und Lösung 1 oder 2 zahlt die 20 Minuten um ein Vielfaches zurück. Machen Sie es einmal im Jahr, denn Auszahlungseinstellungen springen gern zurück, sobald Sie eine neue Bank oder ein neues Inserat hinzufügen.
 
-Wenn Sie schon beim Geld sind: Der Nachtpreis, aus dem all das fließt, ist der andere Hebel, der einen Blick lohnt — [der echte Break-even-Nachtpreis](/blog/break-even-nightly-rate-math) zeigt, was jede Buchung tatsächlich decken muss, bevor irgendeine dieser Gebühren greift. Und wenn Sie alles von Grund auf aufsetzen: [RentTools](/onboard) hält die operative Seite — Kalender, Reinigung, Gästedaten — aus dem Weg, damit Sie sich auf die Zahlen konzentrieren können, die den Ertrag bewegen.
+Wenn Sie schon beim Geld sind: Der Nachtpreis, aus dem all das fließt, ist der andere Hebel, der einen Blick lohnt — [der echte Break-even-Nachtpreis](/blog/break-even-nightly-rate-math) zeigt, was jede Buchung tatsächlich decken muss, bevor irgendeine dieser Gebühren greift. Und wenn Sie alles von Grund auf aufsetzen: [RentHome Departamentos](/onboard) hält die operative Seite — Kalender, Reinigung, Gästedaten — aus dem Weg, damit Sie sich auf die Zahlen konzentrieren können, die den Ertrag bewegen.
 
 ## FAQ
 

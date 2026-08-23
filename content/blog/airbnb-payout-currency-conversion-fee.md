@@ -98,7 +98,7 @@ You don't need a spreadsheet to find out whether this is costing you. You need t
 
 The gap between step 3 and step 1, as a percentage, is your real spread. If it's under ~0.5%, you're already matched or already self-converting — stop here, you're fine. If it's 2–4%, you're paying the platform to do something Wise does for a fraction, and Fix 1 or Fix 2 will pay for the 20 minutes many times over. Run it once a year, because payout settings have a way of resetting when you add a new bank or a new listing.
 
-While you're auditing the money, the nightly rate it all flows from is the other lever worth a look — [the real break-even nightly rate](/blog/break-even-nightly-rate-math) shows what each booking actually has to clear before any of these fees. And if you're setting all this up from scratch, [RentTools](/onboard) keeps the operational side — calendars, cleaning, guest data — out of the way so you can focus on the numbers that move.
+While you're auditing the money, the nightly rate it all flows from is the other lever worth a look — [the real break-even nightly rate](/blog/break-even-nightly-rate-math) shows what each booking actually has to clear before any of these fees. And if you're setting all this up from scratch, [RentHome Departamentos](/onboard) keeps the operational side — calendars, cleaning, guest data — out of the way so you can focus on the numbers that move.
 
 ## FAQ
 

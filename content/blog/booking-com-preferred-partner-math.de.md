@@ -121,7 +121,7 @@ Die Regel ist einfacher, als das Programm wirken lässt:
 3. **Achten Sie auf den saisonalen Umschlag.** Der August-Fehler vom Anfang ist die klassische Falle: Ein Programm, das den ganzen Winter rentabel war, wird in der Hochsaison zum Ballast. Schwankt Ihre Auslastung stark, schalten Sie Preferred in den ausgebuchten Monaten ab und in der Nebensaison wieder ein. Das Verlassen läuft über die Provisionseinstellungen im Extranet; die Rückkehr hängt davon ab, ob Booking.com erneut einlädt — schalten Sie also nicht so aggressiv, dass Sie aus der Eignung fallen.
 4. **Kombinieren Sie Preferred nicht mit Genius ohne die Stapel-Rechnung.** Laufen Sie schon auf [Genius](/blog/booking-com-genius-levels-math) und sind fast voll, sind zwei Kosten, die einem (nicht vorhandenen) Vorrat freier Nächte hinterherjagen. Wählen Sie den Hebel zur Lage: Preferred für ein Objekt mit hohem ADR und Lücken, Genius für ein wettbewerbsintensives Mittelfeld, das den Rabatt zum Gewinnen des Klicks braucht.
 
-Wenn Sie das automatisch messen wollen — den Preferred-Provisionsaufschlag gegen das tatsächlich erzeugte Buchungsplus, neben Ihren Genius- und Längenrabatten auf einem Bildschirm — genau diese plattformübergreifende Aktions-Buchhaltung macht [RentTools](/onboard). Kostenlos, self-hosted oder gehostet, kein Upsell.
+Wenn Sie das automatisch messen wollen — den Preferred-Provisionsaufschlag gegen das tatsächlich erzeugte Buchungsplus, neben Ihren Genius- und Längenrabatten auf einem Bildschirm — genau diese plattformübergreifende Aktions-Buchhaltung macht [RentHome Departamentos](/onboard). Kostenlos, self-hosted oder gehostet, kein Upsell.
 
 ## FAQ
 

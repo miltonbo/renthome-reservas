@@ -29,31 +29,31 @@ import type { Locale } from "@/lib/i18n/translations";
 const HOME_META: Record<Locale, { title: string; description: string }> = {
   en: {
     title:
-      "RentTools — open-source property manager for short-term rentals",
+      "RentHome Departamentos — open-source property manager for short-term rentals",
     description:
       "Free open-source property manager for short-term rental hosts. Sync Airbnb + Booking.com calendars, automate cleaning, extract guest passports.",
   },
   ru: {
     title:
-      "RentTools — открытый менеджер краткосрочной аренды",
+      "RentHome Departamentos — открытый менеджер краткосрочной аренды",
     description:
       "Бесплатный менеджер для хостов краткосрочной аренды с открытым кодом. Синхронизация календарей Airbnb и Booking.com, автоматизация уборок, распознавание паспортов гостей.",
   },
   de: {
     title:
-      "RentTools — Open-Source-Verwaltung für Kurzzeitvermietung",
+      "RentHome Departamentos — Open-Source-Verwaltung für Kurzzeitvermietung",
     description:
       "Kostenlose Open-Source-Verwaltung für Kurzzeitvermieter. Airbnb- und Booking.com-Kalender synchronisieren, Reinigung automatisieren, Gast-Pässe auslesen.",
   },
   fr: {
     title:
-      "RentTools — gestionnaire open source pour la location courte durée",
+      "RentHome Departamentos — gestionnaire open source pour la location courte durée",
     description:
       "Gestionnaire open source gratuit pour les hôtes de location courte durée. Synchronisez les calendriers Airbnb et Booking.com, automatisez le ménage, extrayez les passeports voyageurs.",
   },
   es: {
     title:
-      "RentTools — gestor de alquiler vacacional de código abierto",
+      "RentHome Departamentos — gestor de alquiler vacacional de código abierto",
     description:
       "Gestor de código abierto y gratuito para anfitriones de alquiler vacacional. Sincroniza los calendarios de Airbnb y Booking.com, automatiza la limpieza y extrae datos de pasaportes de huéspedes.",
   },
@@ -82,7 +82,7 @@ export async function generateMetadata(): Promise<Metadata> {
         title: meta.title,
         description: meta.description,
         url: alts.canonical,
-        siteName: "RentTools",
+        siteName: "RentHome Departamentos",
         locale: ogLocale,
         alternateLocale,
       },
@@ -97,8 +97,6 @@ export async function generateMetadata(): Promise<Metadata> {
   );
 }
 
-const REPO_URL = "https://github.com/Gribadan/RentTools.io";
-
 interface SectionStep { title: string; body: string }
 interface SectionFeature { title: string; body: string }
 interface SectionFaq { q: string; a: string }
@@ -110,7 +108,7 @@ interface CopyBlock {
   trust: { open: { title: string; body: string; link: string }; gdpr: { title: string; body: string; link: string } };
   faq: { eyebrow: string; title: string; items: SectionFaq[] };
   finalCta: { titleA: string; titleB: string; body: string; primary: string; secondary: string };
-  footer: { copyright: string; github: string; blog: string; changelog: string; terms: string; privacy: string; signIn: string; advertise: string; cookieNoteA: string; cookieNoteLink: string; cookieNoteB: string };
+  footer: { copyright: string; blog: string; changelog: string; terms: string; privacy: string; signIn: string; advertise: string; cookieNoteA: string; cookieNoteLink: string; cookieNoteB: string };
 }
 
 // All marketing copy split EN/RU. The EN block also seeds the FAQPage +
@@ -188,8 +186,8 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Open source",
-        body: "MIT-licensed on GitHub. Read the code, file an issue, or self-host on any $4 droplet.",
-        link: "View on GitHub",
+        body: "Your operational information stays centralized under RentHome Departamentos.",
+        link: "Read our privacy policy",
       },
       gdpr: {
         title: "GDPR compliant",
@@ -231,8 +229,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Read the source",
     },
     footer: {
-      copyright: "© 2026 RentTools · MIT License",
-      github: "GitHub",
+      copyright: "© 2026 RentHome Departamentos · MIT License",
       blog: "Blog",
       changelog: "Changelog",
       terms: "Terms",
@@ -317,8 +314,8 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Открытый код",
-        body: "Лицензия MIT на GitHub. Читайте код, заводите issue, разворачивайте у себя — хоть на $4 дроплете.",
-        link: "Посмотреть на GitHub",
+        body: "Ваши операционные данные централизованы под управлением RentHome Departamentos.",
+        link: "Политика конфиденциальности",
       },
       gdpr: {
         title: "Соответствует GDPR",
@@ -360,8 +357,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Посмотреть исходники",
     },
     footer: {
-      copyright: "© 2026 RentTools · MIT License",
-      github: "GitHub",
+      copyright: "© 2026 RentHome Departamentos · MIT License",
       blog: "Блог",
       changelog: "История изменений",
       terms: "Условия",
@@ -446,8 +442,8 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Open Source",
-        body: "MIT-Lizenz auf GitHub. Lesen Sie den Code, melden Sie ein Issue, oder hosten Sie selbst auf einem 4-$-Droplet.",
-        link: "Auf GitHub ansehen",
+        body: "Ihre Betriebsdaten werden zentral von RentHome Departamentos verwaltet.",
+        link: "Datenschutz lesen",
       },
       gdpr: {
         title: "DSGVO-konform",
@@ -489,8 +485,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Quellcode lesen",
     },
     footer: {
-      copyright: "© 2026 RentTools · MIT-Lizenz",
-      github: "GitHub",
+      copyright: "© 2026 RentHome Departamentos · MIT-Lizenz",
       blog: "Blog",
       changelog: "Änderungsverlauf",
       terms: "AGB",
@@ -575,8 +570,8 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Open source",
-        body: "Sous licence MIT sur GitHub. Lisez le code, ouvrez une issue, ou auto-hébergez sur n’importe quel droplet à 4 $.",
-        link: "Voir sur GitHub",
+        body: "Vos données opérationnelles sont centralisées sous RentHome Departamentos.",
+        link: "Lire la confidentialité",
       },
       gdpr: {
         title: "Conforme RGPD",
@@ -618,8 +613,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Lire le code source",
     },
     footer: {
-      copyright: "© 2026 RentTools · Licence MIT",
-      github: "GitHub",
+      copyright: "© 2026 RentHome Departamentos · Licence MIT",
       blog: "Blog",
       changelog: "Journal des modifications",
       terms: "Conditions",
@@ -704,8 +698,8 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Código abierto",
-        body: "Licencia MIT en GitHub. Lea el código, abra un issue o autoalójelo en cualquier droplet de 4 $.",
-        link: "Ver en GitHub",
+        body: "Su información operativa permanece centralizada bajo RentHome Departamentos.",
+        link: "Ver política de privacidad",
       },
       gdpr: {
         title: "Conforme con el RGPD",
@@ -747,8 +741,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Leer el código fuente",
     },
     footer: {
-      copyright: "© 2026 RentTools · Licencia MIT",
-      github: "GitHub",
+      copyright: "© 2026 RentHome Departamentos · Licencia MIT",
       blog: "Blog",
       changelog: "Registro de cambios",
       terms: "Términos",
@@ -772,9 +765,9 @@ const FAQ_LD = {
   })),
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://renttools.io";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-// SoftwareApplication schema — describes the *product* RentTools is.
+// SoftwareApplication schema — describes the *product* RentHome Departamentos is.
 // Distinct from the Organization block in the root layout (which
 // describes the *publisher*). Required-by-Google fields: name, applicationCategory,
 // operatingSystem, offers. The price=0 + priceCurrency=USD pair is what makes
@@ -783,11 +776,11 @@ const SOFTWARE_LD = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "@id": `${SITE_URL}/#software`,
-  name: "RentTools",
+  name: "RentHome Departamentos",
   description:
     "Free open-source property management software for short-term rental hosts. Cross-syncs Airbnb, Booking.com, and Vrbo iCal calendars; automates cleaning schedules; manages multi-property guest data.",
   applicationCategory: "BusinessApplication",
-  operatingSystem: "Web, Linux (self-host)",
+  operatingSystem: "Web",
   url: SITE_URL,
   softwareVersion: "1.0",
   offers: {
@@ -958,7 +951,7 @@ export default async function HomePage() {
             <Trust
               title={t.trust.open.title}
               body={t.trust.open.body}
-              link={{ href: REPO_URL, label: t.trust.open.link, external: true }}
+              link={{ href: "/privacy", label: t.trust.open.link }}
             />
             <Trust
               title={t.trust.gdpr.title}
@@ -1005,14 +998,12 @@ export default async function HomePage() {
               >
                 {t.finalCta.primary}
               </Link>
-              <a
-                href={REPO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/privacy"
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-6 text-[14px] font-medium text-[var(--ink)] transition-colors hover:bg-[var(--bg-3)] sm:w-auto"
               >
                 {t.finalCta.secondary}
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -1024,13 +1015,12 @@ export default async function HomePage() {
           <div className="flex flex-col items-center justify-between gap-4 text-[12.5px] text-[var(--ink-3)] sm:flex-row">
             <p>{t.footer.copyright}</p>
             <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--ink)] transition-colors">{t.footer.github}</a>
               <Link href={localePath("/blog", locale)} className="hover:text-[var(--ink)] transition-colors">{t.footer.blog}</Link>
               <Link href={localePath("/changelog", locale)} className="hover:text-[var(--ink)] transition-colors">{t.footer.changelog}</Link>
               <Link href="/terms" className="hover:text-[var(--ink)] transition-colors">{t.footer.terms}</Link>
               <Link href="/privacy" className="hover:text-[var(--ink)] transition-colors">{t.footer.privacy}</Link>
               <a
-                href="mailto:support@renttools.io?subject=Advertising%20enquiry"
+                href="mailto:contacto@renthome.local?subject=Advertising%20enquiry"
                 className="hover:text-[var(--ink)] transition-colors"
               >
                 {t.footer.advertise}

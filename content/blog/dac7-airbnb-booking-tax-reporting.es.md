@@ -103,7 +103,7 @@ El paso práctico es el mismo en todas partes: lleve una contabilidad limpia que
 
 Una conciliación concreta que muerde a los anfitriones de la UE: la tasa turística. En algunas plataformas y ciudades, la plataforma la cobra al huésped y la ingresa directamente — y que aparezca o no en su cifra DAC7 depende de cómo la clasifique. Si su facturación declarada y la facturación DAC7 difieren en importes por noche sospechosamente redondos, la culpable suele ser la tasa turística. Quién la cobra y la ingresa en cada plataforma lo desmenuzamos en [quién cobra la tasa turística en Airbnb, Booking.com y Vrbo](/blog/tourist-tax-airbnb-booking-vrbo) — léalo antes de dar por hecho que las cifras no cuadran por un error.
 
-Los anfitriones que llevan esto bien no son los del montaje ingenioso. Son los que, el día de la petición del NIF, lo pegan en el formulario, y mantienen una tabla de «una reserva, una fila» ya alineada con lo que la plataforma declarará. Si quiere que ese registro se construya y cuadre automáticamente contra sus calendarios sincronizados, es parte de lo que hace [RentTools](/onboard): un único sitio donde reservas, pagos y las cifras que verá Hacienda coinciden.
+Los anfitriones que llevan esto bien no son los del montaje ingenioso. Son los que, el día de la petición del NIF, lo pegan en el formulario, y mantienen una tabla de «una reserva, una fila» ya alineada con lo que la plataforma declarará. Si quiere que ese registro se construya y cuadre automáticamente contra sus calendarios sincronizados, es parte de lo que hace [RentHome Departamentos](/onboard): un único sitio donde reservas, pagos y las cifras que verá Hacienda coinciden.
 
 ## FAQ
 

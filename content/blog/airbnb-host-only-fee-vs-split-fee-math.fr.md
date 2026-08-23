@@ -133,7 +133,7 @@ Trois remarques opérationnelles sur lesquelles les hôtes butent :
 2. **Les rapports de versements mettent 14 jours à devenir lisibles.** Le tableau de bord Airbnb segmente les revenus par date de réservation, pas par date de séjour. Pendant les deux premières semaines après la bascule, la moitié de vos versements proviennent encore de réservations en modèle partagé prises avant le changement. Ne tirez pas de conclusions avant le 30e jour.
 3. **Le rééquilibrage du classement n'est pas instantané.** Le gain de conversion se construit sur 3 à 6 semaines : votre annonce accumule des clics au nouveau palier de prix et le modèle de classement d'Airbnb vous fait remonter. Les chiffres à 30 jours sous-estimeront le gain final.
 
-Pour le suivi nécessaire à cette expérience sur vos propres annonces, voyez [les outils gratuits de gestion locative 2026](/blog/free-property-management-tools-2026). Le [tracker gratuit par logement de RentTools](/onboard) enregistre le brut et la retenue Airbnb par séjour — la troisième colonne de chaque tableau de cet article se construit toute seule.
+Pour le suivi nécessaire à cette expérience sur vos propres annonces, voyez [les outils gratuits de gestion locative 2026](/blog/free-property-management-tools-2026). Le [tracker gratuit par logement de RentHome Departamentos](/onboard) enregistre le brut et la retenue Airbnb par séjour — la troisième colonne de chaque tableau de cet article se construit toute seule.
 
 ## FAQ
 

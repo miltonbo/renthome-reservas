@@ -8,7 +8,7 @@ const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 // `emit is undefined` errors during their internal init race. Those
 // errors fire whether or not the user has visited a crypto site —
 // they pollute every Sentry stream that doesn't filter them. None
-// originate from RentTools code, so dropping them at the SDK keeps
+// originate from RentHome Departamentos code, so dropping them at the SDK keeps
 // the alert list focused on signals we can act on.
 //
 // Two filters layered for redundancy:
@@ -96,7 +96,7 @@ function shouldDrop(event: Sentry.ErrorEvent): boolean {
   const hasAppFrame = frames.some((f) => {
     const fn = f.filename ?? "";
     if (!fn || fn === "undefined" || fn === "<anonymous>") return false;
-    return fn.includes("/_next/") || fn.endsWith("renttools.io");
+    return fn.includes("/_next/");
   });
   return !hasAppFrame;
 }

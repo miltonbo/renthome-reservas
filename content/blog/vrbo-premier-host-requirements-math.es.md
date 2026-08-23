@@ -108,7 +108,7 @@ De los cuatro umbrales, este es el que cuesta la insignia a quienes ya han asegu
 
 La intervención más barata es la higiene del calendario con 6 a 12 meses de antelación. Bloquee cada fecha comprometida — viajes, eventos familiares, uso personal, mantenimiento programado — en cuanto la conozca. Configure las reglas de precio de la plataforma para que las solicitudes al precio indeseado no aterricen. Active las notificaciones push de Vrbo y combínelas con un co-anfitrión o pareja que pueda aceptar por usted durante los viajes. Bien hecho, las cuatro métricas se mantienen solas.
 
-Para entender cómo interactúan la cola de solicitudes y el calendario en varias plataformas, vea [cómo evitar reservas dobles](/blog/avoiding-double-bookings): la misma disciplina de calendario que evita reservas dobles mantiene la tasa de aceptación de Vrbo en su sitio. Si quiere un único panel con tasa de aceptación, valoración y tasa de cancelación en Vrbo, Airbnb y Booking.com sin saltar entre pestañas, es lo que rastrea [RentTools](/onboard).
+Para entender cómo interactúan la cola de solicitudes y el calendario en varias plataformas, vea [cómo evitar reservas dobles](/blog/avoiding-double-bookings): la misma disciplina de calendario que evita reservas dobles mantiene la tasa de aceptación de Vrbo en su sitio. Si quiere un único panel con tasa de aceptación, valoración y tasa de cancelación en Vrbo, Airbnb y Booking.com sin saltar entre pestañas, es lo que rastrea [RentHome Departamentos](/onboard).
 
 ## Cuándo deja de compensar perseguir Premier Host
 
@@ -144,7 +144,7 @@ Sí, en cuanto se cumple el umbral de actividad (3 reservas + 45 noches o 5 rese
 No. La función de auto-respuesta de Vrbo envía un mensaje plantilla del tipo «gracias por su solicitud, le responderemos en breve» y no cuenta como aceptación. La acción real de accept/decline tiene que salir de su cuenta dentro de las 24 horas. La configuración más segura: la auto-respuesta desactivada (es lo que Vrbo deja por defecto), las notificaciones push despertando el teléfono y un co-anfitrión para los fines de semana de viaje.
 
 **¿Premier Host se acumula con los programas de Airbnb o Booking.com?**
-Cada plataforma calcula su programa de forma independiente, sin reconocimiento cruzado. Se puede mantener Premier Host en Vrbo, Superhost en Airbnb y Genius en Booking.com a la vez, pero cada uno se calcula solo con los datos de su plataforma. Mantener los tres es un ejercicio de apilar disciplinas, no una única estrategia. La vista entre plataformas de [RentTools](/onboard) está pensada justo para vigilar el cuello de botella en los tres a la vez.
+Cada plataforma calcula su programa de forma independiente, sin reconocimiento cruzado. Se puede mantener Premier Host en Vrbo, Superhost en Airbnb y Genius en Booking.com a la vez, pero cada uno se calcula solo con los datos de su plataforma. Mantener los tres es un ejercicio de apilar disciplinas, no una única estrategia. La vista entre plataformas de [RentHome Departamentos](/onboard) está pensada justo para vigilar el cuello de botella en los tres a la vez.
 
 ## Una opinión clara
 

@@ -108,7 +108,7 @@ Reale Zahlen aus der eingangs erwähnten Wohnung. 18 Monate, 138 Aufenthalte.
 
 Gewonnen hat die 20-$-Konfiguration — rund 3 400 $ mehr Nettoumsatz gegenüber „kein Aufpreis" bei nur 4,3 % weniger Buchungen. Die 30-$-Stufe lohnte sich nicht: 340 $ mehr Brutto wurden durch eine schärfere Konversionsstrafe und drei aufgewendete Abende für „der Preis hat sich an der Kasse verdoppelt"-Nachrichten neutralisiert.
 
-Pflegen Sie die Zahlen pro Inserat selbst — sechs Monate eigener Daten schlagen jeden Benchmark, meinen eingeschlossen. Der [kostenlose Pro-Inserat-Tracker auf RentTools](/onboard) speichert Gästezahl und Brutto pro Aufenthalt, so dass die rechte Spalte sich von selbst füllt.
+Pflegen Sie die Zahlen pro Inserat selbst — sechs Monate eigener Daten schlagen jeden Benchmark, meinen eingeschlossen. Der [kostenlose Pro-Inserat-Tracker auf RentHome Departamentos](/onboard) speichert Gästezahl und Brutto pro Aufenthalt, so dass die rechte Spalte sich von selbst füllt.
 
 Verwandte Texte: [Mathematik des Aufenthaltsrabatts](/blog/length-of-stay-discount-math) und [Reinigungsgebühr versus All-Inclusive-Preis](/blog/airbnb-cleaning-fee-vs-all-in-pricing).
 

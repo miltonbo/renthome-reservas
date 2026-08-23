@@ -85,9 +85,9 @@ The registration laws change *what* you collect. They do not change the GDPR rul
 
 1. **A short retention clock per country.** Spain says three years; Germany says one year then destroy. If you host in both, you cannot run one folder with one rule. Tag each scan with its jurisdiction and its delete-by date.
 2. **A real delete step.** "Hand it to the police" is not "keep it forever". Once Spain's three years pass, the scan is pure liability — delete it. The single worst pattern is the four-year WhatsApp folder of passports nobody scrolls back to.
-3. **One system, not five inboxes.** If a guest files a GDPR access request, you must be able to say exactly what you hold and where. Five email folders and a phone camera roll is not an answer. This is the entire reason [RentTools](/onboard) keeps guest documents in one place with an export button — registration law multiplies your document pile, and a pile you cannot search is a pile you cannot defend.
+3. **One system, not five inboxes.** If a guest files a GDPR access request, you must be able to say exactly what you hold and where. Five email folders and a phone camera roll is not an answer. This is the entire reason [RentHome Departamentos](/onboard) keeps guest documents in one place with an export button — registration law multiplies your document pile, and a pile you cannot search is a pile you cannot defend.
 
-The work of transcribing forty fields from a passport into a government portal is also the work software is good at. Whatever you use — RentTools, a spreadsheet, a channel manager's add-on — the goal is the same: read the document once, store it once, submit it once, delete it on schedule. For the front half of that flow, see our note on [pre-arrival guest forms](/blog/pre-arrival-guest-forms): collecting the ID before arrival turns a 20-hour scramble into a 5-minute upload.
+The work of transcribing forty fields from a passport into a government portal is also the work software is good at. Whatever you use — RentHome Departamentos, a spreadsheet, a channel manager's add-on — the goal is the same: read the document once, store it once, submit it once, delete it on schedule. For the front half of that flow, see our note on [pre-arrival guest forms](/blog/pre-arrival-guest-forms): collecting the ID before arrival turns a 20-hour scramble into a 5-minute upload.
 
 ## FAQ
 

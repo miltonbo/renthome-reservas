@@ -98,7 +98,7 @@ Pas besoin d'un tableur pour savoir si cela vous coûte. Il vous faut trois chif
 
 L'écart entre l'étape 3 et l'étape 1, en pourcentage, c'est votre vraie marge. Sous ~0,5 %, vos devises sont déjà alignées ou vous changez déjà vous-même — arrêtez ici, tout va bien. À 2–4 %, vous payez la plateforme pour ce que Wise fait pour une fraction du prix, et la Solution 1 ou 2 rentabilisera ces 20 minutes des dizaines de fois. Refaites-le une fois par an, car les réglages de versement ont l'habitude de se réinitialiser quand on ajoute une nouvelle banque ou une nouvelle annonce.
 
-Tant que vous comptez l'argent, le prix par nuit d'où tout découle est l'autre levier à regarder — [le vrai prix par nuit de rentabilité](/blog/break-even-nightly-rate-math) montre ce que chaque réservation doit réellement couvrir avant que ces frais n'entrent en jeu. Et si vous montez tout de zéro, [RentTools](/onboard) écarte l'opérationnel — calendriers, ménage, données voyageurs — pour que vous vous concentriez sur les chiffres qui bougent le rendement.
+Tant que vous comptez l'argent, le prix par nuit d'où tout découle est l'autre levier à regarder — [le vrai prix par nuit de rentabilité](/blog/break-even-nightly-rate-math) montre ce que chaque réservation doit réellement couvrir avant que ces frais n'entrent en jeu. Et si vous montez tout de zéro, [RentHome Departamentos](/onboard) écarte l'opérationnel — calendriers, ménage, données voyageurs — pour que vous vous concentriez sur les chiffres qui bougent le rendement.
 
 ## FAQ
 

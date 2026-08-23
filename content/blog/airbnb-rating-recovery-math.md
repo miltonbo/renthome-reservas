@@ -112,7 +112,7 @@ Three levers, in order of leverage.
 
 **Velocity dilutes what removal can't.** For the reviews you can't get removed — the fair ones — the only tool is more clean reviews, faster. A four-line post-stay message at the four-day mark converts 35–50% of guests who would otherwise stay silent. Doubling your review rate halves your recovery time. There is no other dial that does that.
 
-**Stop optimising past your ceiling.** If your listing has a structural cap — a loud street, no lift, thin walls — you are not going to sustain 4.95, and chasing it just makes every 4-star a crisis. Pick the rating you can hold with normal hosting, bank the ballast of review count, and let the mean do its job. A dashboard that shows average rating, review velocity, and Superhost distance across every listing in one view — instead of clicking through Airbnb's tabs one listing at a time — is exactly what [RentTools](/onboard) puts on one screen.
+**Stop optimising past your ceiling.** If your listing has a structural cap — a loud street, no lift, thin walls — you are not going to sustain 4.95, and chasing it just makes every 4-star a crisis. Pick the rating you can hold with normal hosting, bank the ballast of review count, and let the mean do its job. A dashboard that shows average rating, review velocity, and Superhost distance across every listing in one view — instead of clicking through Airbnb's tabs one listing at a time — is exactly what [RentHome Departamentos](/onboard) puts on one screen.
 
 ## FAQ
 

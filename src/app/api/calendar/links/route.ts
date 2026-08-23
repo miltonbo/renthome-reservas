@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "propertyId is required" }, { status: 400 });
     }
 
-    // RentTools syncs any iCal-capable platform, and /api/onboard has always
+    // RentHome Departamentos syncs any iCal-capable platform, and /api/onboard has always
     // accepted a free-form slug. This route still carried an
     // ["airbnb","booking"] allowlist, so adding a Vrbo / Rentalia / HomeToGo
     // feed from inside the app 400'd — reported as "the window simply

@@ -49,7 +49,7 @@ Cada plataforma tiene el suyo. Lo configurable a día de hoy:
 2. **Booking.com** — la extranet permite refresco manual por feed; el automático corre cada 2 a 6 horas. No hay UI para acelerarlo.
 3. **Vrbo** — el más lento de los tres. Hasta 12 horas observadas en casos extremos. Rota la URL si un feed parece atascado más de 24 horas.
 
-Lo que tú puedes cambiar es tu propio sondeo saliente. Si usas una capa intermedia como [RentTools open-source](/onboard), pon su sondeo entrante al menor intervalo posible —10 minutos es razonable; por debajo desperdicias ancho de banda de Airbnb sin ganar nada porque la plataforma de destino sigue sondeando lento—.
+Lo que tú puedes cambiar es tu propio sondeo saliente. Si usas una capa intermedia como [RentHome Departamentos open-source](/onboard), pon su sondeo entrante al menor intervalo posible —10 minutos es razonable; por debajo desperdicias ancho de banda de Airbnb sin ganar nada porque la plataforma de destino sigue sondeando lento—.
 
 Para entender por qué iCal no puede ir más rápido que su ciclo de sondeo y por qué no hay push, mira [nuestro paseo por cómo sincronizan Airbnb y Booking.com](/blog/airbnb-booking-calendar-sync-free).
 
@@ -76,7 +76,7 @@ Tres formas de hacerlo:
 
 1. **Booking.com como canónica.** Bloquea la fecha en la extranet. Airbnb importa el iCal de Booking, así que el bloqueo se propaga en la ventana de sondeo (2 a 4 h). Funciona porque la extranet de Booking tiene la UI más densa de las tres grandes.
 2. **Airbnb como canónica.** Bloqueas en Airbnb. Booking importa el iCal de Airbnb. Misma lógica, dirección opuesta.
-3. **Un calendario externo como canónico.** Usa un Google Calendar (o tu instancia de [RentTools](/onboard)) para bloqueos personales. Tanto Airbnb como Booking importan de él. Útil cuando tienes muchos bloqueos personales (reformas, temporada baja, uso familiar).
+3. **Un calendario externo como canónico.** Usa un Google Calendar (o tu instancia de [RentHome Departamentos](/onboard)) para bloqueos personales. Tanto Airbnb como Booking importan de él. Útil cuando tienes muchos bloqueos personales (reformas, temporada baja, uso familiar).
 
 Sea cual sea, ponte un fondo de pantalla, una nota adhesiva, tatúatelo. La próxima vez que un amigo te escriba para preguntar si tu piso está libre el fin de semana, la respuesta es «lo bloqueo ahora en $CANONICAL». No «espera, lo bloqueo en las dos».
 
@@ -98,7 +98,7 @@ Encontrarás un problema cada 200 a 400 reservas. Casi siempre es un problema tr
 
 No te lo saltes en estancias largas; ahí un choque duele más porque no puedes recolocar trivialmente a un Huésped de 3 semanas.
 
-Puedes automatizar parte. RentTools manda un correo «sin conflictos detectados, nos vemos en 24 h» antes de la llegada. Muchos Channel Managers hacen lo mismo. Manual va bien con menos de 20 reservas al mes: el coste en tiempo es de minutos a la semana.
+Puedes automatizar parte. RentHome Departamentos manda un correo «sin conflictos detectados, nos vemos en 24 h» antes de la llegada. Muchos Channel Managers hacen lo mismo. Manual va bien con menos de 20 reservas al mes: el coste en tiempo es de minutos a la semana.
 
 ## FAQ
 

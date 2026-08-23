@@ -21,7 +21,7 @@ function reservationChannel(reservation: {
  * a single past-dated placeholder VEVENT when given an empty events array
  * (some platforms reject 0-event feeds), so this is just a wrapper.
  */
-export function generateEmptyFeed(calendarName: string = "RentTools placeholder"): string {
+export function generateEmptyFeed(calendarName: string = "RentHome Departamentos placeholder"): string {
   return generateICal([], calendarName);
 }
 
@@ -120,7 +120,7 @@ export async function generateFeed(propertyId: number, forPlatform: string): Pro
 
   for (const res of allReservations.filter(r => reservationChannel(r) !== forPlatform)) {
     otherEvents.push({
-      uid: `renttool-reservation-${res.id}`,
+      uid: `renthome-reservation-${res.id}`,
       summary: `${res.name} (${reservationChannel(res)})`,
       startDate: new Date(res.checkIn).toISOString().substring(0, 10),
       endDate: new Date(res.checkOut).toISOString().substring(0, 10),
@@ -203,13 +203,13 @@ export async function generateFeed(propertyId: number, forPlatform: string): Pro
   // Add force-closed dates as blocked events
   for (const override of closedOverrides) {
     finalEvents.push({
-      uid: `renttool-override-closed-${override.date}`,
+      uid: `renthome-override-closed-${override.date}`,
       summary: "Blocked (manual)",
       startDate: override.date,
       endDate: addDays(override.date, 1),
     });
   }
 
-  const ical = generateICal(finalEvents, `RentTool - Blocked for ${forPlatform}`);
+  const ical = generateICal(finalEvents, `RentHome - Blocked for ${forPlatform}`);
   return { ical };
 }

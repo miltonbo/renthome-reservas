@@ -98,7 +98,7 @@ Une courte liste opérationnelle pour les logements où le calcul dit moyenne du
 2. **Dimensionnez la caution pour un mois, pas pour une nuit.** Un mois d'usure, c'est un mois de risque. AirCover et les cautions de plateforme s'appliquent toujours, mais vous n'inspectez qu'à la fin : la caution et vos photos doivent donc porter plus de poids.
 3. **Connaissez le calendrier des versements.** Airbnb paie les hôtes long séjour mensuellement : le premier versement arrive environ 24 heures après l'arrivée pour le premier mois, puis à la date anniversaire mensuelle pour chaque mois suivant. Anticipez l'écart — vous ne recevez pas tout le séjour d'avance.
 4. **Plafonnez la remise à ce que vaut la vacance.** 25 % est une remise mensuelle courante, mais le bon chiffre est « celui qui bat mon net nuitée attendu pour ce mois ». Pour le calcul du curseur de remise à différents niveaux d'occupation, voyez les [remises longue durée](/blog/length-of-stay-discount-math) — le compagnon de cet article.
-5. **Suivez les deux modes au même endroit.** Le logement basculé en moyenne durée garde quand même une annonce nuitée au chaud pour les mois entre longs séjours. Un calendrier, un taux d'occupation, les deux modes de prix visibles d'un coup — c'est exactement à cela que sert [RentTools](/onboard).
+5. **Suivez les deux modes au même endroit.** Le logement basculé en moyenne durée garde quand même une annonce nuitée au chaud pour les mois entre longs séjours. Un calendrier, un taux d'occupation, les deux modes de prix visibles d'un coup — c'est exactement à cela que sert [RentHome Departamentos](/onboard).
 
 ## FAQ
 

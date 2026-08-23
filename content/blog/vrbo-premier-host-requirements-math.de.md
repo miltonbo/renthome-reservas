@@ -108,7 +108,7 @@ Von den vier Schwellen ist diese die, an der das Abzeichen verloren geht, nachde
 
 Der günstigste Eingriff ist Kalenderhygiene 6 bis 12 Monate im Voraus. Sperren Sie jeden festen Termin — Reisen, Familienanlässe, Eigennutzung, geplante Wartung — sobald Sie davon wissen. Setzen Sie plattformseitige Preisregeln so, dass Anfragen zu unattraktiven Preisen nicht durchkommen. Aktivieren Sie Vrbos Push-Benachrichtigungen und ergänzen Sie eine Co-Gastgeberin oder einen Partner, der während Ihrer Reisen annehmen kann. Wenn das steht, halten sich die vier Metriken von selbst.
 
-Wie sich die Anfrage-Warteschlange und der Kalender über mehrere Plattformen hinweg verhalten, steht im Beitrag zur [Vermeidung von Doppelbuchungen](/blog/avoiding-double-bookings) — dieselbe Kalenderdisziplin, die vor Doppelbuchungen schützt, hält auch die Vrbo-Annahmequote stabil. Wer Annahmequote, Bewertung und Stornierungsquote über Vrbo, Airbnb und Booking.com in einem einzigen Dashboard sehen will, ohne zwischen Tabs zu springen, findet das in [RentTools](/onboard).
+Wie sich die Anfrage-Warteschlange und der Kalender über mehrere Plattformen hinweg verhalten, steht im Beitrag zur [Vermeidung von Doppelbuchungen](/blog/avoiding-double-bookings) — dieselbe Kalenderdisziplin, die vor Doppelbuchungen schützt, hält auch die Vrbo-Annahmequote stabil. Wer Annahmequote, Bewertung und Stornierungsquote über Vrbo, Airbnb und Booking.com in einem einzigen Dashboard sehen will, ohne zwischen Tabs zu springen, findet das in [RentHome Departamentos](/onboard).
 
 ## Wann sich die Jagd auf Premier Host nicht mehr lohnt
 
@@ -144,7 +144,7 @@ Ja, sobald die Aktivitätsschwelle erfüllt ist (3 Buchungen + 45 Nächte oder 5
 Nein. Vrbos Auto-Antwort verschickt eine vorlagenhafte „Danke für die Anfrage, wir melden uns" — und sie wird nicht als Annahme gewertet. Die eigentliche Accept/Decline-Aktion muss innerhalb von 24 Stunden aus Ihrem Konto kommen. Sicherste Konfiguration: Auto-Antwort aus (Vrbos stille Voreinstellung), Push-Benachrichtigungen wecken das Telefon, und für Reisewochenenden steht eine Co-Gastgeberin bereit.
 
 **Stapelt sich Premier Host mit den Programmen von Airbnb oder Booking.com?**
-Jede Plattform rechnet ihr Programm unabhängig, eine Anerkennung zwischen den Anbietern gibt es nicht. Sie können gleichzeitig Premier Host bei Vrbo, Superhost bei Airbnb und Genius-Status bei Booking.com halten, jede Auszeichnung wird aber nur aus den Daten der jeweiligen Plattform berechnet. Alle drei zu fahren ist eine Übung im Stapeln von Disziplinen, keine Einzelstrategie. Die plattformübergreifende Dashboard-Ansicht von [RentTools](/onboard) ist genau dafür gebaut, den jeweils engsten Engpass im Blick zu behalten.
+Jede Plattform rechnet ihr Programm unabhängig, eine Anerkennung zwischen den Anbietern gibt es nicht. Sie können gleichzeitig Premier Host bei Vrbo, Superhost bei Airbnb und Genius-Status bei Booking.com halten, jede Auszeichnung wird aber nur aus den Daten der jeweiligen Plattform berechnet. Alle drei zu fahren ist eine Übung im Stapeln von Disziplinen, keine Einzelstrategie. Die plattformübergreifende Dashboard-Ansicht von [RentHome Departamentos](/onboard) ist genau dafür gebaut, den jeweils engsten Engpass im Blick zu behalten.
 
 ## Eine entschiedene Meinung
 

@@ -105,7 +105,7 @@ Esa marca de tiempo lo es todo. Nueve de cada diez pánicos de «mi calendario n
 
 Aquí va la parte honesta. Incluso con las siete causas descartadas y cada feed sano, el propio sondeo de la plataforma de destino es el suelo. Booking.com tira cada 2-6 horas, y eso no lo cambia usted.
 
-Una capa intermedia resuelve la mitad del problema. Una herramienta de código abierto como [RentTools](/onboard) —o un cron que escriba usted mismo— consulta los feeds de *origen* cada 10 minutos, así que su hub se entera de una nueva reserva de Airbnb en diez minutos en vez de en horas. Lo que no puede hacer es obligar a Booking.com a tirar *del hub* más rápido de lo que Booking.com quiere. Lo único que bate el ciclo de sondeo por completo es la conexión por API en tiempo real, que Airbnb y Booking.com solo venden a PMS certificados por 100-300 $ al mes.
+Una capa intermedia resuelve la mitad del problema. Una herramienta de código abierto como [RentHome Departamentos](/onboard) —o un cron que escriba usted mismo— consulta los feeds de *origen* cada 10 minutos, así que su hub se entera de una nueva reserva de Airbnb en diez minutos en vez de en horas. Lo que no puede hacer es obligar a Booking.com a tirar *del hub* más rápido de lo que Booking.com quiere. Lo único que bate el ciclo de sondeo por completo es la conexión por API en tiempo real, que Airbnb y Booking.com solo venden a PMS certificados por 100-300 $ al mes.
 
 Para uno a tres alojamientos, no pierda el sueño por la ventana de refresco. Las causas de caducidad de arriba —una URL reiniciada que nadie actualizó, un feed que la plataforma descartó en silencio— provocan a pequeña escala muchas más reservas duplicadas que el sondeo de 2-6 horas. Si quiere la configuración completa en vez del diagnóstico, empiece por [sincronizar gratis los calendarios de Airbnb y Booking.com](/blog/airbnb-booking-calendar-sync-free).
 
@@ -132,7 +132,7 @@ Sí; es exactamente el mecanismo. Si su importación en Booking.com del calendar
 **¿Por qué no hay error cuando la sincronización iCal falla?**
 Porque iCal es un protocolo de tirón sin canal de empuje ni señal de salud estándar. El destino tira de una URL a su ritmo; si la descarga falla, conserva los últimos datos buenos y reintenta más tarde. Nada en el estándar obliga al destino a avisarle, así que no lo hace.
 
-**¿Cada cuánto refresca RentTools los feeds?**
+**¿Cada cuánto refresca RentHome Departamentos los feeds?**
 Cada 10 minutos en el lado del origen. Eso significa que el hub se entera de una nueva reserva en diez minutos, frente a las horas que tarda una importación directa de plataforma a plataforma. Aun así no puede forzar a la plataforma de destino a tirar del hub más rápido que su propio ciclo de 2-6 horas; ninguna herramienta iCal puede.
 
 ## Una opinión con criterio

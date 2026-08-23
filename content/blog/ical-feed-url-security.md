@@ -128,7 +128,7 @@ The structural fix is to stop handing out platform-generated tokens at all.
 
 Put a layer you own in the middle. Both platforms import from your feed, and your feed is the only URL that ever gets pasted into a tool, a screenshot, or a forum. Rotation becomes one action instead of four, so you actually do it. The exported file contains exactly the fields you choose to emit — for availability sync that is `DTSTART`, `DTEND`, `UID`, and a `SUMMARY` of `Busy`, nothing that turns a schedule into a dossier. And when a co-host leaves, you rotate one string.
 
-That is a large part of why [RentTools](/onboard) exists in the shape it does: it polls source feeds every 10 minutes, emits a minimal outbound feed per property, and rotates that outbound URL on demand without touching Airbnb's or Booking.com's settings. Self-host it on a $4 droplet or use the hosted instance; either way the token you paste into other people's software is one you can kill.
+That is a large part of why [RentHome Departamentos](/onboard) exists in the shape it does: it polls source feeds every 10 minutes, emits a minimal outbound feed per property, and rotates that outbound URL on demand without touching Airbnb's or Booking.com's settings. Self-host it on a $4 droplet or use the hosted instance; either way the token you paste into other people's software is one you can kill.
 
 You still cannot fix the inbound side. Airbnb's export URL exists whether you use it or not, and if you have ever generated one, it is live right now. Rotate that one today, then decide what you export tomorrow.
 

@@ -175,4 +175,4 @@ Le 2 nuits minimum est la valeur la plus surrégulée des locations courte duré
 
 Calculez sur votre propre bien chaque trimestre. Si vous ne pouvez pas vous remémorer votre pire réservation des 90 derniers jours, votre minimum va bien. Si vous le pouvez — ce 1 nuit le mardi que vous aviez juré de ne plus accepter — demandez-vous combien de *bonnes* 1 nuits vous n’avez pas vues, parce que la plateforme n’a jamais montré votre annonce. Les bonnes 1 nuits dépassent les mauvaises de dix à un. Les mauvaises sont juste les seules dont vous vous souvenez.
 
-Si vous voulez ce calcul tournant automatiquement contre votre calendrier — LOS moyen, occupation par minimum, comptage des nuits de gap — c’est ce que fait [RentTools](/onboard). Gratuit, self-hosting ou hébergé, sans upsell.
+Si vous voulez ce calcul tournant automatiquement contre votre calendrier — LOS moyen, occupation par minimum, comptage des nuits de gap — c’est ce que fait [RentHome Departamentos](/onboard). Gratuit, self-hosting ou hébergé, sans upsell.

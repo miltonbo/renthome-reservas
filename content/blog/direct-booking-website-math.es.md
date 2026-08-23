@@ -111,7 +111,7 @@ No llevo una operación solo de directo, y no creo que la mayoría de anfitrione
 4. **Repartir el ahorro en tarifas solo del anfitrión/Booking.** Ofrézcale al huésped recurrente un **5 % de descuento** sobre la tarifa directa. Aun así le gana a la tarifa de servicio de la OTA, y yo aun así recibo más de lo que habría pagado la plataforma. Ganan ambas partes; solo la plataforma se queda sin comisión.
 5. **Nunca anuncios para perseguir desconocidos en directo.** Esa es la línea. La captación en frío es el trabajo de la plataforma, y lo hace mejor de lo que jamás lo hará mi presupuesto de publicidad.
 
-La sincronización de calendario que hay debajo de todo esto — feeds de las OTA más reservas directas más días buffer de limpieza, todo en un sitio para que el canal directo no provoque una reserva doble — es exactamente lo que hace [RentTools](/onboard), gratis y de código abierto. La web de reserva directa es opcional; el calendario que evita que reviente, no.
+La sincronización de calendario que hay debajo de todo esto — feeds de las OTA más reservas directas más días buffer de limpieza, todo en un sitio para que el canal directo no provoque una reserva doble — es exactamente lo que hace [RentHome Departamentos](/onboard), gratis y de código abierto. La web de reserva directa es opcional; el calendario que evita que reviente, no.
 
 ## FAQ
 

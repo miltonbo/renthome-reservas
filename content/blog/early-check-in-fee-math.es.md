@@ -128,7 +128,7 @@ Ponga la misma política en todas partes. Ponga **expectativas** distintas sobre
 
 Si la mayoría de los anfitriones falla con la entrada anticipada es por el momento: la decisión llega a las 06:40, medio dormido, y la respuesta correcta depende de datos que no ha mirado. El remedio es dejar que decida el calendario, no su memoria al amanecer.
 
-La regla que quiere: **si la noche anterior está libre, envíe un mensaje previo a la llegada ofreciendo la entrada anticipada; si hay rotación el mismo día, envíe el mensaje de dejar equipaje.** Esa única condición convierte una decisión nerviosa sobre la marcha en un mensaje de plantilla siempre correcto. Las comprobaciones de llegada el mismo día, el estado de la noche anterior y las plantillas previas a la llegada condicionales son justo la lógica que [RentTools](/onboard) ejecuta en todas las plataformas a la vez, gratis.
+La regla que quiere: **si la noche anterior está libre, envíe un mensaje previo a la llegada ofreciendo la entrada anticipada; si hay rotación el mismo día, envíe el mensaje de dejar equipaje.** Esa única condición convierte una decisión nerviosa sobre la marcha en un mensaje de plantilla siempre correcto. Las comprobaciones de llegada el mismo día, el estado de la noche anterior y las plantillas previas a la llegada condicionales son justo la lógica que [RentHome Departamentos](/onboard) ejecuta en todas las plataformas a la vez, gratis.
 
 ## FAQ
 

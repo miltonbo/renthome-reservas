@@ -115,7 +115,7 @@ El IVA y el cargo de pago no se negocian, pero sí puede encoger la base sobre l
 - **Replantéese los cargos incluidos.** Cada euro de limpieza o de huéspedes adicionales carga la pila completa de ~19 %. No significa «quite el cargo» — significa: sepa que recupera ~80 % de él, y fije el precio en consecuencia.
 - **Audite sus programas activos.** Genius y Preferred Partner tienen cada uno un coste medible. Déjelos correr 60 días, mida el aumento de reservas y conserve solo lo que se rentabiliza. El [cálculo del punto de equilibrio de Genius](/blog/booking-com-genius-levels-math) es un ejemplo trabajado de cómo decidir.
 - **Conozca su situación de IVA.** Si está cerca del umbral de registro, la brecha de tres puntos del IVA sobre comisión debe entrar en el cálculo, junto al coste de darse de alta. Pregunte a un asesor — con el número real en la mano.
-- **No pague dos veces entre plataformas.** Si también está en Airbnb, el requisito para gestionar ambas sin [reservas dobles](/blog/avoiding-double-bookings) es la sincronización de calendarios — que [RentTools hace gratis](/onboard), de modo que de una plataforma a otra solo compara el recorte, no el riesgo operativo.
+- **No pague dos veces entre plataformas.** Si también está en Airbnb, el requisito para gestionar ambas sin [reservas dobles](/blog/avoiding-double-bookings) es la sincronización de calendarios — que [RentHome Departamentos hace gratis](/onboard), de modo que de una plataforma a otra solo compara el recorte, no el riesgo operativo.
 
 ## FAQ
 

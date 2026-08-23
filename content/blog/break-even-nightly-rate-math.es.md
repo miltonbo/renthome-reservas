@@ -110,7 +110,7 @@ Conocer su suelo no sirve de nada si la decisión cae a las 23:00, cuando suena 
 
 Cada plataforma tiene un campo de precio mínimo. Póngalo en su suelo *de una noche* — el más alto — y el calendario simplemente se negará a vender una noche por debajo. Encima ponga descuentos por estancia larga, para que las estancias más largas tarifen legítimamente hacia sus suelos más bajos sin que usted toque nada. Resultado: el sistema dice que no solo a la noche suelta de 39 $ que pierde dinero, y que sí a las cuatro noches rentables de 50 $, sin nada de cuentas suyas a las 23:00.
 
-Donde se complica es que su suelo no es una sola cifra — es por temporada y por plataforma, y el coste por noche cambia de verdad entre julio y enero. Llevar eso a mano en Airbnb, Booking.com y Vrbo es exactamente la contabilidad multiplataforma que se queda obsoleta la semana en que deja de vigilarla. Reunir los costes y las tarifas de cada anuncio en un solo sitio para que el suelo esté siempre al día es justo lo que [RentTools](/onboard) está hecho para gestionar — gratis y en todas las plataformas a la vez.
+Donde se complica es que su suelo no es una sola cifra — es por temporada y por plataforma, y el coste por noche cambia de verdad entre julio y enero. Llevar eso a mano en Airbnb, Booking.com y Vrbo es exactamente la contabilidad multiplataforma que se queda obsoleta la semana en que deja de vigilarla. Reunir los costes y las tarifas de cada anuncio en un solo sitio para que el suelo esté siempre al día es justo lo que [RentHome Departamentos](/onboard) está hecho para gestionar — gratis y en todas las plataformas a la vez.
 
 ## FAQ
 

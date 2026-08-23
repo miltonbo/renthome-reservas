@@ -98,7 +98,7 @@ Eine kurze operative Checkliste für die Wohnungen, bei denen die Rechnung mitte
 2. **Die Kaution für einen Monat bemessen, nicht für eine Nacht.** Ein Monat Verschleiß ist ein Monat Risiko. AirCover und Plattformkautionen greifen weiter, aber Sie inspizieren erst am Ende — also müssen Kaution und Dokumentation mehr Gewicht tragen.
 3. **Den Auszahlungsplan kennen.** Airbnb zahlt Langzeit-Gastgeber monatlich: die erste Auszahlung kommt rund 24 Stunden nach Check-in für Monat eins, danach am Monatsstichtag für jeden weiteren Monat. Planen Sie die Lücke ein — Sie bekommen nicht den ganzen Aufenthalt im Voraus.
 4. **Den Rabatt auf den Wert des Leerstands begrenzen.** 25 % ist ein üblicher Monatsrabatt, aber die richtige Zahl ist „die, die mein erwartetes Nacht-Netto für diesen Monat schlägt". Die Rabatt-Schieber-Rechnung bei verschiedenen Auslastungen finden Sie in der [Längen-Rabatt-Mathematik](/blog/length-of-stay-discount-math) — dem Begleiter zu diesem Beitrag.
-5. **Beide Modi an einem Ort führen.** Die auf mittelfristig umgestellte Wohnung hält weiter ein Nacht-Inserat warm für die Monate zwischen Langzeitgästen. Ein Kalender, eine Auslastungszahl, beide Preismodi auf einmal sichtbar — genau dafür ist [RentTools](/onboard) da.
+5. **Beide Modi an einem Ort führen.** Die auf mittelfristig umgestellte Wohnung hält weiter ein Nacht-Inserat warm für die Monate zwischen Langzeitgästen. Ein Kalender, eine Auslastungszahl, beide Preismodi auf einmal sichtbar — genau dafür ist [RentHome Departamentos](/onboard) da.
 
 ## FAQ
 

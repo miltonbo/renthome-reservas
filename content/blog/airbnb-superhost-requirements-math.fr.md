@@ -92,7 +92,7 @@ Deux cas où je ne courrais pas après le badge.
 
 Pour tout le reste — multi-hôtes, logements urbains à prix moyen, hôtes avec une discipline de réponse déjà en place — Superhôte reste le levier de croissance le moins cher qu'Airbnb tend à un hôte. Le même logement sans le badge a besoin de 10 à 15 % de meilleures photos ou de 5 % de baisse de prix pour rivaliser sur les mêmes requêtes.
 
-Sur l'interaction entre le minuteur de réponse et les modes de réservation, voir [réservation instantanée vs sur demande sur Airbnb](/fr/blog/airbnb-instant-book-vs-request-to-book). Pour la moitié annulation de l'équation, voir [le calcul des politiques d'annulation Airbnb](/fr/blog/airbnb-cancellation-policy-math). Et si vous voulez un seul tableau de bord pour suivre temps de réponse, taux d'annulation et note moyenne sur plusieurs logements sans jongler entre les onglets Airbnb, c'est exactement ce que fait [RentTools](/onboard).
+Sur l'interaction entre le minuteur de réponse et les modes de réservation, voir [réservation instantanée vs sur demande sur Airbnb](/fr/blog/airbnb-instant-book-vs-request-to-book). Pour la moitié annulation de l'équation, voir [le calcul des politiques d'annulation Airbnb](/fr/blog/airbnb-cancellation-policy-math). Et si vous voulez un seul tableau de bord pour suivre temps de réponse, taux d'annulation et note moyenne sur plusieurs logements sans jongler entre les onglets Airbnb, c'est exactement ce que fait [RentHome Departamentos](/onboard).
 
 ## FAQ
 

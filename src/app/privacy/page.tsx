@@ -5,7 +5,7 @@ import { applySeoOverrides } from "@/lib/seo";
 
 const PRIVACY_TITLE = "Privacy Policy";
 const PRIVACY_DESCRIPTION =
-  "How RentTools collects, uses, stores, and protects your data — and how to access, export, or delete it.";
+  "How RentHome Departamentos collects, uses, stores, and protects your data — and how to access, export, or delete it.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const base: Metadata = {
@@ -14,14 +14,14 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: "/privacy" },
     openGraph: {
       type: "article",
-      title: `${PRIVACY_TITLE} · RentTools`,
+      title: `${PRIVACY_TITLE} · RentHome Departamentos`,
       description: PRIVACY_DESCRIPTION,
       url: "/privacy",
-      siteName: "RentTools",
+      siteName: "RentHome Departamentos",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${PRIVACY_TITLE} · RentTools`,
+      title: `${PRIVACY_TITLE} · RentHome Departamentos`,
       description: PRIVACY_DESCRIPTION,
     },
   };
@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const LAST_UPDATED = "2026-05-05";
 const OPERATOR_NAME = "Ilya Asminkin";
-const OPERATOR_EMAIL = "support@renttools.io";
+const OPERATOR_EMAIL = "contacto@renthome.local";
 
 export default function PrivacyPage() {
   return (
@@ -44,14 +44,14 @@ export default function PrivacyPage() {
         <div className="mt-8 space-y-8 text-sm leading-relaxed text-[var(--ink-2)] sm:text-base">
           <section>
             <p>
-              This Privacy Policy describes how RentTools (&quot;the Service&quot;,
+              This Privacy Policy describes how RentHome Departamentos (&quot;the Service&quot;,
               &quot;we&quot;, &quot;our&quot;), operated by {OPERATOR_NAME} as an
               independent maintainer, collects, uses, stores, and protects information when
               you use the hosted instance at{" "}
-              <span className="font-mono text-[var(--ink)]">https://renttools.io</span>.
+              <span className="font-mono text-[var(--ink)]">http://localhost:3000</span>.
               By using the Service you agree to the practices described below. If you
-              self-host the open-source code on your own infrastructure, you act as the
-              data controller for that instance and this policy does not apply to you.
+              use the Service, RentHome Departamentos acts as the operator responsible
+              for the processing described in this Policy.
             </p>
           </section>
 
@@ -314,7 +314,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-[var(--ink)]">10. Guest passport data — your responsibility</h2>
             <p>
-              When you upload guest passports to RentTools you remain the data controller
+              When you upload guest passports to RentHome Departamentos you remain the data controller
               under GDPR for that information. You must have your own lawful basis to
               collect and retain it (typically a hospitality registration obligation
               under your local law, sometimes consent), inform your guests, and respect
@@ -351,8 +351,7 @@ export default function PrivacyPage() {
               We may update this Policy when the Service changes or when laws change.
               Material updates will be flagged inside the app and dated at the top of
               this page. Continued use after changes go live means you accept the
-              updated Policy. Past versions are available in the public Git history of
-              the open-source repository.
+              updated Policy. Material changes will be communicated through the application.
             </p>
           </section>
 
@@ -362,25 +361,13 @@ export default function PrivacyPage() {
               For any privacy question, data request, or complaint:
             </p>
             <p className="mt-2 font-mono text-[var(--ink)]">{OPERATOR_EMAIL}</p>
-            <p className="mt-2">
-              You can also file a public issue at{" "}
-              <a
-                href="https://github.com/Gribadan/RentTools.io/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sky-400 hover:underline"
-              >
-                github.com/Gribadan/RentTools.io/issues
-              </a>
-              {" "}— but please use email for anything that contains personal data.
-            </p>
           </section>
         </div>
       </main>
 
       <footer className="border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-[var(--ink-4)] sm:flex-row sm:px-6">
-          <p>© 2026 RentTools · MIT License</p>
+          <p>© 2026 RentHome Departamentos · MIT License</p>
           <nav className="flex gap-4">
             <Link href="/" className="hover:text-[var(--ink)]">Home</Link>
             <Link href="/terms" className="hover:text-[var(--ink)]">Terms</Link>

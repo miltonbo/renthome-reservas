@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "RentTool-CalendarSync/1.0",
+        "User-Agent": "RentHome-CalendarSync/1.0",
         Accept: "text/calendar, text/plain, */*",
       },
     });

@@ -103,7 +103,7 @@ The practical move is the same in every country: keep your own clean records and
 
 A concrete reconciliation that bites EU hosts: tourist tax. On some platforms and in some cities the platform collects the local tourist tax from the guest and remits it directly — it may or may not show in your DAC7 consideration figure depending on how the platform classifies it. If your declared revenue and the DAC7 revenue differ by suspiciously round per-night amounts, tourist tax is usually the culprit. We pulled apart who collects and remits that levy on each platform in [who collects tourist tax on Airbnb, Booking.com, and Vrbo](/blog/tourist-tax-airbnb-booking-vrbo) — worth a read before you assume the numbers don't match because of an error.
 
-The hosts who handle this well aren't the ones with clever schemes. They're the ones who, the day the platform asks for a TIN, paste it in, and who keep a one-row-per-booking spreadsheet that already matches what the platform will report. If you want that ledger built and reconciled automatically against your synced calendars, that's part of what [RentTools](/onboard) does — one place where bookings, payouts, and the figures the tax office will see all line up.
+The hosts who handle this well aren't the ones with clever schemes. They're the ones who, the day the platform asks for a TIN, paste it in, and who keep a one-row-per-booking spreadsheet that already matches what the platform will report. If you want that ledger built and reconciled automatically against your synced calendars, that's part of what [RentHome Departamentos](/onboard) does — one place where bookings, payouts, and the figures the tax office will see all line up.
 
 ## FAQ
 

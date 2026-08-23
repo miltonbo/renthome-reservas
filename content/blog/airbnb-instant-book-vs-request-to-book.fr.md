@@ -79,7 +79,7 @@ T3 à Tachkent, 90 $ la nuit en moyenne, 65 % d’occupation, 10 réservations p
 
 « Pertes mauvais voyageurs » compte le remboursement, le ménage supplémentaire et les nuits de remplacement d’un seul séjour problématique par période. La ligne du milieu — instantanée plus toutes les exigences — gagne chez quasiment tout le monde. Même boost que l’instantanée pure, deux tiers du bénéfice de filtrage de la demande de réservation, et zéro pénalité sur le taux de réponse que vous payez en tapant « accepté » cinq jours sur sept.
 
-Suivez ça vous-même par annonce — dans [RentTools](/onboard) ou dans une feuille. Six mois de vos propres données battent n’importe quel benchmark externe, le mien compris.
+Suivez ça vous-même par annonce — dans [RentHome Departamentos](/onboard) ou dans une feuille. Six mois de vos propres données battent n’importe quel benchmark externe, le mien compris.
 
 La demande de réservation ne gagne que pour deux profils d’annonce : du haut de gamme au-dessus de 400 $ la nuit, où un seul mauvais voyageur fait 2 000 $ de dégâts, et des logements avec des règles structurelles (pas d’animaux du tout, pas d’enfants de moins de 12 ans, pas de réservations week-end) que l’UI « Exigences » n’exprime pas proprement.
 

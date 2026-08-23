@@ -173,7 +173,7 @@ export function GuestFormView({
 // Inline privacy / data-handling reassurance shown above the form. The
 // always-visible summary covers 80% of guest worries in one sentence;
 // the "Details" toggle expands into a short GDPR-aware breakdown plus
-// outbound links to the full policy and the open-source repo so a
+// outbound link to the full privacy policy so a
 // genuinely concerned guest can verify everything themselves. Exported
 // so the host-side builder preview can render the exact same panel.
 export function GuestFormPrivacyPanel({ copy }: { copy: GuestPrivacyCopy }) {
@@ -239,14 +239,6 @@ export function GuestFormPrivacyPanel({ copy }: { copy: GuestPrivacyCopy }) {
               className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300"
             >
               {copy.fullPolicyLabel} →
-            </a>
-            <a
-              href="https://github.com/Gribadan/RentTools.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300"
-            >
-              {copy.sourceLinkLabel} →
             </a>
           </div>
         </div>

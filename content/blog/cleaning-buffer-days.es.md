@@ -103,7 +103,7 @@ Las dos plataformas grandes lo soportan. Ninguna lo llama «día buffer». La te
 
 Error de configuración común: poner el buffer a mano en ambas plataformas. Esto duplica. Airbnb ve su propio buffer de 1 día más el buffer de 1 día propagado vía iCal de Booking más su siguiente buffer de 1 día, y acabas con 3 noches bloqueadas en vez de 1. Configura el buffer en la canónica. Deja que iCal lo lleve. Confía en la propagación.
 
-Si autoalojas con [RentTools](/onboard) u otra capa intermedia, la regla es la misma. Configura el buffer una vez, en la canónica, y deja que la capa de sincronización haga su trabajo.
+Si autoalojas con [RentHome Departamentos](/onboard) u otra capa intermedia, la regla es la misma. Configura el buffer una vez, en la canónica, y deja que la capa de sincronización haga su trabajo.
 
 ## FAQ
 

@@ -111,7 +111,7 @@ I don't run a direct-only operation and I don't think most hosts should. The set
 4. **Split the savings on host-only/Booking rates.** Offer the repeat guest **5% off** the direct rate. They still beat the OTA's guest fee, and I still net more than the platform would have paid me. Both sides win; the platform is the only one out the commission.
 5. **Never run ads to chase strangers direct.** That's the line. Cold acquisition is the platform's job, and it's better at it than my ad budget will ever be.
 
-The calendar sync underneath this — OTA feeds plus the direct bookings plus cleaning buffers, all in one place so the direct channel can't strand a double booking — is exactly what [RentTools](/onboard) does, free and open-source. The direct booking site is optional; the calendar that keeps it from blowing up is not.
+The calendar sync underneath this — OTA feeds plus the direct bookings plus cleaning buffers, all in one place so the direct channel can't strand a double booking — is exactly what [RentHome Departamentos](/onboard) does, free and open-source. The direct booking site is optional; the calendar that keeps it from blowing up is not.
 
 ## FAQ
 

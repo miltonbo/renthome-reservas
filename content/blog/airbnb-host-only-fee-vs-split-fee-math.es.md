@@ -133,7 +133,7 @@ Tres notas operativas con las que los anfitriones tropiezan:
 2. **Los informes de pagos tardan 14 días en verse normales.** El panel de Airbnb segmenta los ingresos por fecha de reserva, no por fecha de estancia. En las dos primeras semanas tras el cambio, la mitad de sus pagos siguen siendo de reservas en modelo compartido hechas antes del interruptor. No saque conclusiones antes del día 30.
 3. **El reequilibrio del ranking no es instantáneo.** El aumento de conversión se construye en 3 a 6 semanas, a medida que su anuncio acumula clics en el nuevo nivel de precio y el modelo de ranking de Airbnb lo sube. Las cifras a 30 días infravalorarán el efecto final.
 
-Para el seguimiento que necesita para correr este experimento en sus propios anuncios, vea [herramientas gratis de gestión de alquiler 2026](/blog/free-property-management-tools-2026). El [seguidor gratuito por alojamiento de RentTools](/onboard) guarda el bruto y la retención de Airbnb por estancia, así la tercera columna de cada tabla de este artículo se construye sola.
+Para el seguimiento que necesita para correr este experimento en sus propios anuncios, vea [herramientas gratis de gestión de alquiler 2026](/blog/free-property-management-tools-2026). El [seguidor gratuito por alojamiento de RentHome Departamentos](/onboard) guarda el bruto y la retención de Airbnb por estancia, así la tercera columna de cada tabla de este artículo se construye sola.
 
 ## FAQ
 

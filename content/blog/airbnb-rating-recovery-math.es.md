@@ -112,7 +112,7 @@ Tres palancas, de mayor a menor efecto.
 
 **La velocidad diluye lo que no se puede retirar.** Para las reseñas que no logre retirar — las justas — la única herramienta es más reseñas limpias, más rápido. Un mensaje de cuatro líneas tras la estancia, al cuarto día, convierte al 35–50 % de los huéspedes que si no callarían. Duplique su tasa de reseñas y reducirá a la mitad su tiempo de recuperación. Ningún otro mando hace eso.
 
-**Deje de optimizar por encima de su techo.** Si su anuncio tiene un límite estructural — calle ruidosa, sin ascensor, tabiques finos — no sostendrá 4,95, y perseguirlo solo convierte cada cuatro estrellas en una crisis. Elija la valoración que sostiene con un trato normal, acumule el lastre del número de reseñas y deje que la media haga su trabajo. Un panel que muestre la valoración media, la velocidad de reseñas y la distancia al Superanfitrión de todos sus anuncios en una sola pantalla — en vez de ir pestaña por pestaña de Airbnb anuncio a anuncio — es exactamente lo que [RentTools](/onboard) reúne en una misma superficie.
+**Deje de optimizar por encima de su techo.** Si su anuncio tiene un límite estructural — calle ruidosa, sin ascensor, tabiques finos — no sostendrá 4,95, y perseguirlo solo convierte cada cuatro estrellas en una crisis. Elija la valoración que sostiene con un trato normal, acumule el lastre del número de reseñas y deje que la media haga su trabajo. Un panel que muestre la valoración media, la velocidad de reseñas y la distancia al Superanfitrión de todos sus anuncios en una sola pantalla — en vez de ir pestaña por pestaña de Airbnb anuncio a anuncio — es exactamente lo que [RentHome Departamentos](/onboard) reúne en una misma superficie.
 
 ## FAQ
 

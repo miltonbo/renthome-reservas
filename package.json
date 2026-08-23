@@ -3,14 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "homepage": "https://github.com/miltonbo/renthome-reservas",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/miltonbo/renthome-reservas.git"
-  },
-  "bugs": {
-    "url": "https://github.com/miltonbo/renthome-reservas/issues"
-  },
   "scripts": {
     "dev": "next dev",
     "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch(e){}\"",

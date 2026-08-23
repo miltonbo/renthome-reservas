@@ -179,7 +179,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
                 <path d="M5 10v10a1 1 0 0 0 1 1h4v-7h4v7h4a1 1 0 0 0 1-1V10" />
               </svg>
             </div>
-            <span className="display text-[17px] font-semibold tracking-tight text-[var(--ink)]">RentTools</span>
+            <span className="display text-[17px] font-semibold tracking-tight text-[var(--ink)]">RentHome Departamentos</span>
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />

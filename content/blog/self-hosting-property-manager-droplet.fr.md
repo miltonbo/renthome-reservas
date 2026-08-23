@@ -45,7 +45,7 @@ Ne self-hostez **pas** si :
 3. Vous attendez du five-nines. Un droplet unique = point de défaillance unique. Un reboot, un blip réseau, un disque plein — la reprise est sur vous.
 4. « Regarder les logs » vous semble une punition. Le self-hosting, c’est essentiellement regarder les logs.
 
-Le juste milieu honnête : essayez d’abord une instance hébergée gratuite ([RentTools](/onboard) en est un exemple ; il y en a d’autres). Si ça colle, restez. Pour plus de contrôle, le droplet à 4 $ est l’étape suivante. Si vous le dépassez, un PMS managé est la suivante.
+Le juste milieu honnête : essayez d’abord une instance hébergée gratuite ([RentHome Departamentos](/onboard) en est un exemple ; il y en a d’autres). Si ça colle, restez. Pour plus de contrôle, le droplet à 4 $ est l’étape suivante. Si vous le dépassez, un PMS managé est la suivante.
 
 ## La question du dimensionnement
 

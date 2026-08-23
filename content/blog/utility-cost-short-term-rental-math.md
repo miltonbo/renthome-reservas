@@ -111,7 +111,7 @@ The fix is never to make the unit less comfortable — a cold guest in January w
 
 What doesn't work is asking. The guest-behaviour tax is an incentive problem, and incentive problems don't yield to polite notes. They yield to a thermostat that simply won't go to 18°C with the door open.
 
-The piece most hosts miss is that you can't manage this line if you can't see it. One listing, you'll eventually notice a weird bill. Three listings on three different occupancy curves, and "which unit's HVAC ran hot last month, and was it the open-door guest or just a cold snap?" becomes a question you can't answer from a stack of utility statements — which is exactly the kind of per-listing operational state [RentTools](/onboard) is built to keep in one place, free, alongside the calendar that tells you how many turnovers — and how many laundry loads — are about to hit each unit.
+The piece most hosts miss is that you can't manage this line if you can't see it. One listing, you'll eventually notice a weird bill. Three listings on three different occupancy curves, and "which unit's HVAC ran hot last month, and was it the open-door guest or just a cold snap?" becomes a question you can't answer from a stack of utility statements — which is exactly the kind of per-listing operational state [RentHome Departamentos](/onboard) is built to keep in one place, free, alongside the calendar that tells you how many turnovers — and how many laundry loads — are about to hit each unit.
 
 ## FAQ
 

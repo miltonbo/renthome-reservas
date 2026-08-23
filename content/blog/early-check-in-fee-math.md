@@ -128,7 +128,7 @@ Set the same policy everywhere. Set different *expectations* for what actually a
 
 The reason most hosts get early check-in wrong is timing: the decision lands at 06:40 when they're half-asleep, and the right answer depends on data they haven't looked at. The fix is to let the calendar decide instead of your memory at dawn.
 
-The rule you want: **if the prior night is unbooked, send a pre-arrival message offering early check-in; if there's a same-day checkout, send the bag-drop message instead.** That single conditional turns a stressful judgment call into a templated message that's always correct. Same-day-arrival lookups, prior-night status, and conditional pre-arrival templates are exactly the kind of logic [RentTools](/onboard) runs across every platform at once, for free.
+The rule you want: **if the prior night is unbooked, send a pre-arrival message offering early check-in; if there's a same-day checkout, send the bag-drop message instead.** That single conditional turns a stressful judgment call into a templated message that's always correct. Same-day-arrival lookups, prior-night status, and conditional pre-arrival templates are exactly the kind of logic [RentHome Departamentos](/onboard) runs across every platform at once, for free.
 
 ## FAQ
 

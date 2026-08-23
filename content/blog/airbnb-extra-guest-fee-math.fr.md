@@ -108,7 +108,7 @@ Vraies données de l'appartement de l'introduction. 18 mois, 138 séjours.
 
 C'est la configuration à 20 $ qui gagne — environ 3 400 $ de plus en net que sans supplément, pour 4,3 % de réservations en moins. Le palier à 30 $ ne valait pas le coup : les 340 $ de brut additionnels ont été neutralisés par une chute de conversion plus marquée et trois soirées passées à répondre à des « le prix a doublé à la caisse ».
 
-Suivez vos propres chiffres par annonce — six mois de vos données battent n'importe quel benchmark, le mien compris. Le [suivi gratuit par bien sur RentTools](/onboard) enregistre le nombre de voyageurs et le brut par séjour, donc la colonne de droite s'assemble toute seule.
+Suivez vos propres chiffres par annonce — six mois de vos données battent n'importe quel benchmark, le mien compris. Le [suivi gratuit par bien sur RentHome Departamentos](/onboard) enregistre le nombre de voyageurs et le brut par séjour, donc la colonne de droite s'assemble toute seule.
 
 À lire en complément : [la mathématique de la remise séjour long](/blog/length-of-stay-discount-math) et [frais de ménage contre tarif tout compris](/blog/airbnb-cleaning-fee-vs-all-in-pricing).
 

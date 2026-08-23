@@ -128,7 +128,7 @@ Außerhalb dieser drei: Sobald 3 Listings aktiv buchen, liegt der Break-even-Hub
 
 Drei Listings in Lissabon und Taschkent, alle bei PriceLabs für 19,99 $/Objekt. Ich schaue einmal pro Woche in den Kalender — meist Dienstagabend, zehn Minuten. Ich überschreibe das Modell auf Daten, die ich besser kenne (lokale Konferenz, Marathon, Schulferien in Inbound-Märkten) und lasse den Rest laufen. Im März 2026 habe ich den Basispreis nach achtzehn aufeinanderfolgenden Wochen >85 % Auslastung um 8 % erhöht; das Modell hat sofort nachjustiert, die nächsten zwei Wochen wurden zum höheren Tarif ohne Auslastungsdelle weggebucht. Die Gebühr ist 720 $/Jahr. Der Hub, gemessen an meinem manuellen Baseline von 2023, liegt bei 11–12 % — bei 30.000 $/Jahr pro Listing also mehr als 3.500 $/Jahr Neuumsatz pro Listing. Die Gebühr ist Rundungsfehler.
 
-Wenn RentTools Ihr Ausgangspunkt für den Kalenderabgleich über die Plattformen hinweg ist, ist Dynamic Pricing der nächste logische Layer, sobald die Buchungen stabil laufen. [Starten Sie mit dem Kalenderabgleich](/onboard) und schalten Sie ein Pricing-Tool dazu, wenn Sie 90 saubere Buchungstage haben, mit denen man es füttern kann.
+Wenn RentHome Departamentos Ihr Ausgangspunkt für den Kalenderabgleich über die Plattformen hinweg ist, ist Dynamic Pricing der nächste logische Layer, sobald die Buchungen stabil laufen. [Starten Sie mit dem Kalenderabgleich](/onboard) und schalten Sie ein Pricing-Tool dazu, wenn Sie 90 saubere Buchungstage haben, mit denen man es füttern kann.
 
 ## FAQ
 

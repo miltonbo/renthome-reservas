@@ -37,7 +37,7 @@ const COPY: Record<Locale, CopyShape> = {
     heading: "Direct extension",
     connectedTo: (platform) => `Connected to ${platform}`,
     body: (platform) =>
-      `These nights were added directly in RentTools to the ${platform} reservation.`,
+      `These nights were added directly in RentHome Departamentos to the ${platform} reservation.`,
     openDetails: "Open reservation details",
     cancelExtension: "Cancel direct extension",
     confirmHeading: "Remove this Direct segment?",
@@ -55,7 +55,7 @@ const COPY: Record<Locale, CopyShape> = {
     heading: "Прямое продление",
     connectedTo: (platform) => `Связано с ${platform}`,
     body: (platform) =>
-      `Эти ночи добавлены напрямую в RentTools к брони из ${platform}.`,
+      `Эти ночи добавлены напрямую в RentHome Departamentos к брони из ${platform}.`,
     openDetails: "Открыть детали брони",
     cancelExtension: "Отменить прямое продление",
     confirmHeading: "Удалить этот сегмент Direct?",
@@ -73,7 +73,7 @@ const COPY: Record<Locale, CopyShape> = {
     heading: "Direkte Verlängerung",
     connectedTo: (platform) => `Mit ${platform} verbunden`,
     body: (platform) =>
-      `Diese Nächte wurden in RentTools direkt zur ${platform}-Buchung hinzugefügt.`,
+      `Diese Nächte wurden in RentHome Departamentos direkt zur ${platform}-Buchung hinzugefügt.`,
     openDetails: "Buchungsdetails öffnen",
     cancelExtension: "Direkte Verlängerung stornieren",
     confirmHeading: "Diesen Direct-Abschnitt entfernen?",
@@ -91,7 +91,7 @@ const COPY: Record<Locale, CopyShape> = {
     heading: "Prolongation directe",
     connectedTo: (platform) => `Liée à ${platform}`,
     body: (platform) =>
-      `Ces nuits ont été ajoutées directement dans RentTools à la réservation ${platform}.`,
+      `Ces nuits ont été ajoutées directement dans RentHome Departamentos à la réservation ${platform}.`,
     openDetails: "Ouvrir les détails",
     cancelExtension: "Annuler la prolongation directe",
     confirmHeading: "Supprimer ce segment Direct ?",
@@ -109,7 +109,7 @@ const COPY: Record<Locale, CopyShape> = {
     heading: "Ampliación directa",
     connectedTo: (platform) => `Conectada con ${platform}`,
     body: (platform) =>
-      `Estas noches se añadieron directamente en RentTools a la reserva de ${platform}.`,
+      `Estas noches se añadieron directamente en RentHome Departamentos a la reserva de ${platform}.`,
     openDetails: "Abrir detalles de la reserva",
     cancelExtension: "Cancelar ampliación directa",
     confirmHeading: "¿Quitar este segmento Direct?",

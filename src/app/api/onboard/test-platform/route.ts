@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     res = await fetch(url.toString(), {
       signal: controller.signal,
       headers: {
-        "User-Agent": "RentTools-Onboarding/1.0 (+https://renttools.io)",
+        "User-Agent": "RentHome Departamentos-Onboarding/1.0 (+http://localhost:3000)",
         Accept: "text/calendar, text/plain, */*",
       },
       redirect: "follow",

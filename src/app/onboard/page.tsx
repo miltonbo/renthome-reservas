@@ -167,7 +167,7 @@ const COPY: Record<Locale, CopyShape> = {
     invalidGeneric:
       "Couldn't verify this URL — you can still save and we'll keep trying after signup.",
     validOk: "Looks good — we'll start syncing every 10 minutes after you sign up.",
-    pasteBackLabel: (display) => `Paste this RentTools URL back into ${display}`,
+    pasteBackLabel: (display) => `Paste this RentHome Departamentos URL back into ${display}`,
     feedUrlPlaceholder: "URL appears once you save the property name above",
     copy: "Copy",
     copied: "Copied!",
@@ -270,7 +270,7 @@ const COPY: Record<Locale, CopyShape> = {
     invalidGeneric:
       "Diese URL konnten wir nicht prüfen — Sie können trotzdem speichern, wir versuchen es nach der Registrierung weiter.",
     validOk: "Sieht gut aus — wir starten den 10-Minuten-Sync, sobald Sie sich registriert haben.",
-    pasteBackLabel: (display) => `Diese RentTools-URL zurück in ${display} einfügen`,
+    pasteBackLabel: (display) => `Diese RentHome Departamentos-URL zurück in ${display} einfügen`,
     feedUrlPlaceholder: "URL erscheint, sobald oben ein Name vergeben ist",
     copy: "Kopieren",
     copied: "Kopiert!",
@@ -321,7 +321,7 @@ const COPY: Record<Locale, CopyShape> = {
     invalidGeneric:
       "Impossible de vérifier cette URL — vous pouvez tout de même enregistrer, on continuera d’essayer après l’inscription.",
     validOk: "Tout bon — la synchronisation toutes les 10 minutes démarrera dès l’inscription.",
-    pasteBackLabel: (display) => `Recollez cette URL RentTools dans ${display}`,
+    pasteBackLabel: (display) => `Recollez cette URL RentHome Departamentos dans ${display}`,
     feedUrlPlaceholder: "L’URL apparaît dès que vous nommez le logement ci-dessus",
     copy: "Copier",
     copied: "Copié !",
@@ -372,7 +372,7 @@ const COPY: Record<Locale, CopyShape> = {
     invalidGeneric:
       "No hemos podido verificar esta URL — puede guardar igualmente y seguiremos intentándolo tras el registro.",
     validOk: "Todo en orden — empezamos a sincronizar cada 10 minutos en cuanto se registre.",
-    pasteBackLabel: (display) => `Pegue esta URL de RentTools de vuelta en ${display}`,
+    pasteBackLabel: (display) => `Pegue esta URL de RentHome Departamentos de vuelta en ${display}`,
     feedUrlPlaceholder: "La URL aparece en cuanto guarde el nombre del alojamiento arriba",
     copy: "Copiar",
     copied: "¡Copiado!",
@@ -422,7 +422,7 @@ function clientSlug(raw: string): string {
 
 function feedUrl(slug: string, platform: string): string {
   // SSR-safe: window may not exist on first render
-  const origin = typeof window === "undefined" ? "https://renttools.io" : window.location.origin;
+  const origin = typeof window === "undefined" ? "http://localhost:3000" : window.location.origin;
   return `${origin}/api/calendar/feed/${slug}/for-${platform}.ics`;
 }
 
@@ -884,7 +884,7 @@ function PlatformRow({
         )}
       </div>
 
-      {/* Body — URL inputs + test + RentTools URL — only when enabled */}
+      {/* Body — URL inputs + test + RentHome Departamentos URL — only when enabled */}
       {row.enabled && (
         <div className="border-t border-[var(--line)] px-4 py-4 space-y-3">
           {preset?.hasInstructions && (
@@ -937,7 +937,7 @@ function PlatformRow({
             )}
           </div>
 
-          {/* RentTools feed URL for this platform */}
+          {/* RentHome Departamentos feed URL for this platform */}
           <div>
             <label className="block text-[12px] font-medium text-[var(--ink-2)] mb-1.5">
               {t.pasteBackLabel(display)}

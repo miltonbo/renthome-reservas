@@ -114,7 +114,7 @@ No necesita la póliza más cara del mercado. Necesita las cinco capas correctas
 2. **Ajuste la responsabilidad a su exposición.** 1 M$ es el suelo. Suba a 2 M$ si hay piscina, jacuzzi o una escalera que los huéspedes usan a oscuras.
 3. **Añada la garantía de pérdida de ingresos por alquiler.** Para un anuncio a plena ocupación suele ser la línea más valiosa de la póliza.
 4. **Guarde AirCover como red, no como plan.** Es gratis y sí paga los daños causados por el huésped. Que sea la primera capa de 50–800 $; que la póliza sea la capa de catástrofe.
-5. **Mantenga sus pruebas de siniestro en orden.** Fotos fechadas a la entrada y a la salida, un registro limpio de quién se alojó y cuándo, facturas de todo lo valioso. La documentación decide los expedientes dudosos en cualquier sistema. Si usted reúne a mano las fichas de huéspedes y el historial de estancias entre plataformas, ese es justo el papeleo que una herramienta como [RentTools](/onboard) guarda en un solo sitio — los mismos registros que necesitará el día del parte.
+5. **Mantenga sus pruebas de siniestro en orden.** Fotos fechadas a la entrada y a la salida, un registro limpio de quién se alojó y cuándo, facturas de todo lo valioso. La documentación decide los expedientes dudosos en cualquier sistema. Si usted reúne a mano las fichas de huéspedes y el historial de estancias entre plataformas, ese es justo el papeleo que una herramienta como [RentHome Departamentos](/onboard) guarda en un solo sitio — los mismos registros que necesitará el día del parte.
 
 ## FAQ
 

@@ -93,7 +93,7 @@ Pick the row that matches your scale. **C** is the monthly channel-manager bill 
 | Time saved with unified inbox | ~1.5 hours/month |
 | Time-cost at $25/hour | $37.50/month |
 
-**Break-even at 1 property: -$73/month.** A free Smoobu plan or a free [RentTools](/onboard) instance plus a 2-minute morning audit covers 99% of this. At one property, the paid manager is a clear loss.
+**Break-even at 1 property: -$73/month.** A free Smoobu plan or a free [RentHome Departamentos](/onboard) instance plus a 2-minute morning audit covers 99% of this. At one property, the paid manager is a clear loss.
 
 ### Three properties
 
@@ -157,12 +157,12 @@ There are three host profiles where the math says stay free, even at 3+ properti
 
 1. **Single-platform listers.** If 95% of bookings come from Airbnb and Booking-via-iCal is a fallback, the failure rate is closer to the 1-property number. The paid manager is buying a sync you barely use.
 2. **Always-attended hosts.** A host who answers every message within 10 minutes from a phone is doing manually what auto-messaging does automatically. The labor-cost line on the table goes to near-zero. Pure cost vs. risk shrinks the break-even.
-3. **Self-hosted alternatives.** Running a free [RentTools](/onboard) instance or self-hosting on a [$4 droplet](/blog/self-hosting-property-manager-droplet) gets you most of the sync and inbox features without the per-property fee. You pay in time, not money. Below 5 properties, the time cost is manageable. Above 5, it isn't.
+3. **Self-hosted alternatives.** Running a free [RentHome Departamentos](/onboard) instance or self-hosting on a [$4 droplet](/blog/self-hosting-property-manager-droplet) gets you most of the sync and inbox features without the per-property fee. You pay in time, not money. Below 5 properties, the time cost is manageable. Above 5, it isn't.
 
 The third profile is most of the audience reading this post. The realistic ladder for a growing host:
 
 - **Property 1:** free iCal cross-import, 5 minutes a day.
-- **Property 2:** free iCal cross-import + a free [RentTools](/onboard) account or Smoobu free plan for the inbox.
+- **Property 2:** free iCal cross-import + a free [RentHome Departamentos](/onboard) account or Smoobu free plan for the inbox.
 - **Property 3:** decision time. Either move to paid, or accept the higher double-booking rate as part of the cost of staying free.
 - **Property 4–7:** paid manager, almost certainly. Pick on failure-mode quality.
 - **Property 8+:** paid manager, definitely. The question is which one.

@@ -4,7 +4,7 @@ import { MarketingHeader } from "@/components/marketing-header";
 import { applySeoOverrides } from "@/lib/seo";
 
 const TERMS_TITLE = "Terms of Service";
-const TERMS_DESCRIPTION = "Terms of service for the free hosted instance of RentTools at renttools.io.";
+const TERMS_DESCRIPTION = "Terms of service for the free hosted instance of RentHome Departamentos at localhost:3000.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const base: Metadata = {
@@ -13,14 +13,14 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: "/terms" },
     openGraph: {
       type: "article",
-      title: `${TERMS_TITLE} · RentTools`,
+      title: `${TERMS_TITLE} · RentHome Departamentos`,
       description: TERMS_DESCRIPTION,
       url: "/terms",
-      siteName: "RentTools",
+      siteName: "RentHome Departamentos",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${TERMS_TITLE} · RentTools`,
+      title: `${TERMS_TITLE} · RentHome Departamentos`,
       description: TERMS_DESCRIPTION,
     },
   };
@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const LAST_UPDATED = "2026-05-05";
 const OPERATOR_NAME = "Ilya Asminkin";
-const OPERATOR_EMAIL = "support@renttools.io";
+const OPERATOR_EMAIL = "contacto@renthome.local";
 
 export default function TermsPage() {
   return (
@@ -46,8 +46,8 @@ export default function TermsPage() {
               These Terms of Service (&quot;Terms&quot;) form a binding agreement between
               you (&quot;you&quot;, &quot;your&quot;) and {OPERATOR_NAME}
               (&quot;we&quot;, &quot;us&quot;, &quot;the Operator&quot;), the
-              independent maintainer of the RentTools service hosted at{" "}
-              <span className="font-mono text-[var(--ink)]">https://renttools.io</span>{" "}
+              independent maintainer of the RentHome Departamentos service hosted at{" "}
+              <span className="font-mono text-[var(--ink)]">http://localhost:3000</span>{" "}
               (&quot;the Service&quot;). By creating an account or using the Service you
               agree to these Terms. If you do not agree, do not use the Service.
             </p>
@@ -56,20 +56,9 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-[var(--ink)]">1. About the Service</h2>
             <p>
-              RentTools is an open-source property and reservation manager designed for
-              owners and managers of short-term rentals. The source code is published
-              under the MIT License at{" "}
-              <a
-                href="https://github.com/Gribadan/RentTools.io"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sky-400 hover:underline"
-              >
-                github.com/Gribadan/RentTools.io
-              </a>{" "}
-              and may be self-hosted by anyone. These Terms govern only the hosted
-              instance operated by us at renttools.io. If you self-host, you operate
-              your own service and these Terms do not apply.
+              RentHome Departamentos es una plataforma privada para administrar
+              propiedades, reservas, calendarios y tareas operativas. Estos términos
+              regulan el uso de la instancia administrada por RentHome Departamentos.
             </p>
           </section>
 
@@ -116,7 +105,7 @@ export default function TermsPage() {
               </li>
               <li>
                 resell, sublicense, or commercially redistribute the hosted Service
-                (you can self-host the open-source code freely under MIT);
+                outside the terms agreed with RentHome Departamentos;
               </li>
               <li>
                 use the Service to send spam, malware, or to operate any kind of
@@ -124,7 +113,7 @@ export default function TermsPage() {
               </li>
               <li>
                 attempt to reverse-engineer or extract code or data not made available
-                to you, other than by reading the public source repository.
+                to you through the service documentation or support channels.
               </li>
             </ul>
             <p className="mt-3">
@@ -171,10 +160,8 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-[var(--ink)]">7. Intellectual property</h2>
             <p>
-              The RentTools source code is licensed under the MIT License — copy a copy
-              with the source. The &quot;RentTools&quot; name and any logos used on
-              renttools.io remain the property of the Operator and are not licensed for
-              use to imply endorsement of forks or other instances. The third-party
+              The &quot;RentHome Departamentos&quot; name, visual identity and logos remain
+              the property of the Operator and may not be reused without permission. The third-party
               names mentioned in the application (Airbnb, Booking.com, Google, etc.)
               belong to their respective owners.
             </p>
@@ -190,7 +177,7 @@ export default function TermsPage() {
               uninterrupted operation. We do not warrant that the Service will be free
               of errors, that calendars will sync without delay, or that backups will
               succeed every night. If the Service is critical to your business, please
-              self-host so you control your own backups, uptime, and data residency.
+              maintain independent backups and an operational continuity plan.
             </p>
           </section>
 
@@ -232,8 +219,7 @@ export default function TermsPage() {
               the Service offline for maintenance, migration, or — in extreme cases — to
               shut it down entirely. If we plan to shut the hosted instance down, we
               will notify registered users at least 30 days in advance with instructions
-              to export their data. The open-source code will continue to be available
-              under MIT for self-hosting regardless.
+              to export their data before the service is discontinued.
             </p>
             <p className="mt-2">
               We may add, change, or remove features without notice. We may impose or
@@ -273,8 +259,7 @@ export default function TermsPage() {
             <p>
               We may update these Terms when the Service changes or when laws change.
               We will flag material updates inside the app and update the date at the
-              top of this page. Past versions are visible in the public Git history of
-              the open-source repository. Continued use of the Service after changes go
+              top of this page. Continued use of the Service after changes go
               live means you accept the updated Terms.
             </p>
           </section>
@@ -298,12 +283,12 @@ export default function TermsPage() {
               <a href={`mailto:${OPERATOR_EMAIL}`} className="text-sky-400 hover:underline">{OPERATOR_EMAIL}</a>.
               For public bug reports or feature requests, please file an issue at{" "}
               <a
-                href="https://github.com/Gribadan/RentTools.io/issues"
+                href="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sky-400 hover:underline"
               >
-                github.com/Gribadan/RentTools.io/issues
+                RentHome Departamentos
               </a>.
             </p>
           </section>
@@ -312,7 +297,7 @@ export default function TermsPage() {
 
       <footer className="border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-[var(--ink-4)] sm:flex-row sm:px-6">
-          <p>© 2026 RentTools · MIT License</p>
+          <p>© 2026 RentHome Departamentos · MIT License</p>
           <nav className="flex gap-4">
             <Link href="/" className="hover:text-[var(--ink)]">Home</Link>
             <Link href="/privacy" className="hover:text-[var(--ink)]">Privacy</Link>

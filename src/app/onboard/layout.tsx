@@ -47,15 +47,15 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: alts,
     openGraph: {
       type: "website",
-      title: `${copy.title} · RentTools`,
+      title: `${copy.title} · RentHome Departamentos`,
       description: copy.description,
       url: alts.canonical,
-      siteName: "RentTools",
+      siteName: "RentHome Departamentos",
       locale: ogLocale,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${copy.title} · RentTools`,
+      title: `${copy.title} · RentHome Departamentos`,
       description: copy.description,
     },
   };

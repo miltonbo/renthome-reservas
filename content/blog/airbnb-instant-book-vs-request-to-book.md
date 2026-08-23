@@ -79,7 +79,7 @@ A Tashkent two-bedroom, $90 nightly average, 65% occupancy, 10 bookings per mont
 
 "Lost to bad guests" counts the refund + extra cleaning + replacement nights from one problem stay per period. The all-requirements middle row wins for almost every host. Same ranking boost as plain instant book, two-thirds of the screening benefit of request-to-book, and zero of the response-rate penalty that comes from spending five days a week typing "approved" to inquiries.
 
-Track this yourself per listing in [RentTools](/onboard) or in a sheet — six months of your own data beats anyone's benchmark, mine included.
+Track this yourself per listing in [RentHome Departamentos](/onboard) or in a sheet — six months of your own data beats anyone's benchmark, mine included.
 
 Request-to-book wins for two listing profiles only: luxury units above $400/night where one bad guest does $2,000 in damage, and units with structural rules (no pets at all, no children under 12, no weekend bookings) that the Requirements UI doesn't express cleanly.
 

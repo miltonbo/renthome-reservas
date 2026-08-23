@@ -128,7 +128,7 @@ El arreglo estructural consiste en dejar de repartir tokens generados por las pl
 
 Ponga en medio una capa que sea suya. Las dos plataformas importan de su feed, y la única URL que sale hacia fuera —a una herramienta, a una captura, a un foro— es esa. Regenerar pasa a ser una acción en lugar de cuatro, y por eso acaba haciéndolo de verdad. El archivo exportado contiene exactamente los campos que usted decide emitir: para sincronizar disponibilidad bastan `DTSTART`, `DTEND`, `UID` y un `SUMMARY` con el valor `Busy`, nada que convierta un calendario en un expediente. Y cuando se va un coanfitrión, cambia una cadena de texto.
 
-Buena parte de por qué [RentTools](/onboard) tiene la forma que tiene es esta: consulta los feeds de origen cada 10 minutos, emite un feed saliente mínimo por alojamiento y regenera esa URL saliente cuando usted lo pida, sin tocar los ajustes de Airbnb ni de Booking.com. Autoalojado en un droplet de 4 $ o en la instancia hospedada; en ambos casos, el token que pega en el software de otros es un token que puede matar usted.
+Buena parte de por qué [RentHome Departamentos](/onboard) tiene la forma que tiene es esta: consulta los feeds de origen cada 10 minutos, emite un feed saliente mínimo por alojamiento y regenera esa URL saliente cuando usted lo pida, sin tocar los ajustes de Airbnb ni de Booking.com. Autoalojado en un droplet de 4 $ o en la instancia hospedada; en ambos casos, el token que pega en el software de otros es un token que puede matar usted.
 
 Esto no arregla el lado entrante. La URL de exportación de Airbnb existe la use o no, y si alguna vez generó una, ahora mismo está viva. Regenere esa hoy y decida mañana qué exporta.
 

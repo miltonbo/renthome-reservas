@@ -115,7 +115,7 @@ Die MwSt. und die Zahlungsgebühr lassen sich nicht verhandeln, aber Sie können
 - **Überdenken Sie eingerechnete Gebühren.** Jeder Euro Reinigungs- oder Zusatzgastgebühr trägt den vollen ~19%-Stapel. Das heißt nicht „Gebühr streichen" — es heißt: wissen, dass Sie ~80% davon hereinholen, und entsprechend kalkulieren.
 - **Prüfen Sie Ihre aktiven Programme.** Genius und Preferred Partner verursachen je messbare Kosten. Lassen Sie sie 60 Tage laufen, messen Sie den Buchungszuwachs und behalten Sie nur, was sich rechnet. Die [Genius-Break-even-Rechnung](/blog/booking-com-genius-levels-math) ist ein ausgearbeitetes Beispiel dafür.
 - **Kennen Sie Ihre MwSt.-Lage.** Liegen Sie nahe der Registrierungsschwelle, gehört die Drei-Punkte-Lücke der Provisions-MwSt. neben die Kosten der Registrierung in die Rechnung. Fragen Sie einen Steuerberater — mit der echten Zahl in der Hand.
-- **Zahlen Sie nicht doppelt über Plattformen.** Listen Sie auch auf Airbnb, ist die Voraussetzung, beide ohne [Doppelbuchungen](/blog/avoiding-double-bookings) zu betreiben, die Kalendersynchronisation — die [RentTools kostenlos erledigt](/onboard), sodass Sie von Plattform zu Plattform nur den Anteil vergleichen, nicht das operative Risiko.
+- **Zahlen Sie nicht doppelt über Plattformen.** Listen Sie auch auf Airbnb, ist die Voraussetzung, beide ohne [Doppelbuchungen](/blog/avoiding-double-bookings) zu betreiben, die Kalendersynchronisation — die [RentHome Departamentos kostenlos erledigt](/onboard), sodass Sie von Plattform zu Plattform nur den Anteil vergleichen, nicht das operative Risiko.
 
 ## FAQ
 

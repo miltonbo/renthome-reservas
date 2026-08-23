@@ -191,4 +191,4 @@ Die meisten Hosts steigen am Tag der Qualifikation in Genius ein, weil die E-Mai
 
 Behandeln Sie es wie jeden anderen Aktionsrabatt: als Werkzeug mit messbaren Kosten und messbarem Nutzen. 60 Tage laufen lassen. Bericht aus dem Extranet ziehen. Stiegen die Buchungen um über 12 % (Stufe 1) oder 18 % (Stufe 2), behalten. Sonst aussteigen. Quartalsweise neu bewerten.
 
-Wer diese Messung automatisch über Airbnb, Booking und Vrbo laufen lassen will — Aktionskosten gegen Buchungs-Lift, nebeneinander — das macht [RentTools](/onboard). Kostenlos, selbst gehostet oder verwaltet, kein Upsell.
+Wer diese Messung automatisch über Airbnb, Booking und Vrbo laufen lassen will — Aktionskosten gegen Buchungs-Lift, nebeneinander — das macht [RentHome Departamentos](/onboard). Kostenlos, selbst gehostet oder verwaltet, kein Upsell.

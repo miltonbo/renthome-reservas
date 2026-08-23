@@ -160,7 +160,7 @@ Vor der Installation: zwei Kombinationen, bei denen sich die Rechnung immer lohn
 1. **Hütten und Ferienhäuser im kalten oder Nebensaison-Klima** — Alpen, Lake District, Catskills, Zentralportugal, Pyrenäen, Vermont, Inneres British Columbia. Der Auslastungssprung ist hier der größte einzelne Umsatzhebel, den irgendeine Ausstattung überhaupt bietet.
 2. **Objekte, die für romantische Kurzaufenthalte und kleine Gruppen vermarktet werden** — der Whirlpool *ist* das Hauptunterscheidungsmerkmal des Inserats und öffnet eine Kategorie von Aufenthalten, die 30–50 % über dem regionalen Median bezahlen.
 
-Wenn Sie die Buchungs- und Umsatzeffekte neben Installationsdatum und Betriebskostenzeile verfolgen möchten — was das neue Titelbild mit Whirlpool an der Klickrate bewegt hat, wie weit der Nacht-Aufschlag tatsächlich gewachsen ist, ab wann sich der Whirlpool ausgezahlt hat — genau dafür ist [RentTools](/onboard) gebaut. Die Preiskurve unter dieser Ausstattung wird in [dynamische Preisgestaltung für Kurzzeitvermietungen](/blog/dynamic-pricing-short-term-rental) behandelt.
+Wenn Sie die Buchungs- und Umsatzeffekte neben Installationsdatum und Betriebskostenzeile verfolgen möchten — was das neue Titelbild mit Whirlpool an der Klickrate bewegt hat, wie weit der Nacht-Aufschlag tatsächlich gewachsen ist, ab wann sich der Whirlpool ausgezahlt hat — genau dafür ist [RentHome Departamentos](/onboard) gebaut. Die Preiskurve unter dieser Ausstattung wird in [dynamische Preisgestaltung für Kurzzeitvermietungen](/blog/dynamic-pricing-short-term-rental) behandelt.
 
 ## FAQ
 

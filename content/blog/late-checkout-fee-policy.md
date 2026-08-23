@@ -172,4 +172,4 @@ The late check-out fee is the single most-overlooked policy lever in short-term 
 
 Pick one model, write it into all three platform listings, and enforce it the same way every time. The host who comps the first hour every time and charges the second hour every time has a five-star reputation. The host who occasionally comps three hours and occasionally charges $50 for one has a 4.7. Same revenue. Different outcome.
 
-If you want this kind of policy logic — same-day arrival lookups, cleaner-buffer math, late check-out reminders auto-sent at 21:00 the night before — that's [RentTools](/onboard). Free, self-host or hosted, no upsell.
+If you want this kind of policy logic — same-day arrival lookups, cleaner-buffer math, late check-out reminders auto-sent at 21:00 the night before — that's [RentHome Departamentos](/onboard). Free, self-host or hosted, no upsell.

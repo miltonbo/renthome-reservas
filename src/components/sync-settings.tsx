@@ -76,7 +76,7 @@ const COPY: Record<Locale, CopyShape> = {
     secStayRules: "Stay rules",
     secAccess: "Access & sharing",
     hubNote:
-      "Keep RentTools as your only hub. Connect each platform here — and turn off any calendar links you set up directly between platforms (e.g. Airbnb → Booking). When every platform syncs only through RentTools, each booking is counted once. If platforms also sync to each other, the same booking echoes around and can show up as a phantom double-booking.",
+      "Keep RentHome Departamentos as your only hub. Connect each platform here — and turn off any calendar links you set up directly between platforms (e.g. Airbnb → Booking). When every platform syncs only through RentHome Departamentos, each booking is counted once. If platforms also sync to each other, the same booking echoes around and can show up as a phantom double-booking.",
   },
   ru: {
     save: "Сохранить",
@@ -111,7 +111,7 @@ const COPY: Record<Locale, CopyShape> = {
     secStayRules: "Правила проживания",
     secAccess: "Доступ и совместная работа",
     hubNote:
-      "Пусть RentTools будет единственным узлом. Подключайте каждую платформу здесь — и отключите прямые связи календарей между платформами (например, Airbnb → Booking). Когда все платформы синхронизируются только через RentTools, каждая бронь учитывается один раз. Если платформы синхронизируются ещё и друг с другом, одна бронь «отражается» по кругу и может выглядеть как двойное бронирование.",
+      "Пусть RentHome Departamentos будет единственным узлом. Подключайте каждую платформу здесь — и отключите прямые связи календарей между платформами (например, Airbnb → Booking). Когда все платформы синхронизируются только через RentHome Departamentos, каждая бронь учитывается один раз. Если платформы синхронизируются ещё и друг с другом, одна бронь «отражается» по кругу и может выглядеть как двойное бронирование.",
   },
   de: {
     save: "Speichern",
@@ -146,7 +146,7 @@ const COPY: Record<Locale, CopyShape> = {
     secStayRules: "Aufenthaltsregeln",
     secAccess: "Zugriff & Freigabe",
     hubNote:
-      "Behalten Sie RentTools als einzigen Knotenpunkt. Verbinden Sie jede Plattform hier — und schalten Sie direkte Kalender-Verknüpfungen zwischen den Plattformen ab (z. B. Airbnb → Booking). Wenn alle Plattformen nur über RentTools synchronisieren, wird jede Buchung einmal gezählt. Synchronisieren sich die Plattformen zusätzlich untereinander, läuft dieselbe Buchung im Kreis und kann als Doppelbuchung erscheinen.",
+      "Behalten Sie RentHome Departamentos als einzigen Knotenpunkt. Verbinden Sie jede Plattform hier — und schalten Sie direkte Kalender-Verknüpfungen zwischen den Plattformen ab (z. B. Airbnb → Booking). Wenn alle Plattformen nur über RentHome Departamentos synchronisieren, wird jede Buchung einmal gezählt. Synchronisieren sich die Plattformen zusätzlich untereinander, läuft dieselbe Buchung im Kreis und kann als Doppelbuchung erscheinen.",
   },
   fr: {
     save: "Enregistrer",
@@ -181,7 +181,7 @@ const COPY: Record<Locale, CopyShape> = {
     secStayRules: "Règles de séjour",
     secAccess: "Accès et partage",
     hubNote:
-      "Gardez RentTools comme unique point central. Connectez chaque plateforme ici — et désactivez les liens de calendrier créés directement entre plateformes (par ex. Airbnb → Booking). Quand toutes les plateformes ne se synchronisent qu’à travers RentTools, chaque réservation est comptée une seule fois. Si les plateformes se synchronisent aussi entre elles, la même réservation tourne en boucle et peut apparaître comme une double réservation.",
+      "Gardez RentHome Departamentos comme unique point central. Connectez chaque plateforme ici — et désactivez les liens de calendrier créés directement entre plateformes (par ex. Airbnb → Booking). Quand toutes les plateformes ne se synchronisent qu’à travers RentHome Departamentos, chaque réservation est comptée une seule fois. Si les plateformes se synchronisent aussi entre elles, la même réservation tourne en boucle et peut apparaître comme une double réservation.",
   },
   es: {
     save: "Guardar",
@@ -216,7 +216,7 @@ const COPY: Record<Locale, CopyShape> = {
     secStayRules: "Reglas de estancia",
     secAccess: "Acceso y uso compartido",
     hubNote:
-      "Mantenga RentTools como su único punto central. Conecte cada plataforma aquí — y desactive los enlaces de calendario que haya creado directamente entre plataformas (p. ej. Airbnb → Booking). Cuando todas las plataformas se sincronizan solo a través de RentTools, cada reserva se cuenta una vez. Si las plataformas también se sincronizan entre sí, la misma reserva da vueltas en bucle y puede aparecer como una reserva doble.",
+      "Mantenga RentHome Departamentos como su único punto central. Conecte cada plataforma aquí — y desactive los enlaces de calendario que haya creado directamente entre plataformas (p. ej. Airbnb → Booking). Cuando todas las plataformas se sincronizan solo a través de RentHome Departamentos, cada reserva se cuenta una vez. Si las plataformas también se sincronizan entre sí, la misma reserva da vueltas en bucle y puede aparecer como una reserva doble.",
   },
 };
 
