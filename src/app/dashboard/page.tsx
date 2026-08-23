@@ -442,14 +442,8 @@ function AppContent({
               <ReservationView
                 key={selectedReservation.id}
                 reservation={selectedReservation}
-                guests={guests}
                 propertyName={selectedProperty.name}
-                onGuestsUpdated={handleGuestsUpdated}
-                onDeleteGuest={handleDeleteGuest}
-                onDeleteReservation={handleDeleteReservation}
-                onUpdateReservation={handleUpdateReservation}
-                onUpdateParent={handleUpdateParent}
-                onUpdateGuest={handleUpdateGuest}
+                relatedReservations={selectedProperty.reservations}
               />
             );
           }

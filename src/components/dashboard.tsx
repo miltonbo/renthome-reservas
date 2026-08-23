@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DateSlider } from "@/components/date-slider";
 import { CleaningSchedule, type CleanerAssignmentInfo } from "@/components/cleaning-schedule";
 import { DashboardOnboarding } from "@/components/dashboard-onboarding";
-import { MasterCalendar } from "@/components/master-calendar";
+import { MasterCalendar, type MasterCalendarStay } from "@/components/master-calendar";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, CalendarLink, DateOverride } from "@/lib/types";
@@ -612,6 +612,7 @@ export function Dashboard({
   const [savingReservation, setSavingReservation] = useState(false);
   const [reservationSaveError, setReservationSaveError] = useState("");
   const [inspectedReservationId, setInspectedReservationId] = useState<number | null>(null);
+  const [inspectedImportedStay, setInspectedImportedStay] = useState<{ propertyId: number; stay: MasterCalendarStay } | null>(null);
   const [formExtensionOfId, setFormExtensionOfId] = useState<number | null>(null);
   const [formEditingId, setFormEditingId] = useState<number | null>(null);
   const [showCancelForm, setShowCancelForm] = useState(false);
@@ -1143,8 +1144,12 @@ export function Dashboard({
       const rootId = selected.extensionOfId || selected.id;
       const root = property.reservations.find((item) => item.id === rootId) || selected;
       const family = property.reservations.filter((item) => item.id === rootId || item.extensionOfId === rootId);
+      family.sort((a, b) => reservationDateKey(a.checkIn).localeCompare(reservationDateKey(b.checkIn)));
+      const initialCheckIn = family.map((item) => reservationDateKey(item.checkIn)).sort()[0];
       const finalCheckOut = family.map((item) => reservationDateKey(item.checkOut)).sort().at(-1)!;
-      return { property, selected, root, rootId, family, finalCheckOut };
+      const lodgingTotal = family.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+      const parkingTotal = family.reduce((sum, item) => sum + (item.parkingTotalPrice || 0), 0);
+      return { property, selected, root, rootId, family, initialCheckIn, finalCheckOut, lodgingTotal, parkingTotal };
     }
     return null;
   }, [inspectedReservationId, properties]);
@@ -1405,7 +1410,7 @@ export function Dashboard({
       {/* Today strip — check-ins + check-outs scheduled for today across
           all properties. Skipped on quiet days so the dashboard stays
           calm when nothing is happening. RT-25.6 tick 5. */}
-      {!selectedProperty && properties.length > 0 && (todayCheckIns.length > 0 || todayCheckOuts.length > 0) && (
+      {false && !selectedProperty && properties.length > 0 && (todayCheckIns.length > 0 || todayCheckOuts.length > 0) && (
         <div className="rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-4">
           <div className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-3)]">
@@ -1491,7 +1496,7 @@ export function Dashboard({
           Running on partial data produced ghost "double bookings"
           and ghost no-cleaner alerts that disappeared once the
           fetches caught up — visible CLS. */}
-      {!selectedProperty && !loadingCalendarData && assignmentsFetched && (dashboardAlerts.doubleBookings.length > 0 || cleanerConflictDates.length > 0 || dashboardAlerts.propertiesWithoutCalendar.length > 0) && (
+      {false && !selectedProperty && !loadingCalendarData && assignmentsFetched && (dashboardAlerts.doubleBookings.length > 0 || cleanerConflictDates.length > 0 || dashboardAlerts.propertiesWithoutCalendar.length > 0) && (
         // Light-theme palette (amber-50 / amber-300 / amber-700) sits next
         // to the dark-theme palette (amber-500/5 + amber-300) via `dark:`
         // overrides. The previous all-dark amber-300 tokens were nearly
@@ -1578,6 +1583,7 @@ export function Dashboard({
           loading={loadingCalendarData}
           onOpenProperty={onSelectProperty}
           onOpenReservation={(_propertyId, reservationId) => setInspectedReservationId(reservationId)}
+          onOpenImportedStay={(propertyId, stay) => setInspectedImportedStay({ propertyId, stay })}
           onCreateReservation={openReservationFormForProperty}
         />
       )}
@@ -1586,7 +1592,7 @@ export function Dashboard({
           three things a host actually scans the dashboard for: who is
           IN the property right now (with nights remaining), who is
           coming NEXT (with arrival date), and any sync-error flag. */}
-      {!selectedProperty && properties.length > 0 && (
+      {false && !selectedProperty && properties.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {properties.map(p => {
             const occ = propertyOccupancy.get(p.id);
@@ -1805,7 +1811,7 @@ export function Dashboard({
       )}
 
       {/* Reservations List */}
-      {displayReservations.length > 0 || (useSections && past.length > 0) ? (
+      {false && ((displayReservations.length > 0 || (useSections && past.length > 0)) ? (
         <div className="rounded-lg border border-[var(--line)] bg-[var(--bg-2)]">
           <div className="border-b border-[var(--line)] px-4 py-3">
             <h2 className="text-xs font-medium text-[var(--ink-3)]">
@@ -1962,7 +1968,7 @@ export function Dashboard({
               : t("dashboard.noReservationsGlobal")}
           </p>
         </div>
-      ) : null}
+      ) : null)}
 
       {/* Cleaning has its own dedicated tab — no inline schedule on
           the dashboard. We still mount a HIDDEN CleaningSchedule
@@ -1995,12 +2001,18 @@ export function Dashboard({
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="font-medium">{platformDisplayName(inspectedContext.selected.platform)}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Salida vigente</dt><dd className="font-medium">{new Date(`${inspectedContext.finalCheckOut}T12:00:00`).toLocaleDateString("es-BO")}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Hospedaje</dt><dd className="font-medium">Bs {inspectedContext.selected.totalPrice ?? 0}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="font-medium">{inspectedContext.selected.hasParking ? `Bs ${inspectedContext.selected.parkingTotalPrice ?? 0}` : "No"}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Estado</dt><dd className="font-medium">Reserva confirmada</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="font-medium">{new Date(`${inspectedContext.initialCheckIn}T12:00:00`).toLocaleDateString("es-BO")} · 14:00</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Salida final</dt><dd className="font-medium">{new Date(`${inspectedContext.finalCheckOut}T12:00:00`).toLocaleDateString("es-BO")} · 11:00</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Hospedaje total</dt><dd className="font-medium">Bs {inspectedContext.lodgingTotal}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo total</dt><dd className="font-medium">{inspectedContext.parkingTotal > 0 ? `Bs ${inspectedContext.parkingTotal}` : "No"}</dd></div>
               <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Garantía vigente</dt><dd className="font-medium">Bs {inspectedContext.root.guaranteeAmount ?? 0} · no se cobra nuevamente</dd></div>
               {inspectedContext.selected.note && <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-2.5 font-medium">{inspectedContext.selected.note}</dd></div>}
             </dl>
+            {inspectedContext.family.length > 1 && <div className="mt-4 space-y-1.5 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3">
+              <div className="text-xs font-semibold text-[var(--ink-2)]">Tramos de la estadía</div>
+              {inspectedContext.family.map((segment, index) => <div key={segment.id} className="flex items-center justify-between gap-3 text-xs"><span className="text-[var(--ink-3)]">{index === 0 ? "Inicial" : `Extensión ${index}`} · {platformDisplayName(segment.platform)}</span><span className="font-medium text-[var(--ink)]">{new Date(`${reservationDateKey(segment.checkIn)}T12:00:00`).toLocaleDateString("es-BO")} → {new Date(`${reservationDateKey(segment.checkOut)}T12:00:00`).toLocaleDateString("es-BO")}</span></div>)}
+            </div>}
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button type="button" onClick={() => handleRowClick(inspectedContext.property.id, inspectedContext.selected.id)} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm">Ver detalle</button>
               <button type="button" onClick={openEditForm} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm font-medium">Modificar</button>
@@ -2010,6 +2022,31 @@ export function Dashboard({
           </div>
         </div>
       )}
+
+      {inspectedImportedStay && (() => {
+        const property = properties.find((item) => item.id === inspectedImportedStay.propertyId);
+        const stay = inspectedImportedStay.stay;
+        const isBlock = stay.platform.endsWith("-block");
+        const nights = Math.max(0, Math.round((stay.end.getTime() - stay.start.getTime()) / 86_400_000));
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Detalle de reserva importada">
+            <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div><h2 className="text-lg font-semibold text-[var(--ink)]">{isBlock ? "No disponible" : stay.name}</h2><p className="text-xs text-[var(--ink-4)]">{property?.name}</p></div>
+                <button type="button" onClick={() => setInspectedImportedStay(null)} aria-label="Cerrar" className="p-1.5 text-[var(--ink-4)]">✕</button>
+              </div>
+              <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
+                <div><dt className="text-xs text-[var(--ink-4)]">Estado</dt><dd className="mt-1 font-medium">{isBlock ? "Bloqueado por el canal" : "Reserva confirmada"}</dd></div>
+                <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="mt-1 font-medium">{platformDisplayName(stay.platform.replace(/-block$/, ""))}</dd></div>
+                <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="mt-1 font-medium">{stay.start.toLocaleDateString("es-BO")} · 14:00</dd></div>
+                <div><dt className="text-xs text-[var(--ink-4)]">Salida</dt><dd className="mt-1 font-medium">{stay.end.toLocaleDateString("es-BO")} · 11:00</dd></div>
+                <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Duración</dt><dd className="mt-1 font-medium">{nights} {nights === 1 ? "noche" : "noches"}</dd></div>
+              </dl>
+              <p className="mt-5 rounded-lg bg-[var(--bg-2)] p-3 text-xs text-[var(--ink-3)]">La información importada por iCal no incluye datos personales, precios ni detalles del huésped.</p>
+            </div>
+          </div>
+        );
+      })()}
 
       {inspectedContext && showCancelForm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 p-4" role="dialog" aria-modal="true" aria-label="Cancelar reserva">

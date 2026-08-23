@@ -15,6 +15,7 @@ const DIRECT_COPY: Record<Locale, { label: string; connected: (platform: string)
 };
 
 function platformName(platform: string): string {
+  if (platform.endsWith("-block")) return "No disponible";
   if (platform === "booking") return "Booking.com";
   if (platform === "airbnb") return "Airbnb";
   if (platform === "vrbo") return "Vrbo";
@@ -22,6 +23,7 @@ function platformName(platform: string): string {
 }
 
 function platformColor(platform: string): string {
+  if (platform.endsWith("-block")) return "#64748b";
   if (platform === "booking") return "#1769aa";
   if (platform === "airbnb") return "#ff385c";
   if (platform === "vrbo") return "#5b4bc4";

@@ -610,6 +610,10 @@ export function useCalendarData(
       // Substring match covers all of them (lowercase compare so we
       // don't have to enumerate capitalisation variants).
       const labelLower = label.toLowerCase();
+      const isAvailabilityBlock =
+        labelLower.includes("not available") ||
+        labelLower.includes("blocked") ||
+        /^\s*closed\b/.test(labelLower);
       const isGenericSummary =
         !label ||
         labelLower.includes("reserved") ||
@@ -620,7 +624,7 @@ export function useCalendarData(
         labelLower.includes("roomstatus") ||
         labelLower === "booked";
       if (isGenericSummary) {
-        const matchingRes = property.reservations.find(rawReservation => {
+        const matchingRes = !isAvailabilityBlock ? property.reservations.find(rawReservation => {
           const r = rawReservation as LinkedReservation;
           const rStart = toReservationDateInput(r.checkIn);
           const rEnd = toReservationDateInput(r.checkOut);
@@ -633,7 +637,7 @@ export function useCalendarData(
             );
           }
           return r.platform === ev.platform;
-        });
+        }) : undefined;
         if (matchingRes) {
           label = matchingRes.name;
           resId = matchingRes.id;
@@ -655,7 +659,7 @@ export function useCalendarData(
             hostaway: "Hostaway",
             lodgify: "Lodgify",
           };
-          label = brandLabels[ev.platform] ?? (
+          label = isAvailabilityBlock ? "No disponible" : brandLabels[ev.platform] ?? (
             ev.platform
               ? ev.platform.charAt(0).toUpperCase() + ev.platform.slice(1)
               : "Booked"
@@ -667,7 +671,7 @@ export function useCalendarData(
         startDate: ev.startDate,
         endDate: ev.endDate,
         name: label,
-        platform: ev.platform,
+        platform: isAvailabilityBlock ? `${ev.platform}-block` : ev.platform,
         reservationId: resId,
         eventUid: ev.eventUid,
         linkedEventUid: ev.linkedEventUid,

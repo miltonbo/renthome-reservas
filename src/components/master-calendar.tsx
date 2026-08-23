@@ -24,6 +24,7 @@ interface MasterCalendarProps {
   loading?: boolean;
   onOpenProperty: (propertyId: number) => void;
   onOpenReservation: (propertyId: number, reservationId: number) => void;
+  onOpenImportedStay: (propertyId: number, stay: MasterCalendarStay) => void;
   onCreateReservation: (propertyId: number) => void;
 }
 
@@ -97,10 +98,6 @@ function buildingName(propertyName: string): string {
   return "Otros";
 }
 
-function shortUnitName(propertyName: string): string {
-  return propertyName.split(" ").at(-1) || propertyName;
-}
-
 function formatRange(start: Date, end: Date): string {
   const formatter = new Intl.DateTimeFormat("es-BO", { day: "2-digit", month: "short" });
   return `${formatter.format(start)} → ${formatter.format(end)}`;
@@ -115,6 +112,7 @@ export function MasterCalendar({
   loading = false,
   onOpenProperty,
   onOpenReservation,
+  onOpenImportedStay,
   onCreateReservation,
 }: MasterCalendarProps) {
   const today = useMemo(() => startOfLocalDay(), []);
@@ -242,9 +240,7 @@ export function MasterCalendar({
                       title={property.name}
                     >
                       <span className="block truncate text-xs font-semibold text-[var(--ink)]">{property.name}</span>
-                      <span className="mt-0.5 hidden text-[10px] text-[var(--ink-4)] sm:block">
-                        Unidad {shortUnitName(property.name)}{property.syncError ? " · error de sync" : ""}
-                      </span>
+                      {property.syncError && <span className="mt-0.5 hidden text-[10px] text-amber-400 sm:block">Error de sincronización</span>}
                     </button>
                     <button
                       type="button"
@@ -287,7 +283,7 @@ export function MasterCalendar({
                           type="button"
                           onClick={() => stay.reservationId
                             ? onOpenReservation(property.id, stay.reservationId)
-                            : onOpenProperty(property.id)}
+                            : onOpenImportedStay(property.id, stay)}
                           className={`absolute top-2 z-[2] h-8 overflow-hidden text-left text-[11px] font-semibold shadow-sm transition-[filter,box-shadow] hover:z-[3] hover:brightness-110 hover:ring-1 hover:ring-inset hover:ring-white/45 focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1 ${
                             stay.extensionOfId
                               ? "rounded-l-sm rounded-r-lg border-l-2 border-dashed border-white/75 pl-1.5 pr-2"
