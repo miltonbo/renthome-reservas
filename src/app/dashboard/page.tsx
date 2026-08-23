@@ -169,6 +169,7 @@ function AppContent({
     parkingNightlyPrice?: number | null;
     parkingTotalPrice?: number | null;
     extensionOfId?: number | null;
+    note?: string | null;
   }) => {
     const res = await fetch("/api/reservations", {
       method: "POST",
@@ -219,6 +220,7 @@ function AppContent({
       hasParking?: boolean;
       parkingNightlyPrice?: number | null;
       parkingTotalPrice?: number | null;
+      note?: string | null;
     }
   ) => {
     const res = await fetch(`/api/reservations/${id}`, {

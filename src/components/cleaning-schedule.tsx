@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, CalendarLink, DateOverride } from "@/lib/types";
 import { bookingWindowCutoff } from "@/lib/types";
+import { toReservationDateInput } from "@/lib/reservation-dates";
 
 interface CopyShape {
   dateLocale: string;
@@ -276,8 +277,8 @@ export function computeCleaningDays(
   }
 
   for (const res of property.reservations) {
-    const start = toDateStr(new Date(res.checkIn));
-    const end = toDateStr(new Date(res.checkOut));
+    const start = toReservationDateInput(res.checkIn);
+    const end = toReservationDateInput(res.checkOut);
     let d = start;
     while (d <= end) { allBooked.add(d); d = addDaysStr(d, 1); }
     const platform = (res.platform || "airbnb").trim().toLowerCase();

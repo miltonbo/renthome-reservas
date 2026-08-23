@@ -106,6 +106,17 @@ export async function PATCH(
       }
     }
 
+    if (body.note !== undefined) {
+      if (body.note !== null && typeof body.note !== "string") {
+        return NextResponse.json({ error: "Invalid note" }, { status: 400 });
+      }
+      const note = typeof body.note === "string" ? body.note.trim() : "";
+      if (note.length > 2000) {
+        return NextResponse.json({ error: "Note is too long" }, { status: 400 });
+      }
+      data.note = note || null;
+    }
+
     // Host-editable group-chat name override. Empty string / whitespace
     // clears it (back to the auto-generated name); otherwise store the
     // trimmed text.

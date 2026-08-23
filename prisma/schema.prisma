@@ -307,6 +307,7 @@ model Reservation {
   hasParking      Boolean  @default(false)
   parkingNightlyPrice Float?
   parkingTotalPrice   Float?
+  note                 String?
   status              String    @default("confirmed") // "confirmed" | "cancelled"
   cancellationReason  String?
   cancelledAt         DateTime?

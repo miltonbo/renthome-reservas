@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       hasParking,
       parkingNightlyPrice,
       parkingTotalPrice,
+      note,
       extensionOfId,
     } = await request.json();
     if (
@@ -76,6 +77,8 @@ export async function POST(request: NextRequest) {
         (typeof parkingNightlyPrice !== "number" || !Number.isFinite(parkingNightlyPrice) || parkingNightlyPrice < 0)) ||
       (parkingTotalPrice !== undefined && parkingTotalPrice !== null &&
         (typeof parkingTotalPrice !== "number" || !Number.isFinite(parkingTotalPrice) || parkingTotalPrice < 0)) ||
+      (note !== undefined && note !== null &&
+        (typeof note !== "string" || note.trim().length > 2000)) ||
       (extensionOfId !== undefined && extensionOfId !== null &&
         (!Number.isInteger(extensionOfId) || extensionOfId <= 0))
     ) {
@@ -316,6 +319,7 @@ export async function POST(request: NextRequest) {
         ...(hasParking !== undefined ? { hasParking } : {}),
         ...(parkingNightlyPrice !== undefined ? { parkingNightlyPrice } : {}),
         ...(parkingTotalPrice !== undefined ? { parkingTotalPrice } : {}),
+        ...(note !== undefined ? { note: typeof note === "string" && note.trim() ? note.trim() : null } : {}),
         ...(extensionRootId ? { extensionOfId: extensionRootId } : {}),
         propertyId,
       },
@@ -367,6 +371,7 @@ export async function POST(request: NextRequest) {
       hasParking: reservation.hasParking,
       parkingNightlyPrice: reservation.parkingNightlyPrice,
       parkingTotalPrice: reservation.parkingTotalPrice,
+      note: reservation.note,
       extensionOfId: reservation.extensionOfId,
     });
     return NextResponse.json(reservation);

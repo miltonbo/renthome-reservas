@@ -58,6 +58,8 @@ export interface Reservation {
   hasParking?: boolean;
   parkingNightlyPrice?: number | null;
   parkingTotalPrice?: number | null;
+  /** Optional operational note (early arrival, payment method, etc.). */
+  note?: string | null;
   status?: "confirmed" | "cancelled";
   cancellationReason?: string | null;
   cancelledAt?: string | null;

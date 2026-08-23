@@ -22,9 +22,10 @@ function platformName(platform: string): string {
 }
 
 function platformColor(platform: string): string {
-  if (platform === "booking") return "#003580";
+  if (platform === "booking") return "#1769aa";
   if (platform === "airbnb") return "#ff385c";
-  if (platform === "vrbo") return "#2c5da9";
+  if (platform === "vrbo") return "#5b4bc4";
+  if (platform === "direct") return "#159a73";
   return "#64748b";
 }
 
@@ -446,28 +447,12 @@ export function CalendarGrid({
                         role={(seg.reservationId || seg.eventUid) ? "button" : undefined}
                         tabIndex={(seg.reservationId || seg.eventUid) ? 0 : undefined}
                         aria-label={seg.isExtension ? directTitle : regularTitle}
-                        className={`absolute ${topClass} ${heightClass} flex items-center px-1.5 sm:px-2.5 text-[10.5px] sm:text-[12.5px] font-semibold text-white/95 truncate shadow-[0_1px_2px_rgba(0,0,0,0.06)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 ${radiusClass} ${
-                          // Per-platform colour. Manual / direct / custom
-                          // bookings get a neutral slate so they're visually
-                          // distinct from Airbnb's coral — previously every
-                          // non-Booking bar fell through to the m-accent
-                          // colour which made manual reservations look
-                          // like Airbnb ones.
-                          isConflict ? "bg-rose-500 ring-1 ring-rose-500/40" :
-                          seg.isExtension ? "bg-slate-600 ring-1 ring-slate-300/40" :
-                          seg.platform === "booking" ? "bg-[#003580]" :
-                          seg.platform === "airbnb" ? "bg-[var(--m-accent)]" :
-                          seg.platform === "vrbo" ? "bg-[#2c5da9]" :
-                          // direct / manual / custom / unknown — slate
-                          // neutral with a dashed ring so the user can
-                          // see at a glance "this is mine, not from a
-                          // platform feed".
-                          "bg-slate-500 ring-1 ring-slate-300/30"
-                        } ${(seg.reservationId || seg.eventUid) ? "hover:brightness-110" : ""} ${seg.isExtension ? "ring-1 ring-white/30 ring-dashed" : ""}`}
+                        className={`absolute ${topClass} ${heightClass} flex items-center px-1.5 sm:px-2.5 text-[10.5px] sm:text-[12.5px] font-semibold text-white/95 truncate shadow-[0_1px_2px_rgba(0,0,0,0.06)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 ${radiusClass} ${isConflict ? "ring-1 ring-rose-500/40" : ""} ${(seg.reservationId || seg.eventUid) ? "hover:brightness-110" : ""} ${seg.isExtension ? "ring-1 ring-white/30 ring-dashed" : ""}`}
                         style={{
                           left: leftStyle,
                           width: widthStyle,
                           zIndex: 10,
+                          backgroundColor: isConflict ? "#f43f5e" : platformColor(seg.platform),
                           backgroundImage: seg.isExtension
                             ? "repeating-linear-gradient(-45deg, transparent 0 6px, rgba(255,255,255,0.22) 6px 8px)"
                             : undefined,
