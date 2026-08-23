@@ -1,7 +1,6 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
@@ -31,6 +30,11 @@ interface CopyShape {
   priority: string;
   potential: string;
   viewReservation: (name: string) => string;
+  copyToday: string;
+  copyTomorrow: string;
+  showAll: (count: number) => string;
+  showOnlyNear: string;
+  noCleanings: string;
 }
 
 const COPY: Record<Locale, CopyShape> = {
@@ -56,6 +60,11 @@ const COPY: Record<Locale, CopyShape> = {
     priority: "Priority",
     potential: "Potential",
     viewReservation: (name) => `View ${name}'s reservation`,
+    copyToday: "Copy today's cleanings",
+    copyTomorrow: "Copy tomorrow's cleanings",
+    showAll: (count) => `View all future cleanings (${count})`,
+    showOnlyNear: "Show only today and tomorrow",
+    noCleanings: "No cleanings scheduled",
   },
   ru: {
     dateLocale: "ru-RU",
@@ -79,6 +88,11 @@ const COPY: Record<Locale, CopyShape> = {
     priority: "Приоритет",
     potential: "Возможно",
     viewReservation: (name) => `Открыть бронь: ${name}`,
+    copyToday: "Копировать уборки на сегодня",
+    copyTomorrow: "Копировать уборки на завтра",
+    showAll: (count) => `Показать все будущие уборки (${count})`,
+    showOnlyNear: "Только сегодня и завтра",
+    noCleanings: "Уборок нет",
   },
   de: {
     dateLocale: "de-DE",
@@ -102,6 +116,11 @@ const COPY: Record<Locale, CopyShape> = {
     priority: "Priorität",
     potential: "Möglich",
     viewReservation: (name) => `Buchung von ${name} öffnen`,
+    copyToday: "Heutige Reinigungen kopieren",
+    copyTomorrow: "Morgige Reinigungen kopieren",
+    showAll: (count) => `Alle zukünftigen Reinigungen (${count})`,
+    showOnlyNear: "Nur heute und morgen",
+    noCleanings: "Keine Reinigungen geplant",
   },
   fr: {
     dateLocale: "fr-FR",
@@ -125,6 +144,11 @@ const COPY: Record<Locale, CopyShape> = {
     priority: "Priorité",
     potential: "Potentiel",
     viewReservation: (name) => `Voir la réservation de ${name}`,
+    copyToday: "Copier les ménages d’aujourd’hui",
+    copyTomorrow: "Copier les ménages de demain",
+    showAll: (count) => `Voir tous les ménages à venir (${count})`,
+    showOnlyNear: "Afficher seulement aujourd’hui et demain",
+    noCleanings: "Aucun ménage prévu",
   },
   es: {
     dateLocale: "es-ES",
@@ -148,6 +172,11 @@ const COPY: Record<Locale, CopyShape> = {
     priority: "Prioridad",
     potential: "Potencial",
     viewReservation: (name) => `Ver reserva de ${name}`,
+    copyToday: "Copiar limpiezas de hoy",
+    copyTomorrow: "Copiar limpiezas de mañana",
+    showAll: (count) => `Ver todas las limpiezas futuras (${count})`,
+    showOnlyNear: "Mostrar solo hoy y mañana",
+    noCleanings: "No hay limpiezas programadas",
   },
 };
 
@@ -715,6 +744,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
   // cleaner's identityKey for a per-cleaner button. Drives the transient
   // "Copied!" label so only the pressed button flips.
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showAllFuture, setShowAllFuture] = useState(false);
   const includePotential = controlledIncludePotential ?? false;
 
   const cleaningDays = useMemo(() => {
@@ -873,6 +903,13 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     () => (includePotential ? futureDays : futureDays.filter(d => d.type !== "potential")),
     [futureDays, includePotential]
   );
+  const tomorrowStr = addDaysStr(todayStr, 1);
+  const displayedDays = useMemo(
+    () => showAllFuture
+      ? visibleDays
+      : visibleDays.filter((day) => day.date === todayStr || day.date === tomorrowStr),
+    [showAllFuture, visibleDays, todayStr, tomorrowStr],
+  );
   const [inspectedReservationId, setInspectedReservationId] = useState<number | null>(null);
   const inspectedReservation = useMemo(() => {
     if (!inspectedReservationId) return null;
@@ -885,13 +922,13 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
 
   const groupedVisibleDays = useMemo(() => {
     const groups = new Map<string, CleaningDay[]>();
-    for (const day of visibleDays) {
+    for (const day of displayedDays) {
       const rows = groups.get(day.date) ?? [];
       rows.push(day);
       groups.set(day.date, rows);
     }
     return Array.from(groups.entries());
-  }, [visibleDays]);
+  }, [displayedDays]);
 
   const formatDate = (d: string) => {
     const date = new Date(d + "T12:00:00");
@@ -904,7 +941,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
 
   const formatGroupTitle = (date: string) => {
     if (date === todayStr) return c.todayGroup;
-    if (date === addDaysStr(todayStr, 1)) return c.tomorrowGroup;
+    if (date === tomorrowStr) return c.tomorrowGroup;
     return c.datedGroup(formatShortDate(date));
   };
 
@@ -942,7 +979,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
   // the cleaner-name suffix (redundant once the list is for that one
   // person) — used by the per-cleaner copy buttons. No key = the full
   // schedule with names, as the plain Copy button produces.
-  const buildScheduleLines = (cleanerKey?: string): string[] => {
+  const buildScheduleLines = (cleanerKey?: string, dateFilter?: string): string[] => {
     const targetProperties = mode === "property" && selectedPropertyId
       ? properties.filter(p => p.id === selectedPropertyId)
       : properties;
@@ -962,6 +999,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     lines.push("");
     for (const day of visibleDays) {
       if (cleanerKey && day.cleanerKey !== cleanerKey) continue;
+      if (dateFilter && day.date !== dateFilter) continue;
       const dateStr = formatDate(day.date);
       const propLabel = mode === "dashboard" ? ` — ${day.property}` : "";
       const prop = propertyById.get(day.propertyId);
@@ -1080,6 +1118,12 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     );
   };
 
+  const handleCopyDate = (date: string, key: "today" | "tomorrow") => {
+    navigator.clipboard.writeText(buildScheduleLines(undefined, date).join("\n"));
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
   const renderMovement = (day: CleaningDay) => {
     if (day.isManual) return <span>{day.manualNote?.trim() || t("cleaning.manualCleaning")}</span>;
     if (day.kind === "turnover") {
@@ -1153,11 +1197,9 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
       )}
 
       {/* Schedule table */}
-      <div className="rounded-lg border border-[var(--line)] bg-[var(--bg-2)]">
-        <div className="border-b border-[var(--line)] px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-medium text-[var(--ink-3)]">
-            {t("cleaning.title")} ({visibleDays.length} {t("cleaning.upcoming")})
-          </h2>
+      <div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3">
+          <h2 className="text-sm font-medium text-[var(--ink-3)]">{t("cleaning.title")}</h2>
           {/* Inline header controls — Copy + Print only. The
               include-potential toggle lives in the parent's sidebar
               (PropertyCleaningView / GlobalCleaningView) where view
@@ -1175,41 +1217,29 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
                   per-property "+ Reservation" CTA. Hidden in
                   dashboard / multi-property mode where there's no
                   unambiguous calendar to land on. */}
-              {mode === "property" && selectedPropertyId && (
-                <Link
-                  href={`/dashboard?property=${selectedPropertyId}&view=calendar`}
-                  className="flex items-center gap-1.5 rounded-md bg-[var(--m-accent)] px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--m-accent-2)]"
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  {c.cleaningCta}
-                </Link>
-              )}
-              {visibleDays.length > 0 && (
+              {(
                 <>
                   <button
-                    onClick={handleCopySchedule}
+                    onClick={() => handleCopyDate(todayStr, "today")}
+                    disabled={!visibleDays.some((day) => day.date === todayStr)}
                     className="flex items-center gap-1.5 rounded-md border border-[var(--line-2)] bg-[var(--line-2)] px-2.5 py-1.5 text-xs text-[var(--ink-2)] transition-colors hover:bg-[var(--line-2)]"
                   >
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
                     </svg>
-                    {copiedKey === "all" ? t("common.copied") : t("cleaning.copySchedule")}
+                    {copiedKey === "today" ? t("common.copied") : c.copyToday}
                   </button>
                   <button
-                    onClick={handlePrintSchedule}
+                    onClick={() => handleCopyDate(tomorrowStr, "tomorrow")}
+                    disabled={!visibleDays.some((day) => day.date === tomorrowStr)}
                     className="flex items-center gap-1.5 rounded-md border border-[var(--line-2)] bg-[var(--line-2)] px-2.5 py-1.5 text-xs text-[var(--ink-2)] transition-colors hover:bg-[var(--line-2)]"
                   >
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
                     </svg>
-                    {t("cleaning.printSchedule")}
+                    {copiedKey === "tomorrow" ? t("common.copied") : c.copyTomorrow}
                   </button>
-                  {/* Per-cleaner copy buttons — one per cleaner with
-                      visible rows. Copies just that cleaner's days with
-                      the name stripped, ready to forward to them. */}
-                  {scheduleCleaners.map(([key, name]) => (
+                  {false && scheduleCleaners.map(([key, name]) => (
                     <button
                       key={key}
                       onClick={() => handleCopyForCleaner(key)}
@@ -1257,14 +1287,19 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
             />
           </div>
         ) : (
-          <div className="max-h-[560px] overflow-y-auto">
+          <div className="space-y-4">
+            {groupedVisibleDays.length === 0 && (
+              <div className="rounded-xl border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] px-4 py-8 text-center text-sm text-[var(--ink-3)]">
+                {c.noCleanings}
+              </div>
+            )}
             {groupedVisibleDays.map(([date, days]) => (
-              <section key={date} aria-labelledby={`cleaning-${date}`}>
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--line)] bg-[var(--bg-3)]/95 px-4 py-2.5 backdrop-blur">
-                  <h3 id={`cleaning-${date}`} className="text-sm font-semibold text-[var(--ink)]">
+              <section key={date} aria-labelledby={`cleaning-${date}`} className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm">
+                <div className="flex items-center justify-between border-b-2 border-[var(--m-accent)]/35 bg-[var(--bg-3)] px-4 py-3">
+                  <h3 id={`cleaning-${date}`} className="text-base font-bold text-[var(--ink)]">
                     {formatGroupTitle(date)}
                   </h3>
-                  <span className="rounded-full bg-[var(--ink)]/8 px-2 py-0.5 text-[11px] font-medium text-[var(--ink-3)]">
+                  <span className="rounded-full bg-[var(--m-accent)]/12 px-2.5 py-1 text-xs font-bold text-[var(--m-accent)]">
                     {days.length}
                   </span>
                 </div>
@@ -1316,6 +1351,13 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
                 </div>
               </section>
             ))}
+          </div>
+        )}
+        {!loading && visibleDays.some((day) => day.date > tomorrowStr) && (
+          <div className="mt-4 flex justify-center">
+            <button type="button" onClick={() => setShowAllFuture((value) => !value)} className="rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--bg-3)]">
+              {showAllFuture ? c.showOnlyNear : c.showAll(visibleDays.length)}
+            </button>
           </div>
         )}
       </div>

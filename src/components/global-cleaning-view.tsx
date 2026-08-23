@@ -212,7 +212,7 @@ export function GlobalCleaningView({ properties }: GlobalCleaningViewProps) {
             whole table to change scope. lg:hidden keeps it out of the
             desktop layout where the sidebar switcher is already visible. */}
         {properties.length > 1 && (
-          <div className="lg:hidden">
+          <div className="hidden">
             <PropertySwitcher
               properties={properties}
               selectedPropertyId={null}
@@ -248,7 +248,7 @@ export function GlobalCleaningView({ properties }: GlobalCleaningViewProps) {
             moved to the schedule's table header. Same shell + soft
             shadow as PropertyCleaningView's sidebar so the cleaning
             surface looks consistent across the two scopes. */}
-        <aside className="w-full lg:w-[360px] lg:shrink-0 lg:sticky lg:top-3 lg:self-start lg:max-h-[calc(100vh-84px)] rounded-2xl bg-[var(--bg)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04),0_4px_16px_-8px_rgba(0,0,0,0.06)] [overflow:clip]">
+        <aside className="hidden">
           <div className="border-b border-[var(--line)] px-5 py-4 space-y-3">
             <div>
               <div className="text-xs uppercase tracking-wide text-[var(--ink-4)]">
