@@ -1295,7 +1295,7 @@ export function Dashboard({
 
   return (
     <div className="-mx-3 sm:-mx-6 lg:-mx-8">
-    <div className="mx-auto max-w-[1760px] space-y-6 px-3 sm:px-5">
+    <div className={`mx-auto max-w-none px-2 sm:px-4 ${selectedProperty ? "space-y-6" : "space-y-3 sm:space-y-4"}`}>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -1336,7 +1336,7 @@ export function Dashboard({
               </button>
             </div>
           ) : (
-            <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--ink)]">
+            <h1 className="flex items-center gap-2 text-xl font-bold text-[var(--ink)] sm:text-2xl">
               {title}
               {loadingCalendarData && (
                 <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-[1.5px] border-[var(--line-2)] border-t-[#58a6ff]" />

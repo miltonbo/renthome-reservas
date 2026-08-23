@@ -141,25 +141,25 @@ export function MasterCalendar({
     : `${monthFormatter.format(windowStart)} – ${monthFormatter.format(lastVisibleDay)}`;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3 sm:px-5">
+    <section className="[--property-column-width:148px] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm sm:[--property-column-width:184px] lg:[--property-column-width:210px]">
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] px-2.5 py-2 sm:px-4 sm:py-2.5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-[var(--ink)]">Calendario maestro</h2>
-            <span className="rounded-full bg-[var(--brand-orange-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--brand-orange)]">
-              {properties.length} departamentos
+            <h2 className="text-sm font-semibold text-[var(--ink)] sm:text-base">Calendario maestro</h2>
+            <span className="rounded-full bg-[var(--brand-orange-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--brand-orange)] sm:px-2 sm:text-[11px]">
+              <span className="sm:hidden">{properties.length}</span><span className="hidden sm:inline">{properties.length} departamentos</span>
             </span>
           </div>
-          <p className="mt-0.5 text-xs text-[var(--ink-4)]">
+          <p className="mt-0.5 hidden text-xs text-[var(--ink-4)] sm:block">
             Reservas confirmadas, ingresos y salidas en una sola vista
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => setWindowStart(addDays(windowStart, -7))}
-            className="rounded-lg border border-[var(--line-2)] px-2.5 py-1.5 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line-2)] text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
             aria-label="Semana anterior"
           >
             ←
@@ -167,14 +167,14 @@ export function MasterCalendar({
           <button
             type="button"
             onClick={() => setWindowStart(addDays(today, -2))}
-            className="rounded-lg border border-[var(--line-2)] px-3 py-1.5 text-xs font-medium text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
+            className="h-8 rounded-lg border border-[var(--line-2)] px-2.5 text-xs font-medium text-[var(--ink-2)] hover:bg-[var(--bg-3)] sm:px-3"
           >
             Hoy
           </button>
           <button
             type="button"
             onClick={() => setWindowStart(addDays(windowStart, 7))}
-            className="rounded-lg border border-[var(--line-2)] px-2.5 py-1.5 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line-2)] text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
             aria-label="Semana siguiente"
           >
             →
@@ -185,11 +185,11 @@ export function MasterCalendar({
         </div>
       </div>
 
-      <div className="max-h-[72vh] overflow-auto">
-        <div style={{ minWidth: 220 + DAY_WIDTH * VISIBLE_DAYS }}>
+      <div className="max-h-[78vh] overflow-auto sm:max-h-[75vh]">
+        <div style={{ minWidth: `calc(var(--property-column-width) + ${DAY_WIDTH * VISIBLE_DAYS}px)` }}>
           <div className="sticky top-0 z-30 flex border-b border-[var(--line)] bg-[var(--bg-2)] shadow-[0_2px_6px_rgba(15,23,42,0.08)]">
-            <div className="sticky left-0 z-30 flex w-[220px] shrink-0 items-end border-r border-[var(--line)] bg-[var(--bg-2)] px-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--ink-4)]">
-              Departamento
+            <div className="sticky left-0 z-30 flex w-[var(--property-column-width)] shrink-0 items-end border-r border-[var(--line)] bg-[var(--bg-2)] px-2 pb-2 text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-4)] sm:px-3 sm:text-[10px]">
+              <span className="hidden sm:inline">Departamento</span><span className="sm:hidden">Depto.</span>
             </div>
             <div className="flex">
               {days.map((day) => {
@@ -229,26 +229,27 @@ export function MasterCalendar({
             return (
               <div key={property.id}>
                 {building !== previousBuilding && (
-                  <div className="sticky left-0 z-10 flex h-7 items-center border-b border-[var(--line)] bg-[var(--brand-navy)] px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70">
+                  <div className="sticky left-0 z-10 flex h-6 items-center border-b border-[var(--line)] bg-[var(--brand-navy)] px-2.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/70 sm:h-7 sm:px-3 sm:text-[10px]">
                     {building}
                   </div>
                 )}
-                <div className="flex h-[52px] border-b border-[var(--line)] last:border-b-0">
-                  <div className="sticky left-0 z-10 flex w-[220px] shrink-0 items-center justify-between gap-2 border-r border-[var(--line)] bg-[var(--bg-2)] px-3">
+                <div className="flex h-[48px] border-b border-[var(--line)] last:border-b-0">
+                  <div className="sticky left-0 z-10 flex w-[var(--property-column-width)] shrink-0 items-center justify-between gap-1.5 border-r border-[var(--line)] bg-[var(--bg-2)] px-2 sm:px-2.5">
                     <button
                       type="button"
                       onClick={() => onOpenProperty(property.id)}
                       className="min-w-0 text-left"
+                      title={property.name}
                     >
                       <span className="block truncate text-xs font-semibold text-[var(--ink)]">{property.name}</span>
-                      <span className="mt-0.5 block text-[10px] text-[var(--ink-4)]">
+                      <span className="mt-0.5 hidden text-[10px] text-[var(--ink-4)] sm:block">
                         Unidad {shortUnitName(property.name)}{property.syncError ? " · error de sync" : ""}
                       </span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onCreateReservation(property.id)}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand-orange-soft)] text-base font-medium text-[var(--brand-orange)] hover:bg-[var(--brand-orange)] hover:text-white"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand-orange-soft)] text-sm font-medium text-[var(--brand-orange)] hover:bg-[var(--brand-orange)] hover:text-white sm:h-7 sm:w-7 sm:text-base"
                       aria-label={`Agregar reserva en ${property.name}`}
                       title="Agregar reserva"
                     >
@@ -256,7 +257,7 @@ export function MasterCalendar({
                     </button>
                   </div>
 
-                  <div className="relative h-[52px]" style={{ width: DAY_WIDTH * VISIBLE_DAYS }}>
+                  <div className="relative h-[48px]" style={{ width: DAY_WIDTH * VISIBLE_DAYS }}>
                     <div className="absolute inset-0 flex">
                       {days.map((day) => {
                         const weekend = day.getDay() === 0 || day.getDay() === 6;
@@ -287,7 +288,7 @@ export function MasterCalendar({
                           onClick={() => stay.reservationId
                             ? onOpenReservation(property.id, stay.reservationId)
                             : onOpenProperty(property.id)}
-                          className="absolute top-[9px] z-[2] h-[34px] overflow-hidden rounded-lg px-2 text-left text-[11px] font-semibold shadow-sm transition-transform hover:z-[3] hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1"
+                          className="absolute top-2 z-[2] h-8 overflow-hidden rounded-lg px-2 text-left text-[11px] font-semibold shadow-sm transition-transform hover:z-[3] hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1"
                           style={{ left, width, backgroundColor: color.background, color: color.foreground }}
                           title={`${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
@@ -312,7 +313,7 @@ export function MasterCalendar({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--line)] px-4 py-2.5 text-[10px] text-[var(--ink-4)] sm:px-5">
+      <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--line)] px-4 py-2 text-[10px] text-[var(--ink-4)] sm:flex">
         {[
           ["#ff385c", "Airbnb"], ["#64748b", "No disponible"], ["#1769aa", "Booking"], ["#159a73", "Directa"], ["#5b4bc4", "Vrbo"],
         ].map(([color, label]) => (
