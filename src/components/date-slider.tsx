@@ -32,8 +32,10 @@ export function canSelectCalendarDate(
   checkIn: string,
   bookedDates?: ReadonlySet<string>,
 ): boolean {
-  if (!bookedDates?.has(dateStr)) return true;
-  if (selecting !== "out" || !checkIn || dateStr <= checkIn) return false;
+  if (!bookedDates) return true;
+  if (selecting !== "out" || !checkIn || dateStr <= checkIn) {
+    return !bookedDates.has(dateStr);
+  }
 
   // The selected date is an exclusive check-out boundary. It is valid even
   // when another guest checks in that day, provided none of this stay's
@@ -78,6 +80,7 @@ function CalendarGrid({
     !checkIn ? "in" : !checkOut ? "out" : "in"
   );
   const [showClassic, setShowClassic] = useState(false);
+  const [hoverDate, setHoverDate] = useState<string | null>(null);
 
   const today = useMemo(() => {
     const d = new Date();
@@ -93,6 +96,7 @@ function CalendarGrid({
   }, [today]);
 
   const handleDayClick = (dateStr: string) => {
+    setHoverDate(null);
     if (selecting === "in") {
       onChangeCheckIn(dateStr);
       onChangeCheckOut("");
@@ -114,6 +118,14 @@ function CalendarGrid({
     if (!checkIn || !checkOut) return false;
     return dateStr > checkIn && dateStr < checkOut;
   };
+
+  const previewEnd = selecting === "out" && checkIn && hoverDate && hoverDate > checkIn &&
+    canSelectCalendarDate(hoverDate, "out", checkIn, bookedDates)
+      ? hoverDate
+      : null;
+
+  const isInPreviewRange = (dateStr: string) =>
+    Boolean(previewEnd && dateStr >= checkIn && dateStr < previewEnd);
 
   const dayCount = () => {
     if (!checkIn || !checkOut) return 0;
@@ -201,7 +213,7 @@ function CalendarGrid({
       </div>
 
       {/* Calendar grids */}
-      <div className="flex gap-4 overflow-x-auto">
+      <div className="flex gap-4 overflow-x-auto" onMouseLeave={() => setHoverDate(null)}>
         {months.map((monthStart) => {
           const year = monthStart.getFullYear();
           const month = monthStart.getMonth();
@@ -236,6 +248,8 @@ function CalendarGrid({
                   const isStart = dateStr === checkIn;
                   const isEnd = dateStr === checkOut;
                   const inRange = isInRange(dateStr);
+                  const inPreviewRange = isInPreviewRange(dateStr);
+                  const isPreviewEnd = dateStr === previewEnd;
                   const isBooked = bookedDates?.has(dateStr) ?? false;
                   const canSelect = canSelectCalendarDate(dateStr, selecting, checkIn, bookedDates);
 
@@ -250,19 +264,24 @@ function CalendarGrid({
                       type="button"
                       disabled={isPast || !canSelect}
                       onClick={() => handleDayClick(dateStr)}
+                      onMouseEnter={() => canSelect && setHoverDate(dateStr)}
                       aria-label={`${dateStr}${isBooked ? " · Ocupado" : ""}`}
                       title={isBooked ? (canSelect ? "Ocupado desde este día; disponible como salida" : "Ocupado por una reserva") : undefined}
                       className={`relative flex h-8 items-center justify-center rounded-md text-xs transition-all ${
                         isPast
                           ? "text-[var(--ink-4)] cursor-not-allowed"
                           : isStart || isEnd
-                          ? "bg-[var(--ink)] text-white font-semibold"
+                          ? "bg-sky-600 text-white font-semibold ring-1 ring-inset ring-sky-300/60"
+                          : isPreviewEnd
+                          ? "bg-sky-500/25 text-sky-100 font-semibold ring-1 ring-inset ring-sky-400"
+                          : inPreviewRange
+                          ? "bg-sky-500/20 text-sky-200"
                           : inRange
-                          ? "bg-[var(--ink)]/12 text-sky-300"
+                          ? "bg-sky-500/20 text-sky-200"
                           : isBooked && !canSelect
-                          ? "cursor-not-allowed bg-amber-500/25 text-amber-200 ring-1 ring-inset ring-amber-400/35"
+                          ? "cursor-not-allowed bg-slate-500/25 text-slate-500 ring-1 ring-inset ring-slate-500/25"
                           : isBooked
-                          ? "bg-amber-500/15 text-amber-200 ring-1 ring-inset ring-amber-400/25 hover:bg-amber-500/25"
+                          ? "bg-slate-500/20 text-slate-400 ring-1 ring-inset ring-slate-500/25 hover:bg-sky-500/20 hover:text-sky-200 hover:ring-sky-400"
                           : isToday
                           ? "text-[var(--ink)] ring-1 ring-[var(--ink)]/40"
                           : "text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
@@ -273,7 +292,7 @@ function CalendarGrid({
                         <span className="absolute bottom-0.5 left-1/2 h-0.5 w-0.5 -translate-x-1/2 rounded-full bg-[var(--ink)]" />
                       )}
                       {isBooked && (
-                        <span className="absolute right-0.5 top-0.5 h-1 w-1 rounded-full bg-amber-400" />
+                        <span className="absolute right-0.5 top-0.5 h-1 w-1 rounded-full bg-slate-400" />
                       )}
                     </button>
                   );

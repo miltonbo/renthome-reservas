@@ -16,6 +16,10 @@ describe("canSelectCalendarDate", () => {
     expect(canSelectCalendarDate("2026-08-21", "out", "2026-08-16", booked)).toBe(false);
   });
 
+  it("does not allow an unoccupied checkout date beyond occupied nights", () => {
+    expect(canSelectCalendarDate("2026-08-23", "out", "2026-08-16", booked)).toBe(false);
+  });
+
   it("keeps an unoccupied date selectable", () => {
     expect(canSelectCalendarDate("2026-08-22", "in", "", booked)).toBe(true);
   });
