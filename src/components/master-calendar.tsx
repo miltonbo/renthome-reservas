@@ -10,6 +10,8 @@ export interface MasterCalendarStay {
   reservationId?: number;
   totalPrice?: number | null;
   extensionOfId?: number | null;
+  currency?: "BOB" | "USD";
+  uid?: string;
 }
 
 interface MasterCalendarProperty {
@@ -290,7 +292,7 @@ export function MasterCalendar({
                               : "rounded-lg px-2"
                           }`}
                           style={{ left, width, backgroundColor: color.background, color: color.foreground }}
-                          title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${formatBolivianos(stay.totalPrice)}` : ""}`}
+                          title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
                           <span className="flex items-center gap-1 truncate">
                             {stay.extensionOfId && (
@@ -301,7 +303,7 @@ export function MasterCalendar({
                           <span className="flex items-center justify-between gap-1 text-[9px] font-medium opacity-90">
                             <span className="truncate">{stay.extensionOfId ? `Extensión · ${platformLabel(stay.platform)}` : platformLabel(stay.platform)}</span>
                             {stay.totalPrice != null && (
-                              <span className="shrink-0 font-semibold">{formatBolivianos(stay.totalPrice)}</span>
+                              <span className="shrink-0 font-semibold">{stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}</span>
                             )}
                           </span>
                         </button>

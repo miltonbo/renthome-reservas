@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
       reservations: {
         where: { status: "confirmed" },
         orderBy: { checkIn: "asc" as const },
-        include: { _count: { select: { guests: true } } },
+        include: {
+          _count: { select: { guests: true } },
+          moneyMovements: { include: { allocations: true }, orderBy: { occurredAt: "asc" as const } },
+        },
       },
     };
     const orderBy = { createdAt: "desc" as const };

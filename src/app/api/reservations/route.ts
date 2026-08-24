@@ -6,6 +6,7 @@ import { canManageProperty, listAccessiblePropertyIds } from "@/lib/ownership";
 import { normalizePlatformSlug } from "@/lib/platforms";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
+import { amountToMinor, bookingCommission, isCurrency } from "@/lib/finance";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     const reservations = await prisma.reservation.findMany({
       where,
       orderBy: { checkIn: "asc" },
-      include: { _count: { select: { guests: true } } },
+      include: { _count: { select: { guests: true } }, moneyMovements: { include: { allocations: true }, orderBy: { occurredAt: "asc" } } },
     });
     return NextResponse.json(reservations);
   } catch (err) {
@@ -45,10 +46,13 @@ export async function POST(request: NextRequest) {
       linkedEventRole,
       nightlyPrice,
       totalPrice,
+      priceCurrency,
       guaranteeAmount,
+      guaranteeCurrency,
       hasParking,
       parkingNightlyPrice,
       parkingTotalPrice,
+      parkingCurrency,
       note,
       extensionOfId,
     } = await request.json();
@@ -70,13 +74,16 @@ export async function POST(request: NextRequest) {
         (typeof nightlyPrice !== "number" || !Number.isFinite(nightlyPrice) || nightlyPrice < 0)) ||
       (totalPrice !== undefined && totalPrice !== null &&
         (typeof totalPrice !== "number" || !Number.isFinite(totalPrice) || totalPrice < 0)) ||
+      (priceCurrency !== undefined && !isCurrency(priceCurrency)) ||
       (guaranteeAmount !== undefined && guaranteeAmount !== null &&
         (typeof guaranteeAmount !== "number" || !Number.isFinite(guaranteeAmount) || guaranteeAmount < 0)) ||
+      (guaranteeCurrency !== undefined && !isCurrency(guaranteeCurrency)) ||
       (hasParking !== undefined && typeof hasParking !== "boolean") ||
       (parkingNightlyPrice !== undefined && parkingNightlyPrice !== null &&
         (typeof parkingNightlyPrice !== "number" || !Number.isFinite(parkingNightlyPrice) || parkingNightlyPrice < 0)) ||
       (parkingTotalPrice !== undefined && parkingTotalPrice !== null &&
         (typeof parkingTotalPrice !== "number" || !Number.isFinite(parkingTotalPrice) || parkingTotalPrice < 0)) ||
+      (parkingCurrency !== undefined && !isCurrency(parkingCurrency)) ||
       (note !== undefined && note !== null &&
         (typeof note !== "string" || note.trim().length > 2000)) ||
       (extensionOfId !== undefined && extensionOfId !== null &&
@@ -315,15 +322,36 @@ export async function POST(request: NextRequest) {
         linkedEventRole: sourceRole,
         ...(nightlyPrice !== undefined ? { nightlyPrice } : {}),
         ...(totalPrice !== undefined ? { totalPrice } : {}),
+        ...(priceCurrency !== undefined ? { priceCurrency } : {}),
         ...(guaranteeAmount !== undefined ? { guaranteeAmount } : {}),
+        ...(guaranteeCurrency !== undefined ? { guaranteeCurrency } : {}),
         ...(hasParking !== undefined ? { hasParking } : {}),
         ...(parkingNightlyPrice !== undefined ? { parkingNightlyPrice } : {}),
         ...(parkingTotalPrice !== undefined ? { parkingTotalPrice } : {}),
+        ...(parkingCurrency !== undefined ? { parkingCurrency } : {}),
         ...(note !== undefined ? { note: typeof note === "string" && note.trim() ? note.trim() : null } : {}),
         ...(extensionRootId ? { extensionOfId: extensionRootId } : {}),
         propertyId,
       },
     });
+
+    if (reservation.platform === "booking" && reservation.totalPrice != null && "bookingCommission" in prisma) {
+      const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { financialOperator: true } });
+      const operator = property?.financialOperator === "deysi" ? "deysi" : "milton";
+      const basisMinor = amountToMinor(reservation.totalPrice);
+      await prisma.bookingCommission.create({
+        data: {
+          reservationId: reservation.id,
+          liablePerson: operator,
+          basisMinor,
+          amountMinor: bookingCommission(basisMinor),
+          currency: reservation.priceCurrency,
+        },
+      });
+    }
+    if (reservationPlatform === "airbnb" && (nightlyPrice != null || totalPrice != null) && priceCurrency !== "USD") {
+      return NextResponse.json({ error: "Airbnb amounts must use USD" }, { status: 400 });
+    }
 
     // Clean up open / closed overrides that the new reservation just
     // made obsolete. The iCal feed already silently filters them
@@ -367,10 +395,13 @@ export async function POST(request: NextRequest) {
       linkedEventRole: reservation.linkedEventRole,
       nightlyPrice: reservation.nightlyPrice,
       totalPrice: reservation.totalPrice,
+      priceCurrency: reservation.priceCurrency,
       guaranteeAmount: reservation.guaranteeAmount,
+      guaranteeCurrency: reservation.guaranteeCurrency,
       hasParking: reservation.hasParking,
       parkingNightlyPrice: reservation.parkingNightlyPrice,
       parkingTotalPrice: reservation.parkingTotalPrice,
+      parkingCurrency: reservation.parkingCurrency,
       note: reservation.note,
       extensionOfId: reservation.extensionOfId,
     });

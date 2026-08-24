@@ -8,26 +8,26 @@ datasource db {
 }
 
 model User {
-  id                 Int                  @id @default(autoincrement())
-  username           String               @unique
+  id                 Int                     @id @default(autoincrement())
+  username           String                  @unique
   password           String
   // False for accounts created via Google sign-in (the stored password
   // is an unusable random placeholder). Drives the profile's "Set a
   // password" vs "Change password" UI; flips true once a real password
   // is set. See src/lib/google-oauth.ts and the change-password route.
-  hasPassword        Boolean              @default(true)
-  role               String               @default("user") // "superadmin" | "user" | "cleaner"
-  email              String?              // optional; populated by Google sign-in (RT-16.5) or future profile edits
-  googleId           String?              @unique // Google subject (sub) ID — set when user signs in with Google
-  createdAt          DateTime             @default(now())
+  hasPassword        Boolean                 @default(true)
+  role               String                  @default("user") // "superadmin" | "user" | "cleaner"
+  email              String? // optional; populated by Google sign-in (RT-16.5) or future profile edits
+  googleId           String?                 @unique // Google subject (sub) ID — set when user signs in with Google
+  createdAt          DateTime                @default(now())
   lastLoginAt        DateTime?
   suspendedAt        DateTime?
   alertsDismissedAt  DateTime?
   properties         Property[]
-  cleanerAssignments CleanerAssignment[]  @relation("CleanerAssignments")
-  cleanerProfiles    Cleaner[]            @relation("CleanerProfiles")
-  managedProperties  PropertyManager[]    @relation("ManagerAssignments")
-  grantedManagers    PropertyManager[]    @relation("ManagerGrants")
+  cleanerAssignments CleanerAssignment[]     @relation("CleanerAssignments")
+  cleanerProfiles    Cleaner[]               @relation("CleanerProfiles")
+  managedProperties  PropertyManager[]       @relation("ManagerAssignments")
+  grantedManagers    PropertyManager[]       @relation("ManagerGrants")
   createdInvites     PropertyManagerInvite[] @relation("InviteCreators")
   acceptedInvites    PropertyManagerInvite[] @relation("InviteAcceptors")
   blogPosts          BlogPost[]
@@ -43,7 +43,7 @@ model User {
 // and capped at a few wrong guesses (attempts) before being burned.
 model EmailCode {
   id           Int       @id @default(autoincrement())
-  purpose      String    // "signup" | "reset"
+  purpose      String // "signup" | "reset"
   email        String
   codeHash     String
   passwordHash String?
@@ -66,14 +66,14 @@ model EmailCode {
 // safe per-IP throttling without retaining raw addresses.
 model Feedback {
   id           Int       @id @default(autoincrement())
-  body         String                                       // 5-2000 chars; sanitised in admin render
-  contactEmail String?                                      // optional; visitor opts in to a reply
-  pagePath     String    @default("")                       // where they were when they hit Send
-  userAgent    String    @default("")                       // truncated to 250 chars at write time
-  ipHash       String                                       // SHA-256 of inbound IP, hex
-  userId       Int?                                         // null when submitted by an anonymous visitor
+  body         String // 5-2000 chars; sanitised in admin render
+  contactEmail String? // optional; visitor opts in to a reply
+  pagePath     String    @default("") // where they were when they hit Send
+  userAgent    String    @default("") // truncated to 250 chars at write time
+  ipHash       String // SHA-256 of inbound IP, hex
+  userId       Int? // null when submitted by an anonymous visitor
   user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  status       String    @default("new")                    // "new" | "read" | "archived"
+  status       String    @default("new") // "new" | "read" | "archived"
   createdAt    DateTime  @default(now())
   updatedAt    DateTime?
 
@@ -99,19 +99,20 @@ model SiteSetting {
 }
 
 model Property {
-  id             Int              @id @default(autoincrement())
-  userId         Int
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name           String
-  minNights      Int              @default(1)
-  checkInTime    String           @default("14:00")
-  checkOutTime   String           @default("11:00")
-  bookingWindow  Int              @default(365) // days forward from today to accept bookings; beyond this, events are ignored
-  cleaningEnabled Boolean         @default(true) // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation; conflict detection still runs
-  feedToken      String?          @unique // optional opt-in token gating the public iCal feed; null = public
-  feedSlug       String?          @unique // durable URL identifier for the iCal feed; minted at creation, never changes
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime?
+  id                 Int                     @id @default(autoincrement())
+  userId             Int
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String
+  minNights          Int                     @default(1)
+  checkInTime        String                  @default("14:00")
+  checkOutTime       String                  @default("11:00")
+  bookingWindow      Int                     @default(365) // days forward from today to accept bookings; beyond this, events are ignored
+  cleaningEnabled    Boolean                 @default(true) // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation; conflict detection still runs
+  financialOperator  String                  @default("milton") // "milton" | "deysi"
+  feedToken          String?                 @unique // optional opt-in token gating the public iCal feed; null = public
+  feedSlug           String?                 @unique // durable URL identifier for the iCal feed; minted at creation, never changes
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime?
   reservations       Reservation[]
   calendarLinks      CalendarLink[]
   calendarEvents     CalendarEvent[]
@@ -122,6 +123,7 @@ model Property {
   managers           PropertyManager[]
   managerInvites     PropertyManagerInvite[]
   guestFormTemplates GuestFormTemplate[]
+  moneyMovements     MoneyMovement[]
 
   @@index([userId])
 }
@@ -148,7 +150,7 @@ model PropertyManagerInvite {
   token        String    @unique
   createdById  Int
   createdBy    User      @relation("InviteCreators", fields: [createdById], references: [id], onDelete: Cascade)
-  acceptedById Int?      // null until accepted; references the user who accepted
+  acceptedById Int? // null until accepted; references the user who accepted
   acceptedBy   User?     @relation("InviteAcceptors", fields: [acceptedById], references: [id], onDelete: SetNull)
   acceptedAt   DateTime?
   expiresAt    DateTime
@@ -160,32 +162,32 @@ model PropertyManagerInvite {
 }
 
 model MessageTemplate {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   propertyId     Int
-  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property       Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   name           String
-  language       String   @default("en")
-  subject        String   @default("")
+  language       String    @default("en")
+  subject        String    @default("")
   body           String
-  sendOffsetDays Int      @default(0)
-  createdAt      DateTime @default(now())
+  sendOffsetDays Int       @default(0)
+  createdAt      DateTime  @default(now())
   updatedAt      DateTime?
 
   @@index([propertyId])
 }
 
 model CleaningRecord {
-  id            Int      @id @default(autoincrement())
-  propertyId    Int
-  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  date          String   // YYYY-MM-DD
-  status        String   @default("pending") // "pending" | "done" | "skipped"
-  doneAt        DateTime?
-  doneByUserId  Int?
-  notes         String   @default("")
-  photos        String   @default("[]") // JSON array of URLs
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime?
+  id           Int       @id @default(autoincrement())
+  propertyId   Int
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date         String // YYYY-MM-DD
+  status       String    @default("pending") // "pending" | "done" | "skipped"
+  doneAt       DateTime?
+  doneByUserId Int?
+  notes        String    @default("")
+  photos       String    @default("[]") // JSON array of URLs
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime?
 
   @@unique([propertyId, date])
   @@index([propertyId, date])
@@ -198,13 +200,13 @@ model CleaningRecord {
 // cleaner Users keep working through the legacy CleanerAssignment.cleanerId
 // path during the transitional cycle.
 model Cleaner {
-  id           Int                 @id @default(autoincrement())
-  ownerUserId  Int
-  owner        User                @relation("CleanerProfiles", fields: [ownerUserId], references: [id], onDelete: Cascade)
-  name         String
-  phone        String?
-  createdAt    DateTime            @default(now())
-  assignments  CleanerAssignment[] @relation("CleanerProfileAssignments")
+  id          Int                 @id @default(autoincrement())
+  ownerUserId Int
+  owner       User                @relation("CleanerProfiles", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String?
+  createdAt   DateTime            @default(now())
+  assignments CleanerAssignment[] @relation("CleanerProfileAssignments")
 
   @@index([ownerUserId])
 }
@@ -238,8 +240,8 @@ model CalendarLink {
   id            Int       @id @default(autoincrement())
   propertyId    Int
   property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  platform      String    // "airbnb" or "booking"
-  icalExportUrl String    // iCal export URL from the platform
+  platform      String // "airbnb" or "booking"
+  icalExportUrl String // iCal export URL from the platform
   bufferBefore  Int       @default(1) // days before booking to block
   bufferAfter   Int       @default(1) // days after booking to block
   lastFetchedAt DateTime?
@@ -252,11 +254,11 @@ model CalendarEvent {
   id         Int      @id @default(autoincrement())
   propertyId Int
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  platform   String   // source platform
-  uid        String   // iCal event UID
+  platform   String // source platform
+  uid        String // iCal event UID
   summary    String   @default("")
-  startDate  String   // YYYY-MM-DD
-  endDate    String   // YYYY-MM-DD
+  startDate  String // YYYY-MM-DD
+  endDate    String // YYYY-MM-DD
   createdAt  DateTime @default(now())
 
   @@unique([propertyId, platform, uid])
@@ -271,67 +273,137 @@ model SyncLog {
 }
 
 model Reservation {
-  id              Int      @id @default(autoincrement())
-  name            String
-  checkIn         DateTime
-  checkOut        DateTime
+  id                   Int                   @id @default(autoincrement())
+  name                 String
+  checkIn              DateTime
+  checkOut             DateTime
   // Actual booking/payment channel. A host-entered extension of an
   // Airbnb/Booking stay is "direct"; the source platform is kept
   // separately in linkedEventPlatform so feeds and UI do not mistake the
   // added nights for inventory owned by the source channel.
-  platform            String  @default("airbnb")
-  linkedEventUid      String? // UID is unique only inside one platform feed
-  linkedEventPlatform String? // exact source platform paired with linkedEventUid
-  linkedEventRole     String? // "claim" (overlaps source) | "extension" (abuts source)
+  platform             String                @default("airbnb")
+  linkedEventUid       String? // UID is unique only inside one platform feed
+  linkedEventPlatform  String? // exact source platform paired with linkedEventUid
+  linkedEventRole      String? // "claim" (overlaps source) | "extension" (abuts source)
   // Per-reservation messenger group chat. The host creates a one-off
   // group for THIS booking (different from User.tgGroupInviteUrl, which
   // is a host-wide invite link sent to every guest) and saves the URL
   // here so they can jump back into it in one click from the reservation
   // view. Validated to start with the platform's public URL prefix at
   // both the UI and the PATCH endpoint.
-  tgGroupUrl      String?  // must start with https://t.me/ when set
-  waGroupUrl      String?  // must start with https://chat.whatsapp.com/ when set
+  tgGroupUrl           String? // must start with https://t.me/ when set
+  waGroupUrl           String? // must start with https://chat.whatsapp.com/ when set
   // Host-editable override for the group-chat name. When null the
   // reservation view shows an auto-generated name ("Airbnb 12-19 May
   // 2026 | Amilla | House 7"); when set, the host's custom text is
   // used by the "Copy group name" button instead.
-  groupName       String?
+  groupName            String?
   // Per-reservation contact phone. Optional; lets the host save a phone
   // number for a booking that has no passport guests (or for a 1-of-1
   // booking) and use it to deeplink straight into a personal WhatsApp /
   // Telegram chat. Stored in the same loose E.164 shape Guest.phone uses.
-  phone           String?
-  nightlyPrice    Float?
-  totalPrice      Float?
-  guaranteeAmount Float?
-  hasParking      Boolean  @default(false)
-  parkingNightlyPrice Float?
-  parkingTotalPrice   Float?
+  phone                String?
+  nightlyPrice         Float?
+  totalPrice           Float?
+  priceCurrency        String                @default("BOB") // "BOB" | "USD"
+  guaranteeAmount      Float?
+  guaranteeCurrency    String                @default("BOB")
+  hasParking           Boolean               @default(false)
+  parkingNightlyPrice  Float?
+  parkingTotalPrice    Float?
+  parkingCurrency      String                @default("BOB")
   note                 String?
-  status              String    @default("confirmed") // "confirmed" | "cancelled"
-  cancellationReason  String?
-  cancelledAt         DateTime?
-  extensionOfId       Int?
-  extensionOf         Reservation?  @relation("ReservationExtensions", fields: [extensionOfId], references: [id], onDelete: Cascade)
-  extensions          Reservation[] @relation("ReservationExtensions")
-  propertyId      Int
-  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  guests          Guest[]
+  status               String                @default("confirmed") // "confirmed" | "cancelled"
+  cancellationReason   String?
+  cancelledAt          DateTime?
+  extensionOfId        Int?
+  extensionOf          Reservation?          @relation("ReservationExtensions", fields: [extensionOfId], references: [id], onDelete: Cascade)
+  extensions           Reservation[]         @relation("ReservationExtensions")
+  propertyId           Int
+  property             Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  guests               Guest[]
   guestFormSubmissions GuestFormSubmission[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  moneyMovements       MoneyMovement[]
+  bookingCommission    BookingCommission?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@index([propertyId, linkedEventPlatform, linkedEventUid])
   @@index([extensionOfId])
   @@index([status])
 }
 
+// Money that was actually received. There are deliberately no pending/paid
+// states: a row exists only after RentHome has the funds.
+model MoneyMovement {
+  id            Int               @id @default(autoincrement())
+  reservationId Int
+  reservation   Reservation       @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  propertyId    Int
+  property      Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type          String // "lodging" | "parking" | "guarantee" | "additional" | "adjustment"
+  amountMinor   Int // cents/centavos; exact for both BOB and USD
+  currency      String // "BOB" | "USD"
+  paymentMethod String // qr | transfer | airbnb | binance | takenos | sepa | cash
+  receivedBy    String? // "deysi" | "milton"; null for split Airbnb receipts
+  occurredAt    DateTime          @default(now())
+  note          String?
+  source        String            @default("manual") // "manual" | "airbnb"
+  allocations   MoneyAllocation[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([reservationId])
+  @@index([propertyId, occurredAt])
+  @@index([receivedBy, currency, occurredAt])
+}
+
+model MoneyAllocation {
+  id              Int           @id @default(autoincrement())
+  moneyMovementId Int
+  moneyMovement   MoneyMovement @relation(fields: [moneyMovementId], references: [id], onDelete: Cascade)
+  person          String // "deysi" | "milton"
+  amountMinor     Int
+  percentageBps   Int // 10000 = 100%; snapshot of the applied rule
+  createdAt       DateTime      @default(now())
+
+  @@index([moneyMovementId])
+  @@index([person])
+}
+
+model BookingCommission {
+  id            Int         @id @default(autoincrement())
+  reservationId Int         @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  liablePerson  String // property operator snapshot
+  basisMinor    Int
+  amountMinor   Int
+  currency      String
+  rateBps       Int         @default(1500)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([liablePerson, currency])
+}
+
+model ExchangeRate {
+  id              Int      @id @default(autoincrement())
+  effectiveDate   String
+  currency        String   @default("USD")
+  bobPerUnitMinor Int // Bs per USD multiplied by 100
+  source          String   @default("BCB")
+  fetchedAt       DateTime @default(now())
+  isManual        Boolean  @default(false)
+
+  @@unique([effectiveDate, currency, source])
+}
+
 model DateOverride {
   id         Int      @id @default(autoincrement())
   propertyId Int
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  date       String   // YYYY-MM-DD
-  type       String   // "open" or "closed"
+  date       String // YYYY-MM-DD
+  type       String // "open" or "closed"
   note       String   @default("")
   createdAt  DateTime @default(now())
 
@@ -341,8 +413,8 @@ model DateOverride {
 model AuditLog {
   id           Int      @id @default(autoincrement())
   userId       Int
-  action       String   // "create" | "update" | "delete"
-  resourceType String   // "property" | "reservation" | "guest" | "override" | "calendarLink"
+  action       String // "create" | "update" | "delete"
+  resourceType String // "property" | "reservation" | "guest" | "override" | "calendarLink"
   resourceId   Int
   payload      String?
   createdAt    DateTime @default(now())
@@ -351,30 +423,30 @@ model AuditLog {
 }
 
 model Guest {
-  id               Int         @id @default(autoincrement())
-  fullName         String
-  firstName        String      @default("")
-  lastName         String      @default("")
-  country          String
-  citizenshipCode  String      @default("")
-  dateOfBirth      String
-  yearsOld         Int
-  gender           String      @default("")
-  dateOfIssue      String
-  expiryDate       String
-  passportNumber   String
-  issuedBy         String
-  visaNumber       String      @default("")
-  visaFrom         String      @default("")
-  visaTo           String      @default("")
-  hasVisa          Boolean     @default(false)
-  parentId         Int?
-  notes            String      @default("")
-  phone            String      @default("")
-  reservationId    Int
-  reservation      Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id              Int         @id @default(autoincrement())
+  fullName        String
+  firstName       String      @default("")
+  lastName        String      @default("")
+  country         String
+  citizenshipCode String      @default("")
+  dateOfBirth     String
+  yearsOld        Int
+  gender          String      @default("")
+  dateOfIssue     String
+  expiryDate      String
+  passportNumber  String
+  issuedBy        String
+  visaNumber      String      @default("")
+  visaFrom        String      @default("")
+  visaTo          String      @default("")
+  hasVisa         Boolean     @default(false)
+  parentId        Int?
+  notes           String      @default("")
+  phone           String      @default("")
+  reservationId   Int
+  reservation     Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 // Anonymous pre-signup wizard state. Created when a visitor starts
@@ -408,24 +480,24 @@ model OnboardingDraft {
 // fast list rendering; the canonical tag table is BlogTag (super-admin
 // can rename / merge tags there without touching every post).
 model BlogPost {
-  id                 Int          @id @default(autoincrement())
+  id                 Int           @id @default(autoincrement())
   slug               String
-  locale             String       @default("en") // "en" | "ru"
+  locale             String        @default("en") // "en" | "ru"
   title              String
-  excerpt            String       @default("")  // 140-160 char meta-description summary
-  body               String       @default("")  // markdown
+  excerpt            String        @default("") // 140-160 char meta-description summary
+  body               String        @default("") // markdown
   // Structured TL;DR — rendered as a callout above the body and excluded
   // from the main markdown so we don't double-render. Plain markdown
   // bullet syntax accepted (e.g. "- foo\n- bar").
-  tldr               String       @default("")
+  tldr               String        @default("")
   // Structured FAQ list — JSON: [{ "q": "...", "a": "..." }, ...]. Drives
   // the on-page Q/A section AND the FAQPage JSON-LD that Google reads
   // for rich-result eligibility. Empty array = no FAQ section rendered.
-  faqJson            String       @default("[]")
-  status             String       @default("draft") // "draft" | "published" | "archived"
+  faqJson            String        @default("[]")
+  status             String        @default("draft") // "draft" | "published" | "archived"
   authorId           Int
-  author             User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tagsJson           String       @default("[]") // JSON array of BlogTag slugs
+  author             User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tagsJson           String        @default("[]") // JSON array of BlogTag slugs
   ogImageUrl         String?
   // Cover image dimensions — populated by the upload API so the post
   // page can emit `width` / `height` in the JSON-LD ImageObject and
@@ -438,7 +510,7 @@ model BlogPost {
   // the translation-link endpoint — null when the post has no sibling.
   translationGroupId Int?
   publishedAt        DateTime?
-  createdAt          DateTime     @default(now())
+  createdAt          DateTime      @default(now())
   updatedAt          DateTime?
   comments           BlogComment[]
 
@@ -581,8 +653,8 @@ model CalendarPlatform {
   iconUrl               String?
   defaultBufferBefore   Int       @default(1) // days, copied into new CalendarLink.bufferBefore
   defaultBufferAfter    Int       @default(1)
-  importInstructionsKey String?   // i18n key for the "where to find your iCal" copy
-  exportInstructionsKey String?   // i18n key for the "paste this back into the platform" copy
+  importInstructionsKey String? // i18n key for the "where to find your iCal" copy
+  exportInstructionsKey String? // i18n key for the "paste this back into the platform" copy
   isCustom              Boolean   @default(false)
   enabled               Boolean   @default(true) // soft-disable hides the preset from add-link dropdowns
   sortOrder             Int       @default(100) // smaller appears first; ties broken by displayName

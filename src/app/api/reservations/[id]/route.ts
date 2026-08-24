@@ -6,6 +6,7 @@ import { canManageProperty } from "@/lib/ownership";
 import { normalizePhone } from "@/lib/sanitize";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
+import { airbnbAllocations, amountToMinor, bookingCommission, isCurrency } from "@/lib/finance";
 
 async function loadManageableReservation(
   reservationId: number,
@@ -94,6 +95,13 @@ export async function PATCH(
         return NextResponse.json({ error: `Invalid ${field}` }, { status: 400 });
       }
       data[field] = value;
+    }
+    for (const field of ["priceCurrency", "guaranteeCurrency", "parkingCurrency"] as const) {
+      if (body[field] === undefined) continue;
+      if (!isCurrency(body[field])) {
+        return NextResponse.json({ error: `Invalid ${field}` }, { status: 400 });
+      }
+      data[field] = body[field];
     }
     if (body.hasParking !== undefined) {
       if (typeof body.hasParking !== "boolean") {
@@ -348,6 +356,47 @@ export async function PATCH(
       where: { id: numId },
       data,
     });
+
+    if (reservation.platform === "booking" && reservation.totalPrice != null && "bookingCommission" in prisma) {
+      const property = await prisma.property.findUnique({
+        where: { id: reservation.propertyId }, select: { financialOperator: true },
+      });
+      const liablePerson = property?.financialOperator === "deysi" ? "deysi" : "milton";
+      const basisMinor = amountToMinor(reservation.totalPrice);
+      await prisma.bookingCommission.upsert({
+        where: { reservationId: reservation.id },
+        create: {
+          reservationId: reservation.id, liablePerson, basisMinor,
+          amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
+        },
+        update: {
+          liablePerson, basisMinor,
+          amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
+        },
+      });
+    } else if ("bookingCommission" in prisma) {
+      await prisma.bookingCommission.deleteMany({ where: { reservationId: reservation.id } });
+    }
+    if (reservation.platform === "airbnb" && reservation.totalPrice != null && "moneyMovement" in prisma) {
+      const property = await prisma.property.findUnique({
+        where: { id: reservation.propertyId }, select: { financialOperator: true },
+      });
+      const operator = property?.financialOperator === "deysi" ? "deysi" : "milton";
+      const amountMinor = amountToMinor(reservation.totalPrice);
+      const allocations = airbnbAllocations(amountMinor, operator);
+      const existing = await prisma.moneyMovement.findFirst({
+        where: { reservationId: reservation.id, source: "airbnb", paymentMethod: "airbnb", type: "lodging" },
+      });
+      if (existing) {
+        await prisma.$transaction([
+          prisma.moneyAllocation.deleteMany({ where: { moneyMovementId: existing.id } }),
+          prisma.moneyMovement.update({
+            where: { id: existing.id },
+            data: { amountMinor, currency: "USD", allocations: { create: allocations } },
+          }),
+        ]);
+      }
+    }
 
     // Same cleanup as the POST path — clear open/closed overrides on
     // the reservation's current date range so they don't shadow the

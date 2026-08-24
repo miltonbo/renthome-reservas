@@ -54,10 +54,13 @@ export interface Reservation {
   /** Commercial details for a confirmed physical stay. Amounts are Bs. */
   nightlyPrice?: number | null;
   totalPrice?: number | null;
+  priceCurrency?: "BOB" | "USD";
   guaranteeAmount?: number | null;
+  guaranteeCurrency?: "BOB" | "USD";
   hasParking?: boolean;
   parkingNightlyPrice?: number | null;
   parkingTotalPrice?: number | null;
+  parkingCurrency?: "BOB" | "USD";
   /** Optional operational note (early arrival, payment method, etc.). */
   note?: string | null;
   status?: "confirmed" | "cancelled";
@@ -68,6 +71,29 @@ export interface Reservation {
   createdAt: string;
   guests?: Guest[];
   _count?: { guests: number };
+  moneyMovements?: MoneyMovement[];
+}
+
+export interface MoneyAllocation {
+  id: number;
+  person: "deysi" | "milton";
+  amountMinor: number;
+  percentageBps: number;
+}
+
+export interface MoneyMovement {
+  id: number;
+  reservationId: number;
+  propertyId: number;
+  type: "lodging" | "parking" | "guarantee" | "additional" | "adjustment";
+  amountMinor: number;
+  currency: "BOB" | "USD";
+  paymentMethod: "qr" | "transfer" | "airbnb" | "binance" | "takenos" | "sepa" | "cash";
+  receivedBy: "deysi" | "milton" | null;
+  occurredAt: string;
+  note?: string | null;
+  source: "manual" | "airbnb";
+  allocations?: MoneyAllocation[];
 }
 
 export interface Property {
@@ -79,6 +105,7 @@ export interface Property {
   checkOutTime: string; // "HH:MM" — guest departure time, e.g. "11:00"
   bookingWindow: number; // days forward from today to consider bookings; beyond this, events are ignored
   cleaningEnabled: boolean; // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation
+  financialOperator?: "deysi" | "milton";
   feedToken: string | null; // optional token gating the public iCal feed
   createdAt: string;
   reservations: Reservation[];

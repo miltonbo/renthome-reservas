@@ -163,10 +163,16 @@ function AppContent({
     propertyId: number;
     nightlyPrice?: number | null;
     totalPrice?: number | null;
+    priceCurrency?: "BOB" | "USD";
     guaranteeAmount?: number | null;
+    guaranteeCurrency?: "BOB" | "USD";
     hasParking?: boolean;
     parkingNightlyPrice?: number | null;
     parkingTotalPrice?: number | null;
+    parkingCurrency?: "BOB" | "USD";
+    linkedEventUid?: string;
+    linkedEventPlatform?: string;
+    linkedEventRole?: "claim" | "extension";
     extensionOfId?: number | null;
     note?: string | null;
   }) => {
@@ -215,10 +221,13 @@ function AppContent({
       phone?: string | null;
       nightlyPrice?: number | null;
       totalPrice?: number | null;
+      priceCurrency?: "BOB" | "USD";
       guaranteeAmount?: number | null;
+      guaranteeCurrency?: "BOB" | "USD";
       hasParking?: boolean;
       parkingNightlyPrice?: number | null;
       parkingTotalPrice?: number | null;
+      parkingCurrency?: "BOB" | "USD";
       note?: string | null;
     }
   ) => {

@@ -223,6 +223,7 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     // unbookable computation and the cleaning schedule hides the
     // property; conflict detection still runs.
     `ALTER TABLE "Property" ADD COLUMN "cleaningEnabled" INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE "Property" ADD COLUMN "financialOperator" TEXT NOT NULL DEFAULT 'milton'`,
     // RT-25.12 — per-guest free-text notes. Empty default so existing
     // rows surface as no-note rather than NULL in the UI.
     `ALTER TABLE "Guest" ADD COLUMN "notes" TEXT NOT NULL DEFAULT ''`,
@@ -261,10 +262,13 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     // stored in bolivianos; null means the host did not enter an amount.
     `ALTER TABLE "Reservation" ADD COLUMN "nightlyPrice" REAL`,
     `ALTER TABLE "Reservation" ADD COLUMN "totalPrice" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "priceCurrency" TEXT NOT NULL DEFAULT 'BOB'`,
     `ALTER TABLE "Reservation" ADD COLUMN "guaranteeAmount" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "guaranteeCurrency" TEXT NOT NULL DEFAULT 'BOB'`,
     `ALTER TABLE "Reservation" ADD COLUMN "hasParking" INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE "Reservation" ADD COLUMN "parkingNightlyPrice" REAL`,
     `ALTER TABLE "Reservation" ADD COLUMN "parkingTotalPrice" REAL`,
+    `ALTER TABLE "Reservation" ADD COLUMN "parkingCurrency" TEXT NOT NULL DEFAULT 'BOB'`,
     `ALTER TABLE "Reservation" ADD COLUMN "note" TEXT`,
     `ALTER TABLE "Reservation" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'confirmed'`,
     `ALTER TABLE "Reservation" ADD COLUMN "cancellationReason" TEXT`,
@@ -273,6 +277,67 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `CREATE INDEX IF NOT EXISTS "Reservation_extensionOfId_idx" ON "Reservation"("extensionOfId")`,
     `CREATE INDEX IF NOT EXISTS "Reservation_status_idx" ON "Reservation"("status")`,
   ];
+
+  const financialSchema = `
+CREATE TABLE IF NOT EXISTS "MoneyMovement" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "reservationId" INTEGER NOT NULL,
+  "propertyId" INTEGER NOT NULL,
+  "type" TEXT NOT NULL,
+  "amountMinor" INTEGER NOT NULL,
+  "currency" TEXT NOT NULL,
+  "paymentMethod" TEXT NOT NULL,
+  "receivedBy" TEXT,
+  "occurredAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "note" TEXT,
+  "source" TEXT NOT NULL DEFAULT 'manual',
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME,
+  CONSTRAINT "MoneyMovement_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "MoneyMovement_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "MoneyMovement_reservationId_idx" ON "MoneyMovement"("reservationId");
+CREATE INDEX IF NOT EXISTS "MoneyMovement_propertyId_occurredAt_idx" ON "MoneyMovement"("propertyId", "occurredAt");
+CREATE INDEX IF NOT EXISTS "MoneyMovement_receivedBy_currency_occurredAt_idx" ON "MoneyMovement"("receivedBy", "currency", "occurredAt");
+
+CREATE TABLE IF NOT EXISTS "MoneyAllocation" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "moneyMovementId" INTEGER NOT NULL,
+  "person" TEXT NOT NULL,
+  "amountMinor" INTEGER NOT NULL,
+  "percentageBps" INTEGER NOT NULL,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "MoneyAllocation_moneyMovementId_fkey" FOREIGN KEY ("moneyMovementId") REFERENCES "MoneyMovement" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "MoneyAllocation_moneyMovementId_idx" ON "MoneyAllocation"("moneyMovementId");
+CREATE INDEX IF NOT EXISTS "MoneyAllocation_person_idx" ON "MoneyAllocation"("person");
+
+CREATE TABLE IF NOT EXISTS "BookingCommission" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "reservationId" INTEGER NOT NULL,
+  "liablePerson" TEXT NOT NULL,
+  "basisMinor" INTEGER NOT NULL,
+  "amountMinor" INTEGER NOT NULL,
+  "currency" TEXT NOT NULL,
+  "rateBps" INTEGER NOT NULL DEFAULT 1500,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME,
+  CONSTRAINT "BookingCommission_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "BookingCommission_reservationId_key" ON "BookingCommission"("reservationId");
+CREATE INDEX IF NOT EXISTS "BookingCommission_liablePerson_currency_idx" ON "BookingCommission"("liablePerson", "currency");
+
+CREATE TABLE IF NOT EXISTS "ExchangeRate" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "effectiveDate" TEXT NOT NULL,
+  "currency" TEXT NOT NULL DEFAULT 'USD',
+  "bobPerUnitMinor" INTEGER NOT NULL,
+  "source" TEXT NOT NULL DEFAULT 'BCB',
+  "fetchedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "isManual" INTEGER NOT NULL DEFAULT 0
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "ExchangeRate_effectiveDate_currency_source_key" ON "ExchangeRate"("effectiveDate", "currency", "source");
+`;
 
   // Feedback table — site-wide visitor feedback queue. New table, so we
   // run a CREATE TABLE here (idempotent on IF NOT EXISTS) rather than
@@ -317,6 +382,23 @@ CREATE INDEX IF NOT EXISTS "Feedback_userId_idx" ON "Feedback"("userId");
       // Column already exists
     }
   }
+  for (const stmt of financialSchema.split(";").map((s) => s.trim()).filter(Boolean)) {
+    try {
+      await prisma.$executeRawUnsafe(stmt);
+      console.log("OK:", stmt.substring(0, 60) + "...");
+    } catch {
+      // Table/index already exists
+    }
+  }
+  // Current RentHome operating responsibility. Stored on Property so the
+  // rule remains editable instead of being hard-coded in reconciliation.
+  await prisma.$executeRawUnsafe(`
+    UPDATE "Property" SET "financialOperator" = 'deysi'
+    WHERE lower("name") IN (
+      'sky elite 528', 'sky elite 527', 'uptown nuu 12d',
+      'sky elite 406', 'sky elite 305', 'sky elite 329'
+    )
+  `);
 
   // Backfill the durable linked-event metadata introduced above. Older rows
   // overloaded Reservation.platform for both the booking channel and the
