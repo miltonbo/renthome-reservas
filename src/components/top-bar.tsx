@@ -314,6 +314,10 @@ export function TopBar({
       onNavigate({ property: null, reservation: null, view: "dashboard" });
       return;
     }
+    if (view === "cleaning") {
+      onNavigate({ property: null, reservation: null, view: "cleaning" });
+      return;
+    }
     // Calendar is the only tab that strictly requires a property —
     // there is no cross-property calendar view (a single grid can't
     // show 5 properties' bars meaningfully). Cleaning and Reports

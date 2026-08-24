@@ -222,6 +222,8 @@ interface CleaningDay {
   nextGuest?: string;
   prevReservationId?: number;
   nextReservationId?: number;
+  prevPlatform?: string;
+  nextPlatform?: string;
   manualNote?: string;
   movableTo?: string;
   hoursAvailable?: number; // only when meaningful (< 24h, true same-day turnover)
@@ -557,6 +559,7 @@ export function computeCleaningDays(
               bufferMode: "full",
               nextGuest: displayName,
               nextReservationId: b.reservationId,
+              nextPlatform: b.platform,
               nextStartDate: b.start,
             });
           }
@@ -585,6 +588,7 @@ export function computeCleaningDays(
               bufferMode: "full",
               nextGuest: displayName,
               nextReservationId: b.reservationId,
+              nextPlatform: b.platform,
               nextStartDate: b.start,
               gapStartDate: gapHasBooking ? undefined : gapBookableStart,
               gapEndDate: gapHasBooking ? undefined : gapBookableEnd,
@@ -606,6 +610,7 @@ export function computeCleaningDays(
           bufferMode: "full",
           prevGuest: displayName,
           prevReservationId: b.reservationId,
+          prevPlatform: b.platform,
           prevEndDate: b.end,
         });
       }
@@ -661,9 +666,11 @@ export function computeCleaningDays(
         bufferMode: "quick",
         prevGuest: displayName,
         prevReservationId: b.reservationId,
+        prevPlatform: b.platform,
         prevEndDate: b.end,
         nextGuest,
         nextReservationId: next?.reservationId,
+        nextPlatform: next?.platform,
         nextStartDate,
         hoursAvailable,
       });
@@ -690,6 +697,7 @@ export function computeCleaningDays(
               bufferMode: "quick",
               nextGuest: nextDisplayName,
               nextReservationId: next.reservationId,
+              nextPlatform: next.platform,
               nextStartDate: next.start,
               gapStartDate: gapStart,
               gapEndDate: addDaysStr(next.start, -1),
@@ -995,11 +1003,25 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     const potentialPrefix = c.potentialPrefix;
 
     const lines: string[] = [];
-    lines.push(c.scheduleHeader + headerSuffix);
+    const numericDate = dateFilter ? `${dateFilter.slice(8, 10)}/${dateFilter.slice(5, 7)}` : "";
+    lines.push(dateFilter ? `Calendario de limpiezas ${numericDate}` : c.scheduleHeader + headerSuffix);
     lines.push("");
     for (const day of visibleDays) {
       if (cleanerKey && day.cleanerKey !== cleanerKey) continue;
       if (dateFilter && day.date !== dateFilter) continue;
+      if (dateFilter) {
+        const guestWithChannel = (name?: string, platform?: string) => {
+          const guest = guestName(name);
+          return platform ? `${guest} (${platformLabel(platform)})` : guest;
+        };
+        let movement: string;
+        if (day.kind === "manual") movement = day.manualNote?.trim() || "Limpieza manual";
+        else if (day.kind === "turnover") movement = `Cambio de huésped: ${guestWithChannel(day.prevGuest, day.prevPlatform)} → ${guestWithChannel(day.nextGuest, day.nextPlatform)}`;
+        else if (day.kind === "before" || day.kind === "gap-potential") movement = `Ingreso de ${guestWithChannel(day.nextGuest, day.nextPlatform)}`;
+        else movement = `Salida normal: ${guestWithChannel(day.prevGuest, day.prevPlatform)} · sin huésped posterior`;
+        lines.push(`${day.property} — ${movement}`);
+        continue;
+      }
       const dateStr = formatDate(day.date);
       const propLabel = mode === "dashboard" ? ` — ${day.property}` : "";
       const prop = propertyById.get(day.propertyId);
@@ -1103,14 +1125,20 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
   })();
 
   const guestName = (name?: string) => (name || "—").replace(/\s+block$/i, "");
-  const renderGuest = (name?: string, reservationId?: number) => {
+  const renderGuest = (name?: string, reservationId?: number, platform?: string) => {
     const label = guestName(name);
-    if (!reservationId) return <span className="font-semibold text-[var(--ink)]">{label}</span>;
+    const channelClass = ({
+      airbnb: "bg-[#ff385c]/15 text-[#ff5a78] hover:bg-[#ff385c]/25",
+      booking: "bg-[#1769aa]/15 text-[#52a9ee] hover:bg-[#1769aa]/25",
+      direct: "bg-[#159a73]/15 text-[#2bc79b] hover:bg-[#159a73]/25",
+      vrbo: "bg-[#5b4bc4]/20 text-[#9a8cff] hover:bg-[#5b4bc4]/30",
+    } as Record<string, string>)[(platform || "").toLowerCase()] || "bg-[var(--m-accent)]/10 text-[var(--m-accent)] hover:bg-[var(--m-accent)]/20";
+    if (!reservationId) return <span className={`rounded-md px-1.5 py-0.5 font-semibold ${channelClass}`}>{label}</span>;
     return (
       <button
         type="button"
         onClick={() => setInspectedReservationId(reservationId)}
-        className="rounded-md bg-[var(--m-accent)]/10 px-1.5 py-0.5 font-semibold text-[var(--m-accent)] underline decoration-dotted underline-offset-2 transition-colors hover:bg-[var(--m-accent)]/20"
+        className={`rounded-md px-1.5 py-0.5 font-semibold underline decoration-dotted underline-offset-2 transition-colors ${channelClass}`}
         aria-label={c.viewReservation(label)}
       >
         {label}
@@ -1130,17 +1158,17 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
       return (
         <span className="flex flex-wrap items-center gap-1">
           <span>{c.guestChange}</span>
-          {renderGuest(day.prevGuest, day.prevReservationId)}
+          {renderGuest(day.prevGuest, day.prevReservationId, day.prevPlatform)}
           <span aria-hidden="true">→</span>
-          {renderGuest(day.nextGuest, day.nextReservationId)}
+          {renderGuest(day.nextGuest, day.nextReservationId, day.nextPlatform)}
           <span className="text-[var(--ink-4)]">{c.sameDay}</span>
         </span>
       );
     }
     if (day.kind === "before" || day.kind === "gap-potential") {
-      return <span className="flex flex-wrap items-center gap-1"><span>{c.enters}</span>{renderGuest(day.nextGuest, day.nextReservationId)}</span>;
+      return <span className="flex flex-wrap items-center gap-1"><span>{c.enters}</span>{renderGuest(day.nextGuest, day.nextReservationId, day.nextPlatform)}</span>;
     }
-    return <span className="flex flex-wrap items-center gap-1"><span>{c.leaves}</span>{renderGuest(day.prevGuest, day.prevReservationId)}</span>;
+    return <span className="flex flex-wrap items-center gap-1"><span>{c.leaves}</span>{renderGuest(day.prevGuest, day.prevReservationId, day.prevPlatform)}</span>;
   };
 
   const platformLabel = (platform: string) => ({
@@ -1378,11 +1406,22 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
               </div>
               <button type="button" onClick={() => setInspectedReservationId(null)} className="rounded-lg p-1.5 text-[var(--ink-3)] hover:bg-[var(--bg-3)]" aria-label="Cerrar">✕</button>
             </div>
+            <div className={`mt-4 rounded-xl border p-3 ${inspectedReservation.reservation.guaranteeAmount ? "border-amber-400/40 bg-amber-400/10" : "border-[var(--line)] bg-[var(--bg-2)]"}`}>
+              <div className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-4)]">Garantía a retornar</div>
+              <div className={`mt-1 text-lg font-bold ${inspectedReservation.reservation.guaranteeAmount ? "text-amber-400" : "text-[var(--ink-3)]"}`}>
+                {inspectedReservation.reservation.guaranteeAmount
+                  ? `${inspectedReservation.reservation.guaranteeCurrency === "USD" ? "USD" : "Bs"} ${inspectedReservation.reservation.guaranteeAmount}`
+                  : "Sin garantía registrada"}
+              </div>
+              {inspectedReservation.reservation.guaranteeAmount ? <p className="mt-1 text-xs text-[var(--ink-3)]">Verificar el departamento antes de realizar la devolución.</p> : null}
+            </div>
             <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
               <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{platformLabel(inspectedReservation.reservation.platform)}</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Estadía</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{formatShortDate(toReservationDateInput(inspectedReservation.reservation.checkIn))} → {formatShortDate(toReservationDateInput(inspectedReservation.reservation.checkOut))}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Total hospedaje</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.totalPrice != null ? `Bs ${inspectedReservation.reservation.totalPrice}` : "Sin monto"}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.hasParking ? `Sí${inspectedReservation.reservation.parkingTotalPrice ? ` · Bs ${inspectedReservation.reservation.parkingTotalPrice}` : ""}` : "No"}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Horario de salida</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.property.checkOutTime || "11:00"}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Estado de cobro</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.settledManuallyAt ? "Saldado manualmente" : "Ver detalle financiero"}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Total hospedaje</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.totalPrice != null ? `${inspectedReservation.reservation.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedReservation.reservation.totalPrice}` : "Sin monto"}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.hasParking ? `Sí${inspectedReservation.reservation.parkingTotalPrice ? ` · ${inspectedReservation.reservation.parkingCurrency === "USD" ? "USD" : "Bs"} ${inspectedReservation.reservation.parkingTotalPrice}` : ""}` : "No"}</dd></div>
               {inspectedReservation.reservation.note && (
                 <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3 font-medium text-[var(--ink)]">{inspectedReservation.reservation.note}</dd></div>
               )}
