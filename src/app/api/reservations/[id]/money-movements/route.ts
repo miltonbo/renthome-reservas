@@ -62,8 +62,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   ) {
     return NextResponse.json({ error: "Invalid money movement" }, { status: 400 });
   }
-  if (paymentMethod === "airbnb" && (reservation.platform !== "airbnb" || currency !== "USD")) {
-    return NextResponse.json({ error: "Airbnb receipts must belong to an Airbnb reservation and use USD" }, { status: 400 });
+  if (paymentMethod === "airbnb" && (reservation.platform !== "airbnb" || currency !== "USD" || type !== "lodging")) {
+    return NextResponse.json({ error: "Airbnb receipts must be lodging payments for an Airbnb reservation and use USD" }, { status: 400 });
   }
 
   const amountMinor = amountToMinor(amount);
@@ -76,6 +76,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Airbnb has one definitive receipt per imported booking. Editing the
     // amount replaces that receipt and its split instead of duplicating it.
     if (paymentMethod === "airbnb") {
+      await tx.reservation.update({
+        where: { id },
+        data: { totalPrice: amount, priceCurrency: "USD" },
+      });
       const existing = await tx.moneyMovement.findFirst({
         where: { reservationId: id, paymentMethod: "airbnb", source: "airbnb", type: "lodging" },
       });
@@ -130,4 +134,3 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   return NextResponse.json(result, { status: 201 });
 }
-
