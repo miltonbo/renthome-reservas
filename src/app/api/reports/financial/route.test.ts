@@ -7,6 +7,7 @@ describe("financial report workbook", () => {
     const { buildFinancialWorkbook } = await import("./route");
     const data = {
       period: { from: "2026-08-01", to: "2026-08-31" },
+      policy: { operatedProperties: { deysi: ["Sky Elite 528"], milton: ["Sky Elite 331"] }, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 },
       channelTotals: { booking: { reservations: 1, BOB: 580, USD: 0 } },
       held: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 58000, USD: 0 } },
       entitled: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 58000, USD: 0 } },

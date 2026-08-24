@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { listAccessiblePropertyIds } from "@/lib/ownership";
+import { operatingAllocations } from "@/lib/finance";
 
 type Person = "deysi" | "milton";
 type Currency = "BOB" | "USD";
@@ -65,21 +66,18 @@ export async function GET(request: NextRequest) {
   for (const movement of movements) {
     const currency = movement.currency as Currency;
     if (!currencies.includes(currency)) continue;
+    const operator: Person = movement.property.financialOperator === "deysi" ? "deysi" : "milton";
+    const policyAllocations = operatingAllocations(movement.amountMinor, operator);
     if (movement.paymentMethod === "airbnb") {
-      for (const allocation of movement.allocations) {
-        const person = allocation.person as Person;
-        if (!people.includes(person)) continue;
-        held[person][currency] += allocation.amountMinor;
-        entitled[person][currency] += allocation.amountMinor;
+      for (const allocation of policyAllocations) {
+        held[allocation.person][currency] += allocation.amountMinor;
+        entitled[allocation.person][currency] += allocation.amountMinor;
       }
       continue;
     }
     const receiver = movement.receivedBy as Person;
     if (people.includes(receiver)) held[receiver][currency] += movement.amountMinor;
-    for (const allocation of movement.allocations) {
-      const person = allocation.person as Person;
-      if (people.includes(person)) entitled[person][currency] += allocation.amountMinor;
-    }
+    for (const allocation of policyAllocations) entitled[allocation.person][currency] += allocation.amountMinor;
   }
 
   const transfers = currencies.flatMap((currency) => {

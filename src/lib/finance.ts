@@ -49,7 +49,7 @@ export function minorToAmount(amountMinor: number): number {
   return amountMinor / 100;
 }
 
-export function airbnbAllocations(amountMinor: number, operator: FinancialPerson) {
+export function operatingAllocations(amountMinor: number, operator: FinancialPerson) {
   if (operator === "deysi") {
     return [{ person: "deysi" as const, amountMinor, percentageBps: 10000 }];
   }
@@ -59,6 +59,9 @@ export function airbnbAllocations(amountMinor: number, operator: FinancialPerson
     { person: "deysi" as const, amountMinor: deysiAmount, percentageBps: 2000 },
   ];
 }
+
+/** Backwards-compatible name for existing Airbnb import call sites. */
+export const airbnbAllocations = operatingAllocations;
 
 export function bookingCommission(amountMinor: number): number {
   return Math.round(amountMinor * 0.15);

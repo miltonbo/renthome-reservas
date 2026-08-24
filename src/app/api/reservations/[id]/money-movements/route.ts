@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageProperty } from "@/lib/ownership";
 import {
-  airbnbAllocations,
+  operatingAllocations,
   amountToMinor,
   bookingCommission,
   isCurrency,
@@ -68,9 +68,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const amountMinor = amountToMinor(amount);
   const operator = reservation.property.financialOperator === "deysi" ? "deysi" : "milton";
-  const allocations = paymentMethod === "airbnb"
-    ? airbnbAllocations(amountMinor, operator)
-    : [{ person: operator, amountMinor, percentageBps: 10000 }];
+  const allocations = operatingAllocations(amountMinor, operator);
 
   const result = await prisma.$transaction(async (tx) => {
     // Airbnb has one definitive receipt per imported booking. Editing the

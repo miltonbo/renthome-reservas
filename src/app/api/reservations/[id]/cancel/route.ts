@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { canManageProperty } from "@/lib/ownership";
-import { amountToMinor, isCurrency, isFinancialPerson, isMethodCurrencyValid, isPaymentMethod } from "@/lib/finance";
+import { amountToMinor, isCurrency, isFinancialPerson, isMethodCurrencyValid, isPaymentMethod, operatingAllocations } from "@/lib/finance";
 
 export async function POST(
   request: NextRequest,
@@ -88,7 +88,7 @@ export async function POST(
           occurredAt: cancelledAt,
           note: reason ? `Reembolso por cancelación: ${reason}` : "Reembolso por cancelación",
           source: "manual",
-          allocations: { create: [{ person: operator, amountMinor, percentageBps: 10000 }] },
+          allocations: { create: operatingAllocations(amountMinor, operator) },
         },
           });
         }

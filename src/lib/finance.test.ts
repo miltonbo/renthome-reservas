@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  airbnbAllocations,
+  operatingAllocations,
   allowedCurrencies,
   amountToMinor,
   bookingCommission,
@@ -24,8 +24,8 @@ describe("RentHome finance rules", () => {
     expect(amountToMinor(245.8)).toBe(24580);
   });
 
-  it("splits Milton-operated Airbnb receipts 80/20 without losing cents", () => {
-    const allocations = airbnbAllocations(10001, "milton");
+  it("splits every receipt from Milton-operated properties 80/20 without losing cents", () => {
+    const allocations = operatingAllocations(10001, "milton");
     expect(allocations).toEqual([
       { person: "milton", amountMinor: 8001, percentageBps: 8000 },
       { person: "deysi", amountMinor: 2000, percentageBps: 2000 },
@@ -33,8 +33,8 @@ describe("RentHome finance rules", () => {
     expect(allocations.reduce((sum, item) => sum + item.amountMinor, 0)).toBe(10001);
   });
 
-  it("assigns Deysi-operated Airbnb receipts entirely to Deysi", () => {
-    expect(airbnbAllocations(10000, "deysi")).toEqual([
+  it("assigns every receipt from Deysi-operated properties entirely to Deysi", () => {
+    expect(operatingAllocations(10000, "deysi")).toEqual([
       { person: "deysi", amountMinor: 10000, percentageBps: 10000 },
     ]);
   });
