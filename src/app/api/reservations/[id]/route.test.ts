@@ -590,6 +590,22 @@ describe("PATCH /api/reservations/:id — commercial details", () => {
       }),
     }));
   });
+
+  it("marks only the selected reservation segment as manually settled", async () => {
+    const response = await PATCH(patchRequest({ settledManually: true }), patchParams());
+    expect(response.status).toBe(200);
+    expect(mocks.reservationUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: reservationId },
+      data: expect.objectContaining({ settledManuallyAt: expect.any(Date) }),
+    }));
+  });
+
+  it("allows removing the manual settlement mark", async () => {
+    await PATCH(patchRequest({ settledManually: false }), patchParams());
+    expect(mocks.reservationUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ settledManuallyAt: null }),
+    }));
+  });
 });
 
 describe("DELETE /api/reservations/:id — linked calendar source", () => {

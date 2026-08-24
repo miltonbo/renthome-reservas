@@ -66,6 +66,7 @@ export interface Reservation {
   status?: "confirmed" | "cancelled";
   cancellationReason?: string | null;
   cancelledAt?: string | null;
+  settledManuallyAt?: string | null;
   extensionOfId?: number | null;
   propertyId: number;
   createdAt: string;

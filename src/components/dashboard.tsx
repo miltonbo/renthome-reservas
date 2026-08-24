@@ -284,8 +284,10 @@ function segmentFinancials(reservation: Reservation) {
     }
   }
   const due = { BOB: Math.max(0, expected.BOB - paid.BOB), USD: Math.max(0, expected.USD - paid.USD) };
+  const manuallySettled = Boolean(reservation.settledManuallyAt);
+  if (manuallySettled) { due.BOB = 0; due.USD = 0; }
   const hasKnownCharge = reservation.totalPrice != null || reservation.parkingTotalPrice != null || reservation.guaranteeAmount != null;
-  return { expected, paid, due, hasOutstandingBalance: hasKnownCharge && (due.BOB > 0.005 || due.USD > 0.005) };
+  return { expected, paid, due, manuallySettled, hasOutstandingBalance: !manuallySettled && hasKnownCharge && (due.BOB > 0.005 || due.USD > 0.005) };
 }
 
 /** Reservation dates are calendar dates, not instants. Prisma/API values may
@@ -600,6 +602,7 @@ interface DashboardProps {
     parkingNightlyPrice?: number | null; parkingTotalPrice?: number | null;
     parkingCurrency?: "BOB" | "USD";
     note?: string | null;
+    settledManually?: boolean;
   }) => Promise<{ ok: boolean; error?: string }>;
   onCancelReservation?: (id: number, reason?: string, refunds?: Array<{ amount: number; currency: "BOB" | "USD"; paymentMethod: string; paidBy: "deysi" | "milton" }>) => Promise<{ ok: boolean; error?: string }>;
   onAddProperty?: (name: string) => Promise<void> | void;
@@ -659,6 +662,7 @@ export function Dashboard({
   const [movementNote, setMovementNote] = useState("");
   const [savingMovement, setSavingMovement] = useState(false);
   const [movementError, setMovementError] = useState("");
+  const [savingSettlement, setSavingSettlement] = useState(false);
   const [airbnbGuestName, setAirbnbGuestName] = useState("");
   const [airbnbAmount, setAirbnbAmount] = useState("");
   const [savingAirbnbDetails, setSavingAirbnbDetails] = useState(false);
@@ -1320,6 +1324,14 @@ export function Dashboard({
     }
     setMovementAmount(""); setMovementNote("");
     await onRefresh?.();
+  };
+
+  const toggleManualSettlement = async () => {
+    if (!inspectedContext || !onUpdateReservation || savingSettlement) return;
+    setSavingSettlement(true); setMovementError("");
+    const result = await onUpdateReservation(inspectedContext.selected.id, { settledManually: !inspectedContext.selectedFinancials.manuallySettled });
+    setSavingSettlement(false);
+    if (!result.ok) setMovementError(result.error || "No se pudo actualizar el estado de pago.");
   };
 
   const saveImportedAirbnb = async (propertyId: number, stay: MasterCalendarStay) => {
@@ -2109,7 +2121,7 @@ export function Dashboard({
       )}
 
       {inspectedContext && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Detalle de reserva">
+        <div onMouseDown={(event) => { if (event.target === event.currentTarget) setInspectedReservationId(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Detalle de reserva">
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div><h2 className="text-lg font-semibold text-[var(--ink)]">{inspectedContext.root.name}</h2><p className="text-xs text-[var(--ink-4)]">{inspectedContext.property.name}</p></div>
@@ -2118,20 +2130,17 @@ export function Dashboard({
             <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="font-medium">{platformDisplayName(inspectedContext.selected.platform)}</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Estado</dt><dd className="font-medium">Reserva confirmada</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="font-medium">{new Date(`${inspectedContext.initialCheckIn}T12:00:00`).toLocaleDateString("es-BO")} · 14:00</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Salida final</dt><dd className="font-medium">{new Date(`${inspectedContext.finalCheckOut}T12:00:00`).toLocaleDateString("es-BO")} · 11:00</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Hospedaje total</dt><dd className="font-medium">{inspectedContext.lodgingTotal.BOB > 0 && <span className="block">Bs {inspectedContext.lodgingTotal.BOB}</span>}{inspectedContext.lodgingTotal.USD > 0 && <span className="block">USD {inspectedContext.lodgingTotal.USD}</span>}{inspectedContext.lodgingTotal.BOB === 0 && inspectedContext.lodgingTotal.USD === 0 && "Sin monto"}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo total</dt><dd className="font-medium">{inspectedContext.parkingTotal.BOB > 0 && <span className="block">Bs {inspectedContext.parkingTotal.BOB}</span>}{inspectedContext.parkingTotal.USD > 0 && <span className="block">USD {inspectedContext.parkingTotal.USD}</span>}{inspectedContext.parkingTotal.BOB === 0 && inspectedContext.parkingTotal.USD === 0 && "No"}</dd></div>
-              <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Garantía vigente</dt><dd className="font-medium">{inspectedContext.root.guaranteeCurrency === "USD" ? "USD" : "Bs"} {inspectedContext.root.guaranteeAmount ?? 0} · no se cobra nuevamente</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkIn)}T12:00:00`).toLocaleDateString("es-BO")} · 14:00</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Salida</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkOut)}T12:00:00`).toLocaleDateString("es-BO")} · 11:00</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Hospedaje</dt><dd className="font-medium">{inspectedContext.selected.totalPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.totalPrice}` : "Sin monto"}</dd></div>
+              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="font-medium">{inspectedContext.selected.hasParking && inspectedContext.selected.parkingTotalPrice != null ? `${inspectedContext.selected.parkingCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.parkingTotalPrice}` : "No"}</dd></div>
+              <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Garantía</dt><dd className="font-medium">{inspectedContext.selected.extensionOfId ? "Se mantiene la garantía de la reserva inicial; no se cobra en esta extensión" : `${inspectedContext.selected.guaranteeCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.guaranteeAmount ?? 0}`}</dd></div>
               {inspectedContext.selected.note && <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-2.5 font-medium">{inspectedContext.selected.note}</dd></div>}
             </dl>
-            {inspectedContext.family.length > 1 && <div className="mt-4 space-y-1.5 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3">
-              <div className="text-xs font-semibold text-[var(--ink-2)]">Tramos de la estadía</div>
-              {inspectedContext.family.map((segment, index) => { const finances = segmentFinancials(segment); return <button type="button" key={segment.id} onClick={() => setInspectedReservationId(segment.id)} className={`flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-xs ${segment.id === inspectedContext.selected.id ? "bg-[var(--bg-3)]" : "hover:bg-[var(--bg-3)]/60"}`}><span className="text-[var(--ink-3)]">{index === 0 ? "Inicial" : `Extensión ${index}`} · {platformDisplayName(segment.platform)}<span className={`ml-2 font-semibold ${finances.hasOutstandingBalance ? "text-amber-400" : "text-emerald-500"}`}>{finances.hasOutstandingBalance ? "Saldo pendiente" : "Saldado"}</span></span><span className="font-medium text-[var(--ink)]">{new Date(`${reservationDateKey(segment.checkIn)}T12:00:00`).toLocaleDateString("es-BO")} → {new Date(`${reservationDateKey(segment.checkOut)}T12:00:00`).toLocaleDateString("es-BO")}</span></button>; })}
-            </div>}
             <div className={`mt-4 rounded-xl border p-3 ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "border-amber-400/40 bg-amber-400/10" : "border-emerald-500/30 bg-emerald-500/10"}`}>
-              <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold">Cobro de {inspectedContext.selected.extensionOfId ? "esta extensión" : "esta reserva"}</span><span className={`text-xs font-bold ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "text-amber-400" : "text-emerald-500"}`}>{inspectedContext.selectedFinancials.hasOutstandingBalance ? "Pendiente" : "Saldado"}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold">Cobro de {inspectedContext.selected.extensionOfId ? "esta extensión" : "esta reserva"}</span><span className={`text-xs font-bold ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "text-amber-400" : "text-emerald-500"}`}>{inspectedContext.selectedFinancials.manuallySettled ? "Saldado manualmente" : inspectedContext.selectedFinancials.hasOutstandingBalance ? "Pendiente" : "Saldado"}</span></div>
               <div className="mt-2 grid grid-cols-3 gap-2 text-xs"><div><span className="block text-[var(--ink-4)]">A cobrar</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.expected[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.expected[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Pagado</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.paid[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.paid[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Adeudado</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.due[c] > 0 && <span key={c} className="block font-bold text-amber-400">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.due[c]}</span>)}{!inspectedContext.selectedFinancials.hasOutstandingBalance && <span className="font-semibold text-emerald-500">0</span>}</div></div>
+              <button type="button" disabled={savingSettlement} onClick={toggleManualSettlement} className="mt-3 w-full rounded-lg border border-emerald-500/40 px-3 py-2 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50">{savingSettlement ? "Guardando…" : inspectedContext.selectedFinancials.manuallySettled ? "Quitar marca de saldado" : "Marcar este tramo como saldado"}</button>
             </div>
             {(inspectedContext.selected.moneyMovements?.length || 0) > 0 && <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3">
               <div className="mb-2 text-xs font-semibold text-[var(--ink-2)]">Dinero recibido</div>
@@ -2264,7 +2273,7 @@ export function Dashboard({
                   <div className="flex h-10 items-center gap-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm">
                     <span className="shrink-0 text-[var(--ink-3)]">{new Date(`${formCheckIn}T12:00:00`).toLocaleDateString("es-BO")}</span>
                     <span>→</span>
-                    <input aria-label="Nueva fecha de salida" type="date" min={addCalendarDays(formCheckIn, 1)} value={formCheckOut} onChange={(e) => setFormCheckOut(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" />
+                    <input aria-label="Nueva fecha de salida" type="date" min={addCalendarDays(formCheckIn, 1)} value={formCheckOut} onClick={(event) => event.currentTarget.showPicker?.()} onChange={(e) => setFormCheckOut(e.target.value)} className="min-w-0 flex-1 cursor-pointer bg-transparent outline-none" />
                   </div>
                 ) : <DateSlider checkIn={formCheckIn} checkOut={formCheckOut} onChangeCheckIn={setFormCheckIn} onChangeCheckOut={setFormCheckOut} bookedDates={bookedDates} compact />}
               </div>

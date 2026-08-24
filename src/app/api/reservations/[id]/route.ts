@@ -113,6 +113,12 @@ export async function PATCH(
         data.parkingTotalPrice = null;
       }
     }
+    if (body.settledManually !== undefined) {
+      if (typeof body.settledManually !== "boolean") {
+        return NextResponse.json({ error: "Invalid settledManually" }, { status: 400 });
+      }
+      data.settledManuallyAt = body.settledManually ? new Date() : null;
+    }
 
     if (body.note !== undefined) {
       if (body.note !== null && typeof body.note !== "string") {

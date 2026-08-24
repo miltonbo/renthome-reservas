@@ -25,7 +25,9 @@ function segmentTotals(segment: Reservation) {
   if (segment.parkingTotalPrice != null) expected[segment.parkingCurrency || "BOB"] += segment.parkingTotalPrice;
   if (segment.guaranteeAmount != null) expected[segment.guaranteeCurrency || "BOB"] += segment.guaranteeAmount;
   for (const movement of segment.moneyMovements || []) if (["lodging", "parking", "guarantee", "refund"].includes(movement.type)) paid[movement.currency] += movement.amountMinor / 100;
-  return { expected, paid, due: { BOB: Math.max(0, expected.BOB - paid.BOB), USD: Math.max(0, expected.USD - paid.USD) } };
+  const due = { BOB: Math.max(0, expected.BOB - paid.BOB), USD: Math.max(0, expected.USD - paid.USD) };
+  if (segment.settledManuallyAt) { due.BOB = 0; due.USD = 0; }
+  return { expected, paid, due, manuallySettled: Boolean(segment.settledManuallyAt) };
 }
 
 function dateLabel(value: string): string {
@@ -75,7 +77,7 @@ export function ReservationView({ reservation, propertyName, relatedReservations
                 <p className="mt-1 text-xs text-[var(--ink-3)]">{dateLabel(segment.checkIn)} → {dateLabel(segment.checkOut)} · {reservationNights(segment.checkIn, segment.checkOut)} {reservationNights(segment.checkIn, segment.checkOut) === 1 ? "noche" : "noches"}</p>
               </div>
               <div className="text-xs text-[var(--ink-3)]">{segment.hasParking ? `Parqueo ${money(segment.parkingTotalPrice, segment.parkingCurrency || "BOB")}` : "Sin parqueo"}</div>
-              <div className="text-right"><div className="font-semibold tabular-nums text-[var(--ink)]">{money(segment.totalPrice, segment.priceCurrency || "BOB")}</div>{(() => { const totals = segmentTotals(segment); const pending = totals.due.BOB > 0.005 || totals.due.USD > 0.005; return <div className={`mt-0.5 text-[10px] font-semibold ${pending ? "text-amber-400" : "text-emerald-500"}`}>{pending ? <>{totals.due.BOB > 0 && `${money(totals.due.BOB)} adeudado `}{totals.due.USD > 0 && `${money(totals.due.USD, "USD")} adeudado`}</> : "Saldado"}</div>; })()}</div>
+              <div className="text-right"><div className="font-semibold tabular-nums text-[var(--ink)]">{money(segment.totalPrice, segment.priceCurrency || "BOB")}</div>{(() => { const totals = segmentTotals(segment); const pending = totals.due.BOB > 0.005 || totals.due.USD > 0.005; return <div className={`mt-0.5 text-[10px] font-semibold ${pending ? "text-amber-400" : "text-emerald-500"}`}>{pending ? <>{totals.due.BOB > 0 && `${money(totals.due.BOB)} adeudado `}{totals.due.USD > 0 && `${money(totals.due.USD, "USD")} adeudado`}</> : totals.manuallySettled ? "Saldado manualmente" : "Saldado"}</div>; })()}</div>
               {segment.note && <div className="rounded-lg bg-[var(--bg-3)] px-3 py-2 text-xs text-[var(--ink-2)] sm:col-span-3"><span className="font-semibold">Nota:</span> {segment.note}</div>}
             </div>
           ))}

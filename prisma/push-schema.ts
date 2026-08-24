@@ -269,6 +269,7 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Reservation" ADD COLUMN "parkingNightlyPrice" REAL`,
     `ALTER TABLE "Reservation" ADD COLUMN "parkingTotalPrice" REAL`,
     `ALTER TABLE "Reservation" ADD COLUMN "parkingCurrency" TEXT NOT NULL DEFAULT 'BOB'`,
+    `ALTER TABLE "Reservation" ADD COLUMN "settledManuallyAt" DATETIME`,
     `ALTER TABLE "Reservation" ADD COLUMN "note" TEXT`,
     `ALTER TABLE "Reservation" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'confirmed'`,
     `ALTER TABLE "Reservation" ADD COLUMN "cancellationReason" TEXT`,

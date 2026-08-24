@@ -316,6 +316,7 @@ model Reservation {
   status               String                @default("confirmed") // "confirmed" | "cancelled"
   cancellationReason   String?
   cancelledAt          DateTime?
+  settledManuallyAt    DateTime? // explicit per-segment settlement for mixed-currency payments
   extensionOfId        Int?
   extensionOf          Reservation?          @relation("ReservationExtensions", fields: [extensionOfId], references: [id], onDelete: Cascade)
   extensions           Reservation[]         @relation("ReservationExtensions")

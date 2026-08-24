@@ -229,6 +229,7 @@ function AppContent({
       parkingTotalPrice?: number | null;
       parkingCurrency?: "BOB" | "USD";
       note?: string | null;
+      settledManually?: boolean;
     }
   ) => {
     const res = await fetch(`/api/reservations/${id}`, {
