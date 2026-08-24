@@ -341,8 +341,8 @@ model MoneyMovement {
   reservation   Reservation       @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   propertyId    Int
   property      Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  type          String // "lodging" | "parking" | "guarantee" | "additional" | "adjustment"
-  amountMinor   Int // cents/centavos; exact for both BOB and USD
+  type          String // lodging | parking | guarantee | additional | adjustment | refund
+  amountMinor   Int // cents/centavos; refunds are stored as negative amounts
   currency      String // "BOB" | "USD"
   paymentMethod String // qr | transfer | airbnb | binance | takenos | sepa | cash
   receivedBy    String? // "deysi" | "milton"; null for split Airbnb receipts

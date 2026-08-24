@@ -85,7 +85,7 @@ export interface MoneyMovement {
   id: number;
   reservationId: number;
   propertyId: number;
-  type: "lodging" | "parking" | "guarantee" | "additional" | "adjustment";
+  type: "lodging" | "parking" | "guarantee" | "additional" | "adjustment" | "refund";
   amountMinor: number;
   currency: "BOB" | "USD";
   paymentMethod: "qr" | "transfer" | "airbnb" | "binance" | "takenos" | "sepa" | "cash";

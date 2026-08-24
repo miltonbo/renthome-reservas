@@ -6,14 +6,18 @@ const mocks = vi.hoisted(() => ({
   canManageProperty: vi.fn(),
   logAudit: vi.fn(),
   findUnique: vi.fn(),
+  findMany: vi.fn(),
   updateMany: vi.fn(),
+  movementFindMany: vi.fn(),
+  movementCreate: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ getSession: mocks.getSession }));
 vi.mock("@/lib/ownership", () => ({ canManageProperty: mocks.canManageProperty }));
 vi.mock("@/lib/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@/lib/prisma", () => ({
-  prisma: { reservation: { findUnique: mocks.findUnique, updateMany: mocks.updateMany } },
+  prisma: { reservation: { findUnique: mocks.findUnique, findMany: mocks.findMany, updateMany: mocks.updateMany }, moneyMovement: { findMany: mocks.movementFindMany, create: mocks.movementCreate }, $transaction: mocks.transaction },
 }));
 
 import { POST } from "./route";
@@ -23,6 +27,9 @@ const request = (reason?: unknown) => new NextRequest("http://localhost/api/rese
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ reason }),
 });
+const refundRequest = (refunds: unknown[]) => new NextRequest("http://localhost/api/reservations/7/cancel", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason: "Salida anticipada", refunds }),
+});
 const params = { params: Promise.resolve({ id: "7" }) };
 
 beforeEach(() => {
@@ -30,6 +37,10 @@ beforeEach(() => {
   mocks.getSession.mockResolvedValue({ userId: 3, role: "user" });
   mocks.canManageProperty.mockResolvedValue(true);
   mocks.findUnique.mockResolvedValue({ id: 7, propertyId: 12, extensionOfId: null, status: "confirmed" });
+  mocks.findMany.mockResolvedValue([{ id: 7 }, { id: 8 }]);
+  mocks.movementFindMany.mockResolvedValue([{ currency: "BOB", amountMinor: 100000 }]);
+  mocks.movementCreate.mockResolvedValue({ id: 99 });
+  mocks.transaction.mockImplementation(async (callback) => callback({ reservation: { updateMany: mocks.updateMany }, moneyMovement: { create: mocks.movementCreate } }));
   mocks.updateMany.mockResolvedValue({ count: 2 });
   mocks.logAudit.mockResolvedValue(undefined);
 });
@@ -68,5 +79,23 @@ describe("POST /api/reservations/:id/cancel", () => {
     const response = await POST(request(), params);
     expect(response.status).toBe(200);
     expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("records a refund as a negative movement for monthly reconciliation", async () => {
+    mocks.findUnique.mockResolvedValue({ id: 7, propertyId: 12, extensionOfId: null, status: "confirmed", property: { financialOperator: "deysi" } });
+    const response = await POST(refundRequest([{ amount: 400, currency: "BOB", paymentMethod: "qr", paidBy: "milton" }]), params);
+    expect(response.status).toBe(200);
+    expect(mocks.movementCreate).toHaveBeenCalledWith({ data: expect.objectContaining({
+      type: "refund", amountMinor: -40000, currency: "BOB", paymentMethod: "qr", receivedBy: "milton",
+      allocations: { create: [{ person: "deysi", amountMinor: -40000, percentageBps: 10000 }] },
+    }) });
+  });
+
+  it("rejects refunds above the amount actually received in that currency", async () => {
+    mocks.findUnique.mockResolvedValue({ id: 7, propertyId: 12, extensionOfId: null, status: "confirmed", property: { financialOperator: "deysi" } });
+    const response = await POST(refundRequest([{ amount: 1200, currency: "BOB", paymentMethod: "cash", paidBy: "deysi" }]), params);
+    expect(response.status).toBe(400);
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+    expect(mocks.movementCreate).not.toHaveBeenCalled();
   });
 });

@@ -244,11 +244,11 @@ function AppContent({
     return { ok: false as const, error: errBody?.error || `Request failed (${res.status})` };
   };
 
-  const handleCancelReservation = async (id: number, reason?: string) => {
+  const handleCancelReservation = async (id: number, reason?: string, refunds?: Array<{ amount: number; currency: "BOB" | "USD"; paymentMethod: string; paidBy: "deysi" | "milton" }>) => {
     const res = await fetch(`/api/reservations/${id}/cancel`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reason: reason || null }),
+      body: JSON.stringify({ reason: reason || null, refunds: refunds || [] }),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({} as { error?: string }));
