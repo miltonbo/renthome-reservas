@@ -1,10 +1,10 @@
 #!/bin/bash
-# rent-tool — calendar sync cron wrapper.
+# deptosbo — calendar sync cron wrapper.
 #
 # Sources CRON_SECRET from .env.production (so the secret never appears
 # in the crontab itself), then calls the local sync endpoint.
 #
-# Wired up by deploy/cron/rent-tool.cron, which runs this every 10 min
+# Wired up by deploy/cron/deptosbo.cron, which runs this every 10 min
 # under the `app` user.
 #
 # Exit codes:
@@ -14,7 +14,7 @@
 
 set -uo pipefail
 
-ENV_FILE="/home/app/rent-tool/.env.production"
+ENV_FILE="/home/app/deptosbo/.env.production"
 ENDPOINT="http://127.0.0.1:3000/api/calendar/cron"
 
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }

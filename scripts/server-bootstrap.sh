@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== rent-tool droplet bootstrap ==="
+echo "=== DeptosBO server bootstrap ==="
 
 # 1. Swap (2 GB) — needed for Next.js builds on 512 MB droplets
 if ! swapon --show | grep -q '/swapfile'; then
@@ -88,9 +88,17 @@ if ! id -u app >/dev/null 2>&1; then
   chmod 440 /etc/sudoers.d/app
 fi
 
-# Copy authorized_keys from root → app
+# Copy the Lightsail/Ubuntu login key to the unprivileged app user.
+SOURCE_USER="${SUDO_USER:-ubuntu}"
 mkdir -p /home/app/.ssh
-cp /root/.ssh/authorized_keys /home/app/.ssh/authorized_keys
+if [ -f "/home/${SOURCE_USER}/.ssh/authorized_keys" ]; then
+  cp "/home/${SOURCE_USER}/.ssh/authorized_keys" /home/app/.ssh/authorized_keys
+elif [ -f /root/.ssh/authorized_keys ]; then
+  cp /root/.ssh/authorized_keys /home/app/.ssh/authorized_keys
+else
+  echo ">> WARNING: no authorized_keys found; add an SSH key for the app user manually."
+  touch /home/app/.ssh/authorized_keys
+fi
 chown -R app:app /home/app/.ssh
 chmod 700 /home/app/.ssh
 chmod 600 /home/app/.ssh/authorized_keys
@@ -103,10 +111,10 @@ echo ">> SSH config: password auth still enabled for root (recovery). Disable ma
 
 # 10. App-specific dirs
 echo ">> Creating app directories..."
-sudo -u app mkdir -p /home/app/rent-tool /home/app/backups /home/app/logs
+sudo -u app mkdir -p /home/app/deptosbo /home/app/backups /home/app/logs
 chown -R app:app /home/app/
 
-# 11. nginx default config — disable, replaced later by rent-tool.conf
+# 11. nginx default config — disable, replaced later by deptosbo.conf
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
 

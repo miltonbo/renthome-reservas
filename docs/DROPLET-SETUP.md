@@ -1,6 +1,6 @@
 # DigitalOcean droplet setup
 
-This is the runbook for self-hosting `rent-tool` on a single DigitalOcean droplet
+This is the runbook for self-hosting `deptosbo` on a single DigitalOcean droplet
 (or any Ubuntu 24.04 VPS — DO is just the cheapest convenient option).
 
 ## What you'll end up with
@@ -57,7 +57,7 @@ The script (idempotent, safe to re-run):
 - Enables **unattended-upgrades** (auto security patches)
 - Creates an `app` user with passwordless sudo
 - Copies your `root/.ssh/authorized_keys` to `app/.ssh/authorized_keys`
-- Creates `/home/app/rent-tool`, `/home/app/backups`, `/home/app/logs`
+- Creates `/home/app/deptosbo`, `/home/app/backups`, `/home/app/logs`
 - Removes the default nginx site
 
 After it finishes, verify you can SSH in as `app`:
@@ -113,18 +113,18 @@ curl -I http://127.0.0.1:3000   # expect 200 or 307
 
 ## 4. Run as a systemd service
 
-Covered by RT-13.4. The unit file lives at `deploy/systemd/rent-tool.service`
+Covered by RT-13.4. The unit file lives at `deploy/systemd/deptosbo.service`
 in this repo. Copy it to `/etc/systemd/system/`, reload, enable, start.
 
 ## 5. Reverse proxy + TLS
 
-Covered by RT-13.5. The nginx config lives at `deploy/nginx/rent-tool.conf`.
+Covered by RT-13.5. The nginx config lives at `deploy/nginx/deptosbo.conf`.
 Then run `certbot --nginx -d your-domain.com` to get the certs.
 
 ## 6. Cron for calendar sync (RT-13.8)
 
 Calendar sync runs natively from the droplet's own cron — no third-party
-scheduler. The crontab template lives at `deploy/cron/rent-tool.cron`
+scheduler. The crontab template lives at `deploy/cron/deptosbo.cron`
 and calls a wrapper at `scripts/cron-sync.sh` so the `CRON_SECRET` is
 sourced from `.env.production` rather than inlined in the crontab.
 
@@ -133,26 +133,26 @@ Install (as root on the droplet):
 ```bash
 # 1. Make sure the wrapper is executable (git should preserve this,
 #    but re-applying is harmless).
-sudo chmod +x /home/app/rent-tool/scripts/cron-sync.sh
+sudo chmod +x /home/app/deptosbo/scripts/cron-sync.sh
 
 # 2. Lock down the env file so other users on the box can't read it.
-sudo chmod 600 /home/app/rent-tool/.env.production
-sudo chown app:app /home/app/rent-tool/.env.production
+sudo chmod 600 /home/app/deptosbo/.env.production
+sudo chown app:app /home/app/deptosbo/.env.production
 
 # 3. Install the crontab for the `app` user. EDITOR=cat lets us pipe
 #    the file in non-interactively; otherwise: `sudo crontab -u app -e`
 #    and paste the contents.
-sudo -u app crontab /home/app/rent-tool/deploy/cron/rent-tool.cron
+sudo -u app crontab /home/app/deptosbo/deploy/cron/deptosbo.cron
 
 # 4. Verify.
 sudo -u app crontab -l
 ```
 
-The wrapper logs to `/home/app/logs/rent-tool-cron.log`. Tail it after
+The wrapper logs to `/home/app/logs/deptosbo-cron.log`. Tail it after
 the next 10-minute boundary to confirm:
 
 ```bash
-tail -f /home/app/logs/rent-tool-cron.log
+tail -f /home/app/logs/deptosbo-cron.log
 # expect lines like:
 # [2026-05-04T19:30:01Z] OK {"ok":true,...,"results":[...]}
 ```
@@ -165,8 +165,8 @@ failures (RT-9.4).
 **Rotating the log.** If the log gets large, add a small logrotate snippet:
 
 ```bash
-sudo tee /etc/logrotate.d/rent-tool-cron >/dev/null <<'EOF'
-/home/app/logs/rent-tool-cron.log {
+sudo tee /etc/logrotate.d/deptosbo-cron >/dev/null <<'EOF'
+/home/app/logs/deptosbo-cron.log {
     weekly
     rotate 8
     compress
@@ -199,11 +199,11 @@ on-disk snapshots.
 Initial setup:
 
 ```bash
-sudo chmod +x /home/app/rent-tool/scripts/backup-db.sh
+sudo chmod +x /home/app/deptosbo/scripts/backup-db.sh
 
 # Run once manually to confirm it produces a valid backup before
 # trusting the cron entry.
-sudo -u app /home/app/rent-tool/scripts/backup-db.sh
+sudo -u app /home/app/deptosbo/scripts/backup-db.sh
 ls -la /home/app/backups/daily/
 ```
 
@@ -211,7 +211,7 @@ After installing the crontab from §6, the next 03:15 will trigger the
 nightly backup automatically. Tail the log to confirm:
 
 ```bash
-tail -f /home/app/logs/rent-tool-backup.log
+tail -f /home/app/logs/deptosbo-backup.log
 # expect a line like:
 # [2026-05-05T03:15:01+00:00] OK /home/app/backups/daily/prod-20260505-0315.db (243712 bytes)
 ```
@@ -226,18 +226,18 @@ tail -f /home/app/logs/rent-tool-backup.log
 ls -la /home/app/backups/daily/
 
 # 2. Stop the app so nothing writes during the swap.
-sudo systemctl stop rent-tool
+sudo systemctl stop deptosbo
 
 # 3. Move the live DB out of the way (don't delete — keep as a fallback).
-mv /home/app/rent-tool/data/prod.db /home/app/rent-tool/data/prod.db.preroll
+mv /home/app/deptosbo/data/prod.db /home/app/deptosbo/data/prod.db.preroll
 
 # 4. Copy the backup into place.
-cp /home/app/backups/daily/prod-YYYYMMDD-HHMM.db /home/app/rent-tool/data/prod.db
-chown app:app /home/app/rent-tool/data/prod.db
+cp /home/app/backups/daily/prod-YYYYMMDD-HHMM.db /home/app/deptosbo/data/prod.db
+chown app:app /home/app/deptosbo/data/prod.db
 
 # 5. Start the app and smoke-test (login, list properties).
-sudo systemctl start rent-tool
-sudo journalctl -u rent-tool -n 50 --no-pager
+sudo systemctl start deptosbo
+sudo journalctl -u deptosbo -n 50 --no-pager
 curl -fsS http://127.0.0.1:3000/api/health
 ```
 
@@ -277,9 +277,9 @@ ssh-keyscan <DROPLET_IP>
 
 # 4. Allow the `app` user passwordless sudo for ONLY the systemctl restart
 #    that deploy.sh needs. As root on the droplet:
-echo 'app ALL=(root) NOPASSWD: /bin/systemctl restart rent-tool' \
-  > /etc/sudoers.d/rent-tool-deploy
-chmod 440 /etc/sudoers.d/rent-tool-deploy
+echo 'app ALL=(root) NOPASSWD: /bin/systemctl restart deptosbo' \
+  > /etc/sudoers.d/deptosbo-deploy
+chmod 440 /etc/sudoers.d/deptosbo-deploy
 visudo -c   # syntax check
 ```
 
@@ -353,16 +353,16 @@ To enable Telegram alerts:
 # 2. Send any message to the bot, then visit:
 #    https://api.telegram.org/bot<TOKEN>/getUpdates
 #    The "chat.id" field is your TELEGRAM_CHAT_ID.
-# 3. Add to /home/app/rent-tool/.env.production:
-echo 'TELEGRAM_BOT_TOKEN=...' >> /home/app/rent-tool/.env.production
-echo 'TELEGRAM_CHAT_ID=...'   >> /home/app/rent-tool/.env.production
+# 3. Add to /home/app/deptosbo/.env.production:
+echo 'TELEGRAM_BOT_TOKEN=...' >> /home/app/deptosbo/.env.production
+echo 'TELEGRAM_CHAT_ID=...'   >> /home/app/deptosbo/.env.production
 ```
 
 Test the alert path manually (forces a fake threshold breach):
 
 ```bash
-RAM_WARN_PCT=1 DISK_WARN_PCT=1 sudo -u app /home/app/rent-tool/scripts/check-resources.sh
-# expect a Telegram message + a line in /home/app/logs/rent-tool-resources.log
+RAM_WARN_PCT=1 DISK_WARN_PCT=1 sudo -u app /home/app/deptosbo/scripts/check-resources.sh
+# expect a Telegram message + a line in /home/app/logs/deptosbo-resources.log
 ```
 
 ---
@@ -373,7 +373,7 @@ RAM_WARN_PCT=1 DISK_WARN_PCT=1 sudo -u app /home/app/rent-tool/scripts/check-res
 without swap. Verify `swapon --show` returns 2 GB. Re-run `server-bootstrap.sh`
 to set it up if missing.
 
-**Node service won't start.** `journalctl -u rent-tool -f` shows the actual
+**Node service won't start.** `journalctl -u deptosbo -f` shows the actual
 error. Common issues: missing env vars, wrong Node version, permission on
 `data/prod.db`.
 

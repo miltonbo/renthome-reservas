@@ -1,13 +1,13 @@
-# rent-tool — rotation for the app's own cron logs.
+# deptosbo — rotation for the app's own cron logs.
 #
 # Install path on the droplet:
-#   /etc/logrotate.d/rent-tool
+#   /etc/logrotate.d/deptosbo
 # scripts/install-build.sh installs it automatically when this file changes.
 #
-# Why this exists: the three cron jobs in deploy/cron/rent-tool.cron all
+# Why this exists: the three cron jobs in deploy/cron/deptosbo.cron all
 # append with `>>` and nothing ever truncated them. Ubuntu ships logrotate
 # rules for syslog/nginx/ufw/btmp but obviously none for /home/app/logs,
-# so rent-tool-cron.log grew unbounded — every 10 minutes, forever. It is
+# so deptosbo-cron.log grew unbounded — every 10 minutes, forever. It is
 # slow-moving (~1.4 MB after months) and so never the headline in a
 # disk-full postmortem, but on an 8.7 GB box with ~64% consumed by
 # swapfile + /usr + node_modules before anything else, nothing is allowed

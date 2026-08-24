@@ -1,5 +1,5 @@
 #!/bin/bash
-# rent-tool — daily SQLite backup with tiered retention.
+# deptosbo — daily SQLite backup with tiered retention.
 #
 # Uses sqlite3's online ".backup" command (not cp) to take a
 # transactionally-consistent snapshot even while the app is writing.
@@ -16,13 +16,13 @@
 # the inode stays alive until ALL references are removed. So you keep
 # at most ~14 + 8 + 6 = 28 distinct on-disk snapshots.
 #
-# Wired up by deploy/cron/rent-tool.cron at 03:15 every day.
+# Wired up by deploy/cron/deptosbo.cron at 03:15 every day.
 #
 # Restore procedure: see docs/DROPLET-SETUP.md §7.
 
 set -euo pipefail
 
-DB="/home/app/rent-tool/data/prod.db"
+DB="/home/app/deptosbo/data/prod.db"
 DEST="/home/app/backups"
 STAMP="$(date +%Y%m%d-%H%M)"
 DOW="$(date +%u)"   # 1=Mon … 7=Sun

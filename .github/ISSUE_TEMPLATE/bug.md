@@ -34,7 +34,7 @@ assignees: ''
 ## Logs
 
 <!--
-Self-hosted: `journalctl -u rent-tool -n 100` (droplet) or your dev server output.
+Self-hosted: `journalctl -u deptosbo -n 100` (droplet) or your dev server output.
 Hosted: include the request URL + approximate timestamp so we can find it in logs.
 Strip credentials and guest passport data before pasting.
 -->

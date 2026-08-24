@@ -4,7 +4,7 @@ All endpoints are JSON unless noted. Base URL: `/`.
 
 ## Authentication
 
-A successful `POST /api/auth/login` sets the `rent-tool-session` cookie (HTTP-only, JWT).
+A successful `POST /api/auth/login` sets the `deptosbo-session` cookie (HTTP-only, JWT).
 The middleware in `src/middleware.ts` rejects any request without a valid session
 cookie with `401 { "error": "Unauthorized" }`, except for these public paths:
 
@@ -29,7 +29,7 @@ Errors follow `{ "error": string }`. Standard codes:
 
 ### `POST /api/auth/login` — public
 Body: `{ "username": string, "password": string }`
-On success: sets `rent-tool-session` cookie; returns `{ user: { userId, username, role } }`.
+On success: sets `deptosbo-session` cookie; returns `{ user: { userId, username, role } }`.
 On failure: `401 { "error": "Invalid credentials" }`.
 
 ### `POST /api/auth/logout` — session

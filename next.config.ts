@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 // Content-Security-Policy (RT-21.2). Defence-in-depth: nginx sets the same
-// header for localhost:3000 traffic (deploy/nginx/rent-tool.conf), this
+// header for localhost:3000 traffic (deploy/nginx/deptosbo.conf), this
 // covers self-hosters who skip the reverse proxy and the dev server.
 //
 // 'unsafe-inline' on script-src is a pragmatic concession — Next.js 16
@@ -67,7 +67,7 @@ const nextConfig: NextConfig = {
 
 export default withSentryConfig(nextConfig, {
   org: "wowcarry-ltd",
-  project: "rent-tool",
+  project: "deptosbo",
   silent: !process.env.CI,
   widenClientFileUpload: true,
   tunnelRoute: "/monitoring",

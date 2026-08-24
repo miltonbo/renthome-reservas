@@ -1,19 +1,20 @@
 [Unit]
-Description=rent-tool Next.js app
-After=network.target
+Description=deptosbo Next.js app
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=simple
 User=app
 Group=app
-WorkingDirectory=/home/app/rent-tool
-EnvironmentFile=/home/app/rent-tool/.env.production
+WorkingDirectory=/home/app/deptosbo
+EnvironmentFile=/home/app/deptosbo/.env.production
 # Written by scripts/install-build.sh on every deploy, holding the SHA the
 # running artifact was built from. /api/health reports it as `version`;
 # without it the endpoint always answered "dev" and there was no way to
 # tell which commit was actually serving. Leading `-` marks the file
 # optional so the unit still starts before the first deploy writes it.
-EnvironmentFile=-/home/app/rent-tool/.env.release
+EnvironmentFile=-/home/app/deptosbo/.env.release
 Environment=NODE_ENV=production
 Environment=PORT=3000
 ExecStart=/usr/bin/npm run start
@@ -21,11 +22,11 @@ Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=rent-tool
+SyslogIdentifier=deptosbo
 
 # Resource limits — keep node well within droplet RAM + swap
 LimitNOFILE=65536
-MemoryMax=900M
+MemoryMax=1200M
 MemorySwapMax=2G
 
 # Hardening — minimal privileges
@@ -33,7 +34,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/app/rent-tool
+ReadWritePaths=/home/app/deptosbo
 
 [Install]
 WantedBy=multi-user.target

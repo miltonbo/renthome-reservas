@@ -1,6 +1,6 @@
-# RentHome Departamentos
+# DeptosBO
 
-Sistema interno para administrar las reservas y la disponibilidad de los 23 departamentos físicos operados por RentHome Departamentos.
+Sistema privado de gestión de propiedades, reservas, disponibilidad, pagos y limpiezas.
 
 ## Funcionalidades principales
 
@@ -28,7 +28,7 @@ La aplicación estará disponible por defecto en `http://localhost:3000`.
 Copiar `.env.example` a `.env.local` y configurar como mínimo:
 
 - `DATABASE_URL` para SQLite local, o las credenciales de Turso.
-- `SESSION_SECRET` con un valor seguro.
+- `JWT_SECRET` y `CRON_SECRET` con valores seguros e independientes.
 - `NEXT_PUBLIC_SITE_URL` con la URL pública al desplegar.
 - `EMAIL_FROM` y las credenciales de correo si se habilitan notificaciones.
 
@@ -39,4 +39,4 @@ npm test
 npm run build
 ```
 
-El sistema es de uso interno de RentHome Departamentos. No deben incorporarse credenciales, enlaces privados de calendarios ni datos de huéspedes al repositorio.
+El sistema es de uso interno. No deben incorporarse credenciales, enlaces privados de calendarios ni datos de huéspedes al repositorio.

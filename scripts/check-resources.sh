@@ -1,5 +1,5 @@
 #!/bin/bash
-# rent-tool — hourly droplet resource check.
+# deptosbo — hourly droplet resource check.
 #
 # Reads thresholds from .env.production (RAM_WARN_PCT, DISK_WARN_PCT).
 # When a threshold is exceeded, posts a warning via:
@@ -7,14 +7,14 @@
 #   2. Generic webhook, if ALERT_WEBHOOK_URL is set
 #   3. Falls back to logging only (still useful — appears in cron log)
 #
-# Wired up by deploy/cron/rent-tool.cron at the top of every hour.
+# Wired up by deploy/cron/deptosbo.cron at the top of every hour.
 #
 # Designed to never error in the "no alerting configured" path so the
 # cron doesn't fill the inbox with failure emails.
 
 set -uo pipefail
 
-ENV_FILE="/home/app/rent-tool/.env.production"
+ENV_FILE="/home/app/deptosbo/.env.production"
 HOST="$(hostname -s)"
 
 # Defaults — overridable from env file.

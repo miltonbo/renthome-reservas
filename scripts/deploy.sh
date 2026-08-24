@@ -1,5 +1,5 @@
 #!/bin/bash
-# rent-tool — full droplet-side build + deploy (FALLBACK).
+# deptosbo — full droplet-side build + deploy (FALLBACK).
 #
 # Builds AND deploys on the droplet. Slow (~18 min on the 458 MB box) and
 # only kept around as a fallback when the CI build pipeline is unavailable
@@ -11,7 +11,7 @@
 #
 # To use this fallback manually:
 #   ssh app@<droplet>
-#   cd /home/app/rent-tool
+#   cd /home/app/deptosbo
 #   bash scripts/deploy.sh
 #
 # Aborts cleanly on any failed step BEFORE touching the running service,
@@ -19,15 +19,15 @@
 # the very last step.
 #
 # Pre-reqs (set up once, see docs/DROPLET-SETUP.md):
-#   - /home/app/rent-tool is the git checkout
+#   - /home/app/deptosbo is the git checkout
 #   - .env.production is in place with DATABASE_URL, JWT_SECRET, CRON_SECRET, GEMINI key
 #   - Node 22 LTS on PATH
-#   - sudo NOPASSWD entry for `app` covering `systemctl restart rent-tool`
+#   - sudo NOPASSWD entry for `app` covering `systemctl restart deptosbo`
 
 set -euo pipefail
 
-REPO_DIR="/home/app/rent-tool"
-SERVICE="rent-tool"
+REPO_DIR="/home/app/deptosbo"
+SERVICE="deptosbo"
 LOG_PREFIX="[$(date -Is)]"
 
 cd "$REPO_DIR"

@@ -24,14 +24,14 @@
 #  4. apply schema if prisma/schema.prisma changed
 #  5. install systemd unit if it changed (then daemon-reload)
 #  5b. sync nginx maintenance.html if it changed (then reload nginx)
-#  6. systemctl restart rent-tool
+#  6. systemctl restart deptosbo
 #  7. smoke-test /api/health
 
 set -euo pipefail
 
 ARTIFACT="${1:-/tmp/build.tar.gz}"
-REPO="/home/app/rent-tool"
-SERVICE="rent-tool"
+REPO="/home/app/deptosbo"
+SERVICE="deptosbo"
 HEALTH_URL="http://127.0.0.1:3000/api/health"
 TARGET_SHA="${GIT_COMMIT_SHA:-origin/master}"
 
@@ -53,7 +53,7 @@ SCHEMA_BEFORE=$(sha256sum prisma/schema.prisma 2>/dev/null | awk '{print $1}' ||
 # new ALTER TABLE there must trigger a push on the next deploy or the
 # seed below 500s on a missing column.
 PUSH_SCRIPT_BEFORE=$(sha256sum prisma/push-schema.ts 2>/dev/null | awk '{print $1}' || echo "")
-SYSTEMD_BEFORE=$(sha256sum deploy/systemd/rent-tool.service 2>/dev/null | awk '{print $1}' || echo "")
+SYSTEMD_BEFORE=$(sha256sum deploy/systemd/deptosbo.service 2>/dev/null | awk '{print $1}' || echo "")
 # nginx serves the maintenance page from /etc/nginx/html/ — outside the
 # repo, so `git reset` never touches it. Track the repo copy's hash so a
 # change to it gets pushed to nginx below instead of silently drifting.
@@ -61,7 +61,7 @@ MAINT_BEFORE=$(sha256sum deploy/nginx/maintenance.html 2>/dev/null | awk '{print
 # logrotate rule for /home/app/logs — the cron jobs append there forever and
 # Ubuntu ships no rule that covers it. Same install-on-change treatment as
 # the unit and the maintenance page, since its target is outside the repo.
-LOGROTATE_BEFORE=$(sha256sum deploy/logrotate/rent-tool 2>/dev/null | awk '{print $1}' || echo "")
+LOGROTATE_BEFORE=$(sha256sum deploy/logrotate/deptosbo 2>/dev/null | awk '{print $1}' || echo "")
 
 # Refuse to proceed if someone edited files directly on the droplet — prevents
 # silent overwrite of unsaved local changes by `git reset --hard`.
@@ -86,9 +86,9 @@ log "recorded release $(git rev-parse --short HEAD) for the service env"
 LOCK_AFTER=$(sha256sum package-lock.json | awk '{print $1}')
 SCHEMA_AFTER=$(sha256sum prisma/schema.prisma | awk '{print $1}')
 PUSH_SCRIPT_AFTER=$(sha256sum prisma/push-schema.ts | awk '{print $1}')
-SYSTEMD_AFTER=$(sha256sum deploy/systemd/rent-tool.service | awk '{print $1}')
+SYSTEMD_AFTER=$(sha256sum deploy/systemd/deptosbo.service | awk '{print $1}')
 MAINT_AFTER=$(sha256sum deploy/nginx/maintenance.html | awk '{print $1}')
-LOGROTATE_AFTER=$(sha256sum deploy/logrotate/rent-tool 2>/dev/null | awk '{print $1}' || echo "")
+LOGROTATE_AFTER=$(sha256sum deploy/logrotate/deptosbo 2>/dev/null | awk '{print $1}' || echo "")
 
 # 2. Conditional npm ci. Only when dependencies actually changed.
 if [ "$LOCK_BEFORE" != "$LOCK_AFTER" ]; then
@@ -164,7 +164,7 @@ npx tsx prisma/seed-blog-posts.ts || log "blog seed failed (non-fatal — deploy
 # 5. If the systemd unit changed, reload its definition before restart.
 if [ "$SYSTEMD_BEFORE" != "$SYSTEMD_AFTER" ]; then
   log "systemd unit changed — installing + reloading daemon"
-  sudo install -m 644 deploy/systemd/rent-tool.service /etc/systemd/system/rent-tool.service
+  sudo install -m 644 deploy/systemd/deptosbo.service /etc/systemd/system/deptosbo.service
   sudo systemctl daemon-reload
 fi
 
@@ -180,13 +180,13 @@ fi
 # 5c. Same for the logrotate rule — target lives under /etc/logrotate.d/.
 #     `logrotate -d` is a dry run, so a malformed rule fails here rather
 #     than silently disabling rotation for these logs.
-if [ "$LOGROTATE_BEFORE" != "$LOGROTATE_AFTER" ] && [ -f deploy/logrotate/rent-tool ]; then
+if [ "$LOGROTATE_BEFORE" != "$LOGROTATE_AFTER" ] && [ -f deploy/logrotate/deptosbo ]; then
   log "logrotate rule changed — installing"
-  sudo install -m 644 -o root -g root deploy/logrotate/rent-tool /etc/logrotate.d/rent-tool
-  if sudo logrotate -d /etc/logrotate.d/rent-tool >/dev/null 2>&1; then
+  sudo install -m 644 -o root -g root deploy/logrotate/deptosbo /etc/logrotate.d/deptosbo
+  if sudo logrotate -d /etc/logrotate.d/deptosbo >/dev/null 2>&1; then
     log "logrotate rule validated"
   else
-    log "WARN — logrotate rejected /etc/logrotate.d/rent-tool; app cron logs will not rotate" >&2
+    log "WARN — logrotate rejected /etc/logrotate.d/deptosbo; app cron logs will not rotate" >&2
   fi
 fi
 

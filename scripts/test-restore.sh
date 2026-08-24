@@ -1,12 +1,12 @@
 #!/bin/bash
-# rent-tool — monthly backup-restore drill (RT-21.8).
+# deptosbo — monthly backup-restore drill (RT-21.8).
 #
 # A backup you've never restored is a guess, not a backup. This script
 # proves the latest snapshot at $DEST/latest is actually restorable: copy
 # it to a throwaway file, run PRAGMA integrity_check, count rows in the
 # core tables, compare against the live DB, alert on any mismatch.
 #
-# Wired up by deploy/cron/rent-tool.cron on the 1st of every month.
+# Wired up by deploy/cron/deptosbo.cron on the 1st of every month.
 # Alerts via the same Telegram / webhook channel as check-resources.sh
 # so the maintainer hears about a failure within a day.
 #
@@ -17,10 +17,10 @@
 
 set -uo pipefail
 
-DB="/home/app/rent-tool/data/prod.db"
+DB="/home/app/deptosbo/data/prod.db"
 DEST="/home/app/backups"
-TEST_DB="/home/app/rent-tool/data/test-restore.db"
-ENV_FILE="/home/app/rent-tool/.env.production"
+TEST_DB="/home/app/deptosbo/data/test-restore.db"
+ENV_FILE="/home/app/deptosbo/.env.production"
 HOST="$(hostname -s)"
 
 # Tables we expect on a healthy DB. Order matters for tidy log output.
