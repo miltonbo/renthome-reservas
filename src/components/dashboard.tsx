@@ -283,11 +283,14 @@ function segmentFinancials(reservation: Reservation) {
       paid[movement.currency] += movement.amountMinor / 100;
     }
   }
-  const due = { BOB: Math.max(0, expected.BOB - paid.BOB), USD: Math.max(0, expected.USD - paid.USD) };
+  const balance = { BOB: paid.BOB - expected.BOB, USD: paid.USD - expected.USD };
   const manuallySettled = Boolean(reservation.settledManuallyAt);
-  if (manuallySettled) { due.BOB = 0; due.USD = 0; }
+  if (manuallySettled) {
+    if (balance.BOB < 0) balance.BOB = 0;
+    if (balance.USD < 0) balance.USD = 0;
+  }
   const hasKnownCharge = reservation.totalPrice != null || reservation.parkingTotalPrice != null || reservation.guaranteeAmount != null;
-  return { expected, paid, due, manuallySettled, hasOutstandingBalance: !manuallySettled && hasKnownCharge && (due.BOB > 0.005 || due.USD > 0.005) };
+  return { expected, paid, balance, manuallySettled, hasOutstandingBalance: hasKnownCharge && (balance.BOB < -0.005 || balance.USD < -0.005) };
 }
 
 /** Reservation dates are calendar dates, not instants. Prisma/API values may
@@ -661,6 +664,7 @@ export function Dashboard({
   const [movementReceiver, setMovementReceiver] = useState<"deysi" | "milton">("deysi");
   const [movementNote, setMovementNote] = useState("");
   const [savingMovement, setSavingMovement] = useState(false);
+  const [deletingMovementId, setDeletingMovementId] = useState<number | null>(null);
   const [movementError, setMovementError] = useState("");
   const [savingSettlement, setSavingSettlement] = useState(false);
   const [airbnbGuestName, setAirbnbGuestName] = useState("");
@@ -1332,6 +1336,19 @@ export function Dashboard({
     const result = await onUpdateReservation(inspectedContext.selected.id, { settledManually: !inspectedContext.selectedFinancials.manuallySettled });
     setSavingSettlement(false);
     if (!result.ok) setMovementError(result.error || "No se pudo actualizar el estado de pago.");
+  };
+
+  const deleteMoneyMovement = async (movementId: number) => {
+    if (deletingMovementId != null) return;
+    setDeletingMovementId(movementId); setMovementError("");
+    const response = await fetch(`/api/money-movements/${movementId}`, { method: "DELETE" });
+    setDeletingMovementId(null);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setMovementError(body.error || "No se pudo eliminar el ingreso.");
+      return;
+    }
+    await onRefresh?.();
   };
 
   const saveImportedAirbnb = async (propertyId: number, stay: MasterCalendarStay) => {
@@ -2138,13 +2155,13 @@ export function Dashboard({
               {inspectedContext.selected.note && <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-2.5 font-medium">{inspectedContext.selected.note}</dd></div>}
             </dl>
             <div className={`mt-4 rounded-xl border p-3 ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "border-amber-400/40 bg-amber-400/10" : "border-emerald-500/30 bg-emerald-500/10"}`}>
-              <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold">Cobro de {inspectedContext.selected.extensionOfId ? "esta extensión" : "esta reserva"}</span><span className={`text-xs font-bold ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "text-amber-400" : "text-emerald-500"}`}>{inspectedContext.selectedFinancials.manuallySettled ? "Saldado manualmente" : inspectedContext.selectedFinancials.hasOutstandingBalance ? "Pendiente" : "Saldado"}</span></div>
-              <div className="mt-2 grid grid-cols-3 gap-2 text-xs"><div><span className="block text-[var(--ink-4)]">A cobrar</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.expected[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.expected[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Pagado</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.paid[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.paid[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Adeudado</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.due[c] > 0 && <span key={c} className="block font-bold text-amber-400">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.due[c]}</span>)}{!inspectedContext.selectedFinancials.hasOutstandingBalance && <span className="font-semibold text-emerald-500">0</span>}</div></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold">Cobro de {inspectedContext.selected.extensionOfId ? "esta extensión" : "esta reserva"}</span><span className={`text-xs font-bold ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "text-amber-400" : "text-emerald-500"}`}>{inspectedContext.selectedFinancials.manuallySettled ? "Saldado manualmente" : inspectedContext.selectedFinancials.hasOutstandingBalance ? "Pendiente" : inspectedContext.selectedFinancials.balance.BOB > 0.005 || inspectedContext.selectedFinancials.balance.USD > 0.005 ? "Excedente" : "Saldado"}</span></div>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-xs"><div><span className="block text-[var(--ink-4)]">A cobrar</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.expected[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.expected[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Pagado</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.paid[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.paid[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Adeudado</span>{(["BOB", "USD"] as const).map(c => Math.abs(inspectedContext.selectedFinancials.balance[c]) > 0.005 && <span key={c} className={`block font-bold ${inspectedContext.selectedFinancials.balance[c] > 0 ? "text-emerald-500" : "text-amber-400"}`}>{inspectedContext.selectedFinancials.balance[c] > 0 ? "+" : "-"} {c === "BOB" ? "Bs" : "USD"} {Math.abs(inspectedContext.selectedFinancials.balance[c]).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span>)}{Math.abs(inspectedContext.selectedFinancials.balance.BOB) <= 0.005 && Math.abs(inspectedContext.selectedFinancials.balance.USD) <= 0.005 && <span className="font-semibold text-emerald-500">0</span>}</div></div>
               <button type="button" disabled={savingSettlement} onClick={toggleManualSettlement} className="mt-3 w-full rounded-lg border border-emerald-500/40 px-3 py-2 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50">{savingSettlement ? "Guardando…" : inspectedContext.selectedFinancials.manuallySettled ? "Quitar marca de saldado" : "Marcar este tramo como saldado"}</button>
             </div>
             {(inspectedContext.selected.moneyMovements?.length || 0) > 0 && <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3">
               <div className="mb-2 text-xs font-semibold text-[var(--ink-2)]">Dinero recibido</div>
-              <div className="space-y-2">{inspectedContext.selected.moneyMovements!.map((movement) => <div key={movement.id} className="flex items-start justify-between gap-3 text-xs"><div><span className={`font-medium ${movement.amountMinor < 0 ? "text-red-400" : "text-[var(--ink)]"}`}>{movement.currency === "USD" ? "USD" : "Bs"} {(movement.amountMinor / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span><span className="ml-2 rounded bg-[var(--bg-3)] px-1.5 py-0.5 font-medium text-[var(--ink-2)]">{MOVEMENT_TYPE_LABELS[movement.type] || movement.type}</span><span className="ml-2 text-[var(--ink-4)]">{movement.paymentMethod === "cash" ? "Efectivo" : movement.paymentMethod === "transfer" ? "Transferencia" : movement.paymentMethod.toUpperCase()}</span>{movement.note && <p className="mt-0.5 text-[var(--ink-3)]">{movement.note}</p>}</div><span className="shrink-0 capitalize text-[var(--ink-4)]">{movement.receivedBy || "Distribución Airbnb"}</span></div>)}</div>
+              <div className="space-y-2">{inspectedContext.selected.moneyMovements!.map((movement) => <div key={movement.id} className="flex items-start justify-between gap-3 text-xs"><div><span className={`font-medium ${movement.amountMinor < 0 ? "text-red-400" : "text-[var(--ink)]"}`}>{movement.currency === "USD" ? "USD" : "Bs"} {(movement.amountMinor / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span><span className="ml-2 rounded bg-[var(--bg-3)] px-1.5 py-0.5 font-medium text-[var(--ink-2)]">{MOVEMENT_TYPE_LABELS[movement.type] || movement.type}</span><span className="ml-2 text-[var(--ink-4)]">{movement.paymentMethod === "cash" ? "Efectivo" : movement.paymentMethod === "transfer" ? "Transferencia" : movement.paymentMethod.toUpperCase()}</span>{movement.note && <p className="mt-0.5 text-[var(--ink-3)]">{movement.note}</p>}</div><div className="flex shrink-0 items-center gap-2"><span className="capitalize text-[var(--ink-4)]">{movement.receivedBy || "Distribución Airbnb"}</span><button type="button" disabled={deletingMovementId != null} onClick={() => deleteMoneyMovement(movement.id)} className="flex h-5 w-5 items-center justify-center rounded-full text-[var(--ink-4)] hover:bg-red-500/15 hover:text-red-400 disabled:opacity-40" aria-label={`Eliminar ingreso de ${movement.currency === "USD" ? "USD" : "Bs"} ${Math.abs(movement.amountMinor / 100)}`} title="Eliminar este registro">×</button></div></div>)}</div>
             </div>}
             <div className="mt-4 rounded-xl border border-[var(--line)] p-3">
               <div className="text-xs font-semibold text-[var(--ink-2)]">Registrar dinero recibido</div>

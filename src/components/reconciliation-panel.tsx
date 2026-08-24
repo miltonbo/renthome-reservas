@@ -10,6 +10,7 @@ type Reconciliation = {
   entitled: PersonTotals;
   transfers: Array<{ from: "deysi" | "milton"; to: "deysi" | "milton"; currency: "BOB" | "USD"; amountMinor: number }>;
   commissions: Array<{ liablePerson: "deysi" | "milton"; currency: "BOB" | "USD"; amountMinor: number }>;
+  excess: CurrencyTotals;
 };
 
 const label = (minor: number, currency: "BOB" | "USD") =>
@@ -59,6 +60,11 @@ export function ReconciliationPanel() {
       <div className="mt-3 rounded-lg bg-[var(--brand-orange-soft)] p-3 text-xs">
         <div className="font-semibold text-[var(--ink)]">Transferencias para conciliar</div>
         {data.transfers.length ? data.transfers.map((transfer) => <div key={`${transfer.from}-${transfer.currency}`} className="mt-1 text-[var(--ink-2)]"><span className="capitalize">{transfer.from}</span> transfiere a <span className="capitalize">{transfer.to}</span>: <strong>{label(transfer.amountMinor, transfer.currency)}</strong></div>) : <p className="mt-1 text-[var(--ink-3)]">No hay transferencias pendientes con los movimientos registrados.</p>}
+      </div>
+      <div className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs">
+        <div className="font-semibold text-[var(--ink)]">Excedentes recibidos</div>
+        <p className="mt-1 text-[var(--ink-2)]"><strong>{label(data.excess?.BOB || 0, "BOB")}</strong> · <strong>{label(data.excess?.USD || 0, "USD")}</strong></p>
+        <p className="mt-1 text-[10px] text-[var(--ink-4)]">Sobrepagos de reservas con movimientos durante el mes. Ya están incluidos en los montos recibidos; no se suman nuevamente.</p>
       </div>
     </> : <p className="mt-4 text-xs text-red-400">No se pudo cargar la conciliación.</p>}
   </section>;

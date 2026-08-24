@@ -37,6 +37,27 @@ export async function GET(request: NextRequest) {
     },
     include: { reservation: { include: { property: { select: { name: true } } } } },
   });
+  const touchedReservationIds = [...new Set(movements.map((movement) => movement.reservationId))];
+  const touchedReservations = touchedReservationIds.length ? await prisma.reservation.findMany({
+    where: { id: { in: touchedReservationIds } },
+    include: { moneyMovements: true },
+  }) : [];
+  const excess: Record<Currency, number> = { BOB: 0, USD: 0 };
+  for (const reservation of touchedReservations) {
+    const expected: Record<Currency, number> = { BOB: 0, USD: 0 };
+    const paid: Record<Currency, number> = { BOB: 0, USD: 0 };
+    const priceCurrency = reservation.priceCurrency as Currency;
+    const parkingCurrency = reservation.parkingCurrency as Currency;
+    const guaranteeCurrency = reservation.guaranteeCurrency as Currency;
+    if (currencies.includes(priceCurrency)) expected[priceCurrency] += Math.round((reservation.totalPrice || 0) * 100);
+    if (currencies.includes(parkingCurrency)) expected[parkingCurrency] += Math.round((reservation.parkingTotalPrice || 0) * 100);
+    if (currencies.includes(guaranteeCurrency)) expected[guaranteeCurrency] += Math.round((reservation.guaranteeAmount || 0) * 100);
+    for (const movement of reservation.moneyMovements) {
+      const currency = movement.currency as Currency;
+      if (currencies.includes(currency) && ["lodging", "parking", "guarantee", "refund"].includes(movement.type)) paid[currency] += movement.amountMinor;
+    }
+    for (const currency of currencies) excess[currency] += Math.max(0, paid[currency] - expected[currency]);
+  }
 
   const blank = () => ({ BOB: 0, USD: 0 });
   const held: Record<Person, Record<Currency, number>> = { deysi: blank(), milton: blank() };
@@ -67,5 +88,5 @@ export async function GET(request: NextRequest) {
     if (miltonExcess < 0) return [{ from: "deysi", to: "milton", currency, amountMinor: -miltonExcess }];
     return [];
   });
-  return NextResponse.json({ month, held, entitled, transfers, commissions, movements });
+  return NextResponse.json({ month, held, entitled, transfers, commissions, movements, excess });
 }
