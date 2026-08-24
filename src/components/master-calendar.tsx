@@ -304,7 +304,7 @@ export function MasterCalendar({
                           <span className="flex items-center justify-between gap-1 text-[9px] font-medium opacity-90">
                             <span className="truncate">{stay.extensionOfId ? `Extensión · ${platformLabel(stay.platform)}` : platformLabel(stay.platform)}</span>
                             {stay.totalPrice != null && (
-                              <span className="shrink-0 font-semibold">{stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}</span>
+                              <span className="shrink-0 text-[10px] font-bold tracking-tight">{stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}</span>
                             )}
                             {stay.hasOutstandingBalance && (
                               <span className="ml-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-amber-300 text-[9px] font-black text-amber-950" title="Saldo pendiente" aria-label="Saldo pendiente">!</span>

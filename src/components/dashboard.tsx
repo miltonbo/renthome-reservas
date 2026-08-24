@@ -2142,7 +2142,7 @@ export function Dashboard({
           <div className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div><h2 className="text-lg font-semibold text-[var(--ink)]">{inspectedContext.root.name}</h2><p className="text-xs text-[var(--ink-4)]">{inspectedContext.property.name}</p></div>
-              <button type="button" onClick={() => setInspectedReservationId(null)} aria-label="Cerrar" className="p-1.5 text-[var(--ink-4)]">✕</button>
+              <button type="button" onClick={() => setInspectedReservationId(null)} className="rounded-lg border border-[var(--line-2)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] hover:bg-[var(--bg-3)] hover:text-[var(--ink)]">Cerrar</button>
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="font-medium">{platformDisplayName(inspectedContext.selected.platform)}</dd></div>
