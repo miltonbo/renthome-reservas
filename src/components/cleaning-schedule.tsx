@@ -1124,7 +1124,11 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     return [...seen.entries()];
   })();
 
-  const guestName = (name?: string) => (name || "—").replace(/\s+block$/i, "");
+  const guestName = (name?: string) => {
+    const cleaned = (name || "—").replace(/\s+block$/i, "");
+    const genericAirbnbGuest: Record<Locale, string> = { en: "Airbnb guest", es: "Huésped de Airbnb", ru: "Гость Airbnb", de: "Airbnb-Gast", fr: "Voyageur Airbnb" };
+    return /^airbnb guest$/i.test(cleaned) ? genericAirbnbGuest[locale] : cleaned;
+  };
   const renderGuest = (name?: string, reservationId?: number, platform?: string) => {
     const label = guestName(name);
     const channelClass = ({
@@ -1426,6 +1430,10 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
                 <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3 font-medium text-[var(--ink)]">{inspectedReservation.reservation.note}</dd></div>
               )}
             </dl>
+            <div className="mt-5 flex justify-end gap-2 border-t border-[var(--line)] pt-4">
+              <button type="button" onClick={() => setInspectedReservationId(null)} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm font-medium text-[var(--ink-2)] hover:bg-[var(--bg-3)]">Cerrar</button>
+              <a href={`/dashboard?property=${inspectedReservation.property.id}&reservation=${inspectedReservation.reservation.id}`} className="rounded-lg bg-[var(--brand-orange)] px-3 py-2 text-sm font-semibold text-white">Ver detalle de la reserva</a>
+            </div>
           </div>
         </div>
       )}

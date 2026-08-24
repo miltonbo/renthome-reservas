@@ -2188,6 +2188,7 @@ export function Dashboard({
               <button type="button" onClick={() => { setCancellationReason(""); setCancellationError(""); setShowCancelForm(true); }} className="rounded-lg border border-red-500/40 px-3 py-2 text-sm font-medium text-red-400">Cancelar reserva</button>
               <button type="button" onClick={openExtensionForm} className="rounded-lg bg-[var(--brand-orange)] px-3 py-2 text-sm font-semibold text-white">Extender estadía</button>
             </div>
+            <button type="button" onClick={() => setInspectedReservationId(null)} className="mt-3 w-full rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm font-semibold text-[var(--ink-2)] hover:bg-[var(--bg-3)]">Cerrar</button>
           </div>
         </div>
       )}

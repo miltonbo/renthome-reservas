@@ -14,7 +14,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { PropertySwitcher } from "@/components/property-switcher";
-import { ReconciliationPanel } from "@/components/reconciliation-panel";
+import { FinancialReportsPanel } from "@/components/financial-reports-panel";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property } from "@/lib/types";
@@ -1048,7 +1048,7 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
             <p className="mt-1 text-xs text-[var(--ink-3)]">{headerSubtitle}</p>
           </div>
 
-          {isMulti && <ReconciliationPanel />}
+          <FinancialReportsPanel propertyId={property?.id} />
 
           {targetProperties.length === 0 ? (
             <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-6 text-center text-xs text-[var(--ink-4)]">
