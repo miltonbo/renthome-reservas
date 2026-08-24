@@ -224,6 +224,12 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     // property; conflict detection still runs.
     `ALTER TABLE "Property" ADD COLUMN "cleaningEnabled" INTEGER NOT NULL DEFAULT 1`,
     `ALTER TABLE "Property" ADD COLUMN "financialOperator" TEXT NOT NULL DEFAULT 'milton'`,
+    `ALTER TABLE "Property" ADD COLUMN "financialModel" TEXT NOT NULL DEFAULT 'operator_split'`,
+    `ALTER TABLE "Property" ADD COLUMN "managementFeeBps" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "Property" ADD COLUMN "managementFixedFeeMinor" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "Property" ADD COLUMN "managementFixedFeeCurrency" TEXT NOT NULL DEFAULT 'BOB'`,
+    `ALTER TABLE "Property" ADD COLUMN "managementBeneficiary" TEXT NOT NULL DEFAULT 'deysi'`,
+    `ALTER TABLE "Property" ADD COLUMN "bookingCommissionPayer" TEXT NOT NULL DEFAULT 'operator'`,
     // RT-25.12 — per-guest free-text notes. Empty default so existing
     // rows surface as no-note rather than NULL in the UI.
     `ALTER TABLE "Guest" ADD COLUMN "notes" TEXT NOT NULL DEFAULT ''`,
@@ -398,6 +404,24 @@ CREATE INDEX IF NOT EXISTS "Feedback_userId_idx" ON "Feedback"("userId");
     WHERE lower("name") IN (
       'sky elite 528', 'sky elite 527', 'uptown nuu 12d',
       'sky elite 406', 'sky elite 305', 'sky elite 329'
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    UPDATE "Property"
+    SET "financialModel" = 'owner_fee',
+        "managementFeeBps" = 1000,
+        "managementFixedFeeMinor" = 7000,
+        "managementFixedFeeCurrency" = 'BOB',
+        "managementBeneficiary" = 'deysi',
+        "bookingCommissionPayer" = 'owner'
+    WHERE lower("name") = 'luxe suites 113'
+  `);
+  await prisma.$executeRawUnsafe(`
+    UPDATE "BookingCommission" SET "liablePerson" = 'owner'
+    WHERE "reservationId" IN (
+      SELECT r."id" FROM "Reservation" r
+      JOIN "Property" p ON p."id" = r."propertyId"
+      WHERE lower(p."name") = 'luxe suites 113'
     )
   `);
 

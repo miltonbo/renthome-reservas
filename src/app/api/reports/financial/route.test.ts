@@ -7,11 +7,13 @@ describe("financial report workbook", () => {
     const { buildFinancialWorkbook } = await import("./route");
     const data = {
       period: { from: "2026-08-01", to: "2026-08-31" },
-      policy: { operatedProperties: { deysi: ["Sky Elite 528"], milton: ["Sky Elite 331"] }, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 },
+      policy: { operatedProperties: { deysi: ["Sky Elite 528"], milton: ["Sky Elite 331"] }, ownerFeeProperties: [{ name: "Luxe Suites 113", feeBps: 1000, fixedFeeMinor: 7000, fixedFeeCurrency: "BOB", beneficiary: "deysi" }], miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 },
       channelTotals: { booking: { reservations: 1, BOB: 580, USD: 0 } },
       held: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 58000, USD: 0 } },
       entitled: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 58000, USD: 0 } },
-      commissions: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 8700, USD: 0 } },
+      commissions: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 8700, USD: 0 }, owner: { BOB: 0, USD: 0 } },
+      ownerPayable: { BOB: 0, USD: 0 },
+      ownerSettlements: [{ propertyId: 99, property: "Luxe Suites 113", gross: { BOB: 100000, USD: 0 }, management: { BOB: 17000, USD: 0 }, payable: { BOB: 83000, USD: 0 }, bookingCommission: { BOB: 0, USD: 0 }, reservationsWithFixedFee: 1 }],
       transfers: [],
       reservations: [{ id: 1, property: "Sky Elite 331", guest: "Huésped prueba", channel: "booking", checkIn: "2026-08-20", checkOut: "2026-08-22", nights: 2, lodgingAmount: 580, lodgingCurrency: "BOB", parkingAmount: 0, parkingCurrency: "BOB", guaranteeAmount: 250, guaranteeCurrency: "BOB", receivedBOB: 58000, receivedUSD: 0, commissionAmount: 8700, commissionCurrency: "BOB", commissionResponsible: "milton", note: "" }],
       performance: [{ property: "Sky Elite 331", occupiedNights: 2, freeNights: 29, occupancy: 2 / 31, averageNightlyBOB: 290, averageNightlyUSD: 0 }],

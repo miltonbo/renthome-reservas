@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   operatingAllocations,
+  financialAllocations,
   allowedCurrencies,
   amountToMinor,
   bookingCommission,
@@ -36,6 +37,12 @@ describe("RentHome finance rules", () => {
   it("assigns every receipt from Deysi-operated properties entirely to Deysi", () => {
     expect(operatingAllocations(10000, "deysi")).toEqual([
       { person: "deysi", amountMinor: 10000, percentageBps: 10000 },
+    ]);
+  });
+
+  it("assigns only the configured percentage to management under an owner contract", () => {
+    expect(financialAllocations(10000, { financialModel: "owner_fee", financialOperator: "milton", managementFeeBps: 1000, managementBeneficiary: "deysi" })).toEqual([
+      { person: "deysi", amountMinor: 1000, percentageBps: 1000 },
     ]);
   });
 

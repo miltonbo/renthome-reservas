@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { canManageProperty } from "@/lib/ownership";
-import { amountToMinor, isCurrency, isFinancialPerson, isMethodCurrencyValid, isPaymentMethod, operatingAllocations } from "@/lib/finance";
+import { amountToMinor, financialAllocations, isCurrency, isFinancialPerson, isMethodCurrencyValid, isPaymentMethod } from "@/lib/finance";
 
 export async function POST(
   request: NextRequest,
@@ -21,7 +21,7 @@ export async function POST(
 
     const reservation = await prisma.reservation.findUnique({
       where: { id: reservationId },
-      select: { id: true, propertyId: true, extensionOfId: true, status: true, property: { select: { financialOperator: true } } },
+      select: { id: true, propertyId: true, extensionOfId: true, status: true, property: { select: { financialOperator: true, financialModel: true, managementFeeBps: true, managementBeneficiary: true } } },
     });
     if (!reservation || !(await canManageProperty(reservation.propertyId, session.userId, session.role))) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -74,7 +74,6 @@ export async function POST(
       result = await prisma.$transaction(async (tx) => {
         const updated = await tx.reservation.updateMany(cancellationData);
         for (const refund of refunds as Array<{ amount: number; currency: "BOB" | "USD"; paymentMethod: string; paidBy: "deysi" | "milton" }>) {
-          const operator = reservation.property?.financialOperator === "deysi" ? "deysi" : "milton";
           const amountMinor = -amountToMinor(refund.amount);
           await tx.moneyMovement.create({
         data: {
@@ -88,7 +87,7 @@ export async function POST(
           occurredAt: cancelledAt,
           note: reason ? `Reembolso por cancelación: ${reason}` : "Reembolso por cancelación",
           source: "manual",
-          allocations: { create: operatingAllocations(amountMinor, operator) },
+          allocations: { create: financialAllocations(amountMinor, reservation.property) },
         },
           });
         }

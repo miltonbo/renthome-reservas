@@ -60,6 +60,31 @@ export function operatingAllocations(amountMinor: number, operator: FinancialPer
   ];
 }
 
+export interface PropertyFinancialPolicy {
+  financialOperator?: string | null;
+  financialModel?: string | null;
+  managementFeeBps?: number | null;
+  managementBeneficiary?: string | null;
+  bookingCommissionPayer?: string | null;
+}
+
+export function bookingCommissionLiability(policy: PropertyFinancialPolicy): "deysi" | "milton" | "owner" {
+  if (policy.bookingCommissionPayer === "owner" || policy.bookingCommissionPayer === "deysi" || policy.bookingCommissionPayer === "milton") return policy.bookingCommissionPayer;
+  return policy.financialOperator === "deysi" ? "deysi" : "milton";
+}
+
+/** Internal entitlement for a single movement. Fixed per-reservation fees
+ * are applied by reconciliation after movements have been grouped. */
+export function financialAllocations(amountMinor: number, policy: PropertyFinancialPolicy) {
+  if (policy.financialModel === "owner_fee") {
+    const beneficiary: FinancialPerson = policy.managementBeneficiary === "milton" ? "milton" : "deysi";
+    const percentageBps = Math.max(0, Math.min(10000, policy.managementFeeBps || 0));
+    return [{ person: beneficiary, amountMinor: Math.round(amountMinor * percentageBps / 10000), percentageBps }];
+  }
+  const operator: FinancialPerson = policy.financialOperator === "deysi" ? "deysi" : "milton";
+  return operatingAllocations(amountMinor, operator);
+}
+
 /** Backwards-compatible name for existing Airbnb import call sites. */
 export const airbnbAllocations = operatingAllocations;
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { listAccessiblePropertyIds } from "@/lib/ownership";
-import { operatingAllocations } from "@/lib/finance";
+import { financialAllocations } from "@/lib/finance";
 
 type Person = "deysi" | "milton";
 type Currency = "BOB" | "USD";
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     where: { propertyId: { in: propertyIds }, occurredAt: { gte: start, lt: end } },
     include: {
       allocations: true,
-      property: { select: { name: true, financialOperator: true } },
+      property: { select: { name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true } },
       reservation: { select: { name: true, platform: true } },
     },
     orderBy: { occurredAt: "asc" },
@@ -63,14 +63,19 @@ export async function GET(request: NextRequest) {
   const blank = () => ({ BOB: 0, USD: 0 });
   const held: Record<Person, Record<Currency, number>> = { deysi: blank(), milton: blank() };
   const entitled: Record<Person, Record<Currency, number>> = { deysi: blank(), milton: blank() };
+  const fixedFeeReservations = new Set<number>();
   for (const movement of movements) {
     const currency = movement.currency as Currency;
     if (!currencies.includes(currency)) continue;
-    const operator: Person = movement.property.financialOperator === "deysi" ? "deysi" : "milton";
-    const policyAllocations = operatingAllocations(movement.amountMinor, operator);
+    const policyAllocations = financialAllocations(movement.amountMinor, movement.property);
+    if (movement.amountMinor > 0 && movement.property.financialModel === "owner_fee") fixedFeeReservations.add(movement.reservationId);
     if (movement.paymentMethod === "airbnb") {
+      if (movement.property.financialModel === "owner_fee") {
+        const receiver: Person = movement.property.managementBeneficiary === "milton" ? "milton" : "deysi";
+        held[receiver][currency] += movement.amountMinor;
+      }
       for (const allocation of policyAllocations) {
-        held[allocation.person][currency] += allocation.amountMinor;
+        if (movement.property.financialModel !== "owner_fee") held[allocation.person][currency] += allocation.amountMinor;
         entitled[allocation.person][currency] += allocation.amountMinor;
       }
       continue;
@@ -80,11 +85,24 @@ export async function GET(request: NextRequest) {
     for (const allocation of policyAllocations) entitled[allocation.person][currency] += allocation.amountMinor;
   }
 
-  const transfers = currencies.flatMap((currency) => {
-    const miltonExcess = held.milton[currency] - entitled.milton[currency];
-    if (miltonExcess > 0) return [{ from: "milton", to: "deysi", currency, amountMinor: miltonExcess }];
-    if (miltonExcess < 0) return [{ from: "deysi", to: "milton", currency, amountMinor: -miltonExcess }];
-    return [];
-  });
+  for (const reservationId of fixedFeeReservations) {
+    const movement = movements.find((item) => item.reservationId === reservationId);
+    if (!movement) continue;
+    const beneficiary: Person = movement.property.managementBeneficiary === "milton" ? "milton" : "deysi";
+    const currency: Currency = movement.property.managementFixedFeeCurrency === "USD" ? "USD" : "BOB";
+    entitled[beneficiary][currency] += movement.property.managementFixedFeeMinor || 0;
+  }
+
+  const transfers: Array<{ from: Person | "owner"; to: Person | "owner"; currency: Currency; amountMinor: number }> = [];
+  for (const currency of currencies) {
+    let deysiBalance = held.deysi[currency] - entitled.deysi[currency];
+    let miltonBalance = held.milton[currency] - entitled.milton[currency];
+    if (deysiBalance > 0 && miltonBalance < 0) { const amount = Math.min(deysiBalance, -miltonBalance); transfers.push({ from: "deysi", to: "milton", currency, amountMinor: amount }); deysiBalance -= amount; miltonBalance += amount; }
+    if (miltonBalance > 0 && deysiBalance < 0) { const amount = Math.min(miltonBalance, -deysiBalance); transfers.push({ from: "milton", to: "deysi", currency, amountMinor: amount }); miltonBalance -= amount; deysiBalance += amount; }
+    if (deysiBalance > 0) transfers.push({ from: "deysi", to: "owner", currency, amountMinor: deysiBalance });
+    if (miltonBalance > 0) transfers.push({ from: "milton", to: "owner", currency, amountMinor: miltonBalance });
+    if (deysiBalance < 0) transfers.push({ from: "owner", to: "deysi", currency, amountMinor: -deysiBalance });
+    if (miltonBalance < 0) transfers.push({ from: "owner", to: "milton", currency, amountMinor: -miltonBalance });
+  }
   return NextResponse.json({ month, held, entitled, transfers, commissions, movements, excess });
 }

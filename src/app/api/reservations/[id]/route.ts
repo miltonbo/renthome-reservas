@@ -6,7 +6,7 @@ import { canManageProperty } from "@/lib/ownership";
 import { normalizePhone } from "@/lib/sanitize";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
-import { airbnbAllocations, amountToMinor, bookingCommission, isCurrency } from "@/lib/finance";
+import { amountToMinor, bookingCommission, bookingCommissionLiability, financialAllocations, isCurrency } from "@/lib/finance";
 
 async function loadManageableReservation(
   reservationId: number,
@@ -365,9 +365,9 @@ export async function PATCH(
 
     if (reservation.platform === "booking" && reservation.totalPrice != null && "bookingCommission" in prisma) {
       const property = await prisma.property.findUnique({
-        where: { id: reservation.propertyId }, select: { financialOperator: true },
+        where: { id: reservation.propertyId }, select: { financialOperator: true, bookingCommissionPayer: true },
       });
-      const liablePerson = property?.financialOperator === "deysi" ? "deysi" : "milton";
+      const liablePerson = bookingCommissionLiability(property || {});
       const basisMinor = amountToMinor(reservation.totalPrice);
       await prisma.bookingCommission.upsert({
         where: { reservationId: reservation.id },
@@ -385,11 +385,10 @@ export async function PATCH(
     }
     if (reservation.platform === "airbnb" && reservation.totalPrice != null && "moneyMovement" in prisma) {
       const property = await prisma.property.findUnique({
-        where: { id: reservation.propertyId }, select: { financialOperator: true },
+        where: { id: reservation.propertyId }, select: { financialOperator: true, financialModel: true, managementFeeBps: true, managementBeneficiary: true },
       });
-      const operator = property?.financialOperator === "deysi" ? "deysi" : "milton";
       const amountMinor = amountToMinor(reservation.totalPrice);
-      const allocations = airbnbAllocations(amountMinor, operator);
+      const allocations = financialAllocations(amountMinor, property || {});
       const existing = await prisma.moneyMovement.findFirst({
         where: { reservationId: reservation.id, source: "airbnb", paymentMethod: "airbnb", type: "lodging" },
       });

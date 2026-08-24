@@ -1048,7 +1048,7 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
             <p className="mt-1 text-xs text-[var(--ink-3)]">{headerSubtitle}</p>
           </div>
 
-          <FinancialReportsPanel propertyId={property?.id} />
+          <FinancialReportsPanel propertyId={property?.id} properties={properties} />
 
           {targetProperties.length === 0 ? (
             <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-6 text-center text-xs text-[var(--ink-4)]">

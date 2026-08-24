@@ -6,7 +6,7 @@ import { canManageProperty, listAccessiblePropertyIds } from "@/lib/ownership";
 import { normalizePlatformSlug } from "@/lib/platforms";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
-import { amountToMinor, bookingCommission, isCurrency } from "@/lib/finance";
+import { amountToMinor, bookingCommission, bookingCommissionLiability, isCurrency } from "@/lib/finance";
 
 export async function GET(request: NextRequest) {
   try {
@@ -336,13 +336,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (reservation.platform === "booking" && reservation.totalPrice != null && "bookingCommission" in prisma) {
-      const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { financialOperator: true } });
-      const operator = property?.financialOperator === "deysi" ? "deysi" : "milton";
+      const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { financialOperator: true, bookingCommissionPayer: true } });
+      const liablePerson = bookingCommissionLiability(property || {});
       const basisMinor = amountToMinor(reservation.totalPrice);
       await prisma.bookingCommission.create({
         data: {
           reservationId: reservation.id,
-          liablePerson: operator,
+          liablePerson,
           basisMinor,
           amountMinor: bookingCommission(basisMinor),
           currency: reservation.priceCurrency,

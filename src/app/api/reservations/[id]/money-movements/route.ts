@@ -3,9 +3,10 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageProperty } from "@/lib/ownership";
 import {
-  operatingAllocations,
+  financialAllocations,
   amountToMinor,
   bookingCommission,
+  bookingCommissionLiability,
   isCurrency,
   isFinancialPerson,
   isMethodCurrencyValid,
@@ -17,7 +18,7 @@ const MOVEMENT_TYPES = ["lodging", "parking", "guarantee", "additional", "adjust
 async function loadReservation(id: number) {
   return prisma.reservation.findUnique({
     where: { id },
-    include: { property: { select: { id: true, financialOperator: true } } },
+    include: { property: { select: { id: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementBeneficiary: true, bookingCommissionPayer: true } } },
   });
 }
 
@@ -67,8 +68,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const amountMinor = amountToMinor(amount);
-  const operator = reservation.property.financialOperator === "deysi" ? "deysi" : "milton";
-  const allocations = operatingAllocations(amountMinor, operator);
+  const allocations = financialAllocations(amountMinor, reservation.property);
 
   const result = await prisma.$transaction(async (tx) => {
     // Airbnb has one definitive receipt per imported booking. Editing the
@@ -118,14 +118,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   // transfers between Deysi and Milton.
   if (reservation.platform === "booking" && reservation.totalPrice != null) {
     const basisMinor = amountToMinor(reservation.totalPrice);
+    const liablePerson = bookingCommissionLiability(reservation.property);
     await prisma.bookingCommission.upsert({
       where: { reservationId: id },
       create: {
-        reservationId: id, liablePerson: operator, basisMinor,
+        reservationId: id, liablePerson, basisMinor,
         amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
       },
       update: {
-        liablePerson: operator, basisMinor,
+        liablePerson, basisMinor,
         amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
       },
     });

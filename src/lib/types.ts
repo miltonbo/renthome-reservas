@@ -107,6 +107,12 @@ export interface Property {
   bookingWindow: number; // days forward from today to consider bookings; beyond this, events are ignored
   cleaningEnabled: boolean; // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation
   financialOperator?: "deysi" | "milton";
+  financialModel?: "operator_split" | "owner_fee";
+  managementFeeBps?: number;
+  managementFixedFeeMinor?: number;
+  managementFixedFeeCurrency?: "BOB" | "USD";
+  managementBeneficiary?: "deysi" | "milton";
+  bookingCommissionPayer?: "operator" | "owner" | "deysi" | "milton";
   feedToken: string | null; // optional token gating the public iCal feed
   createdAt: string;
   reservations: Reservation[];

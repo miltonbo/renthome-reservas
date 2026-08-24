@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import { getSession } from "@/lib/auth";
 import { listAccessiblePropertyIds } from "@/lib/ownership";
 import { prisma } from "@/lib/prisma";
-import { operatingAllocations } from "@/lib/finance";
+import { financialAllocations } from "@/lib/finance";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   if (requestedPropertyId && !propertyIds.includes(requestedPropertyId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const [properties, reservations, movements, calendarEvents] = await Promise.all([
-    prisma.property.findMany({ where: { id: { in: propertyIds } }, select: { id: true, name: true, financialOperator: true }, orderBy: { name: "asc" } }),
+    prisma.property.findMany({ where: { id: { in: propertyIds } }, select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true }, orderBy: { name: "asc" } }),
     prisma.reservation.findMany({
       where: { propertyId: { in: propertyIds }, status: "confirmed", checkIn: { lt: period.toExclusive }, checkOut: { gt: period.from } },
       include: { property: { select: { name: true, financialOperator: true } }, moneyMovements: true, bookingCommission: true },
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     }),
     prisma.moneyMovement.findMany({
       where: { propertyId: { in: propertyIds }, occurredAt: { gte: period.from, lt: period.toExclusive } },
-      include: { allocations: true, property: { select: { name: true, financialOperator: true } }, reservation: { select: { name: true, platform: true } } },
+      include: { allocations: true, property: { select: { name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true } }, reservation: { select: { name: true, platform: true } } },
       orderBy: { occurredAt: "asc" },
     }),
     prisma.calendarEvent.findMany({ where: { propertyId: { in: propertyIds }, startDate: { lt: period.toKey }, endDate: { gt: period.fromKey } } }),
@@ -69,13 +69,18 @@ export async function GET(request: NextRequest) {
 
   const held: Record<Person, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency() };
   const entitled: Record<Person, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency() };
+  const fixedFeeReservations = new Set<number>();
   for (const movement of movements) {
     const currency = asCurrency(movement.currency);
-    const operator: Person = movement.property.financialOperator === "deysi" ? "deysi" : "milton";
-    const policyAllocations = operatingAllocations(movement.amountMinor, operator);
+    const policyAllocations = financialAllocations(movement.amountMinor, movement.property);
+    if (movement.amountMinor > 0 && movement.property.financialModel === "owner_fee") fixedFeeReservations.add(movement.reservationId);
     if (movement.paymentMethod === "airbnb") {
+      if (movement.property.financialModel === "owner_fee") {
+        const receiver: Person = movement.property.managementBeneficiary === "milton" ? "milton" : "deysi";
+        held[receiver][currency] += movement.amountMinor;
+      }
       for (const allocation of policyAllocations) {
-        held[allocation.person][currency] += allocation.amountMinor;
+        if (movement.property.financialModel !== "owner_fee") held[allocation.person][currency] += allocation.amountMinor;
         entitled[allocation.person][currency] += allocation.amountMinor;
       }
     } else {
@@ -85,18 +90,32 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const commissions: Record<Person, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency() };
+  for (const reservationId of fixedFeeReservations) {
+    const movement = movements.find((item) => item.reservationId === reservationId);
+    if (!movement) continue;
+    const beneficiary: Person = movement.property.managementBeneficiary === "milton" ? "milton" : "deysi";
+    entitled[beneficiary][asCurrency(movement.property.managementFixedFeeCurrency)] += movement.property.managementFixedFeeMinor || 0;
+  }
+
+  const commissions: Record<Person | "owner", Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency(), owner: blankCurrency() };
   for (const reservation of reservations) {
     const commission = reservation.bookingCommission;
     if (!commission) continue;
-    const person = commission.liablePerson as Person;
-    if (people.includes(person)) commissions[person][asCurrency(commission.currency)] += commission.amountMinor;
+    const person = (commission.liablePerson === "owner" ? "owner" : commission.liablePerson) as Person | "owner";
+    if (person === "owner" || people.includes(person as Person)) commissions[person][asCurrency(commission.currency)] += commission.amountMinor;
   }
-  const transfers: Array<{ from: Person; to: Person; currency: Currency; amountMinor: number }> = [];
+  const ownerPayable = blankCurrency();
+  for (const currency of currencies) ownerPayable[currency] = held.deysi[currency] + held.milton[currency] - entitled.deysi[currency] - entitled.milton[currency];
+  const transfers: Array<{ from: Person | "owner"; to: Person | "owner"; currency: Currency; amountMinor: number }> = [];
   for (const currency of currencies) {
-    const miltonBalance = held.milton[currency] - entitled.milton[currency];
-    if (miltonBalance > 0) transfers.push({ from: "milton", to: "deysi", currency, amountMinor: miltonBalance });
-    if (miltonBalance < 0) transfers.push({ from: "deysi", to: "milton", currency, amountMinor: -miltonBalance });
+    let deysiBalance = held.deysi[currency] - entitled.deysi[currency];
+    let miltonBalance = held.milton[currency] - entitled.milton[currency];
+    if (deysiBalance > 0 && miltonBalance < 0) { const transfer = Math.min(deysiBalance, -miltonBalance); transfers.push({ from: "deysi", to: "milton", currency, amountMinor: transfer }); deysiBalance -= transfer; miltonBalance += transfer; }
+    if (miltonBalance > 0 && deysiBalance < 0) { const transfer = Math.min(miltonBalance, -deysiBalance); transfers.push({ from: "milton", to: "deysi", currency, amountMinor: transfer }); miltonBalance -= transfer; deysiBalance += transfer; }
+    if (deysiBalance > 0) transfers.push({ from: "deysi", to: "owner", currency, amountMinor: deysiBalance });
+    if (miltonBalance > 0) transfers.push({ from: "milton", to: "owner", currency, amountMinor: miltonBalance });
+    if (deysiBalance < 0) transfers.push({ from: "owner", to: "deysi", currency, amountMinor: -deysiBalance });
+    if (miltonBalance < 0) transfers.push({ from: "owner", to: "milton", currency, amountMinor: -miltonBalance });
   }
 
   const detailedReservations = reservations.map((reservation) => {
@@ -156,10 +175,31 @@ export async function GET(request: NextRequest) {
   }
 
   const operatedProperties = {
-    deysi: properties.filter((property) => property.financialOperator === "deysi").map((property) => property.name),
-    milton: properties.filter((property) => property.financialOperator !== "deysi").map((property) => property.name),
+    deysi: properties.filter((property) => property.financialModel !== "owner_fee" && property.financialOperator === "deysi").map((property) => property.name),
+    milton: properties.filter((property) => property.financialModel !== "owner_fee" && property.financialOperator !== "deysi").map((property) => property.name),
   };
-  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, held, entitled, commissions, transfers, reservations: detailedReservations, performance, monthlyIncome: [...monthlyMap.values()] };
+  const ownerFeeProperties = properties.filter((property) => property.financialModel === "owner_fee").map((property) => ({ name: property.name, feeBps: property.managementFeeBps, fixedFeeMinor: property.managementFixedFeeMinor, fixedFeeCurrency: asCurrency(property.managementFixedFeeCurrency), beneficiary: property.managementBeneficiary }));
+  const ownerSettlements = properties.filter((property) => property.financialModel === "owner_fee").map((property) => {
+    const propertyMovements = movements.filter((movement) => movement.propertyId === property.id);
+    const gross = blankCurrency();
+    const management = blankCurrency();
+    const payable = blankCurrency();
+    const reservationIds = new Set<number>();
+    for (const movement of propertyMovements) {
+      const currency = asCurrency(movement.currency);
+      gross[currency] += movement.amountMinor;
+      management[currency] += financialAllocations(movement.amountMinor, property).reduce((sum, allocation) => sum + allocation.amountMinor, 0);
+      if (movement.amountMinor > 0) reservationIds.add(movement.reservationId);
+    }
+    management[asCurrency(property.managementFixedFeeCurrency)] += reservationIds.size * (property.managementFixedFeeMinor || 0);
+    for (const currency of currencies) payable[currency] = gross[currency] - management[currency];
+    const commission = blankCurrency();
+    for (const reservation of reservations.filter((item) => item.propertyId === property.id)) {
+      if (reservation.bookingCommission) commission[asCurrency(reservation.bookingCommission.currency)] += reservation.bookingCommission.amountMinor;
+    }
+    return { propertyId: property.id, property: property.name, gross, management, payable, bookingCommission: commission, reservationsWithFixedFee: reservationIds.size };
+  });
+  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, ownerFeeProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, held, entitled, commissions, ownerPayable, ownerSettlements, transfers, reservations: detailedReservations, performance, monthlyIncome: [...monthlyMap.values()] };
   if (request.nextUrl.searchParams.get("format") !== "xlsx") return NextResponse.json(data);
 
   const workbook = buildFinancialWorkbook(data, movements.map((movement) => ({
@@ -197,10 +237,17 @@ export function buildFinancialWorkbook(data: any, movements: any[]) {
   management.addRow({ metric: `Opera Deysi: ${data.policy.operatedProperties.deysi.join(", ") || "—"}` });
   management.addRow({ metric: `Opera Milton: ${data.policy.operatedProperties.milton.join(", ") || "—"}` });
   management.addRow({ metric: "Política: propiedades de Milton 80% Milton / 20% Deysi; propiedades de Deysi 100% Deysi. Comisión Booking 15% a cargo del operador." });
+  for (const policy of data.policy.ownerFeeProperties || []) management.addRow({ metric: `Contrato ${policy.name}: ${(policy.feeBps / 100).toLocaleString("es-BO")}% + ${policy.fixedFeeCurrency} ${(policy.fixedFeeMinor / 100).toFixed(2)} por reserva para ${policy.beneficiary}; saldo al propietario.` });
   for (const [channel, values] of Object.entries<any>(data.channelTotals)) management.addRow({ metric: `Ventas ${channel} (${values.reservations} reservas)`, BOB: values.BOB, USD: values.USD });
   for (const person of people) {
     management.addRow({ metric: `Recibido por ${person}`, BOB: data.held[person].BOB / 100, USD: data.held[person].USD / 100 });
     management.addRow({ metric: `Comisión Booking de ${person}`, BOB: data.commissions[person].BOB / 100, USD: data.commissions[person].USD / 100 });
+  }
+  for (const settlement of data.ownerSettlements || []) {
+    management.addRow({ metric: `Ingresos cobrados · ${settlement.property}`, BOB: settlement.gross.BOB / 100, USD: settlement.gross.USD / 100 });
+    management.addRow({ metric: `Administración para Deysi · ${settlement.property}`, BOB: settlement.management.BOB / 100, USD: settlement.management.USD / 100 });
+    management.addRow({ metric: `Saldo a propietario · ${settlement.property}`, BOB: settlement.payable.BOB / 100, USD: settlement.payable.USD / 100 });
+    management.addRow({ metric: `Comisión Booking a cargo del propietario · ${settlement.property}`, BOB: settlement.bookingCommission.BOB / 100, USD: settlement.bookingCommission.USD / 100 });
   }
   for (const transfer of data.transfers) management.addRow({ metric: `${transfer.from} transfiere a ${transfer.to}`, [transfer.currency]: transfer.amountMinor / 100 });
   styleSheet(management); management.getColumn(1).width = 95; management.getColumn(2).numFmt = '"Bs" #,##0.00'; management.getColumn(3).numFmt = '"USD" #,##0.00'; management.getRow(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${pale}` } };
