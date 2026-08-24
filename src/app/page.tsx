@@ -29,31 +29,31 @@ import type { Locale } from "@/lib/i18n/translations";
 const HOME_META: Record<Locale, { title: string; description: string }> = {
   en: {
     title:
-      "RentHome Departamentos — open-source property manager for short-term rentals",
+      "DeptosBO — open-source property manager for short-term rentals",
     description:
       "Free open-source property manager for short-term rental hosts. Sync Airbnb + Booking.com calendars, automate cleaning, extract guest passports.",
   },
   ru: {
     title:
-      "RentHome Departamentos — открытый менеджер краткосрочной аренды",
+      "DeptosBO — открытый менеджер краткосрочной аренды",
     description:
       "Бесплатный менеджер для хостов краткосрочной аренды с открытым кодом. Синхронизация календарей Airbnb и Booking.com, автоматизация уборок, распознавание паспортов гостей.",
   },
   de: {
     title:
-      "RentHome Departamentos — Open-Source-Verwaltung für Kurzzeitvermietung",
+      "DeptosBO — Open-Source-Verwaltung für Kurzzeitvermietung",
     description:
       "Kostenlose Open-Source-Verwaltung für Kurzzeitvermieter. Airbnb- und Booking.com-Kalender synchronisieren, Reinigung automatisieren, Gast-Pässe auslesen.",
   },
   fr: {
     title:
-      "RentHome Departamentos — gestionnaire open source pour la location courte durée",
+      "DeptosBO — gestionnaire open source pour la location courte durée",
     description:
       "Gestionnaire open source gratuit pour les hôtes de location courte durée. Synchronisez les calendriers Airbnb et Booking.com, automatisez le ménage, extrayez les passeports voyageurs.",
   },
   es: {
     title:
-      "RentHome Departamentos — gestor de alquiler vacacional de código abierto",
+      "DeptosBO — gestor de alquiler vacacional de código abierto",
     description:
       "Gestor de código abierto y gratuito para anfitriones de alquiler vacacional. Sincroniza los calendarios de Airbnb y Booking.com, automatiza la limpieza y extrae datos de pasaportes de huéspedes.",
   },
@@ -82,7 +82,7 @@ export async function generateMetadata(): Promise<Metadata> {
         title: meta.title,
         description: meta.description,
         url: alts.canonical,
-        siteName: "RentHome Departamentos",
+        siteName: "DeptosBO",
         locale: ogLocale,
         alternateLocale,
       },
@@ -186,7 +186,7 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Open source",
-        body: "Your operational information stays centralized under RentHome Departamentos.",
+        body: "Your operational information stays centralized under DeptosBO.",
         link: "Read our privacy policy",
       },
       gdpr: {
@@ -229,7 +229,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Read the source",
     },
     footer: {
-      copyright: "© 2026 RentHome Departamentos · MIT License",
+      copyright: "© 2026 DeptosBO · MIT License",
       blog: "Blog",
       changelog: "Changelog",
       terms: "Terms",
@@ -314,7 +314,7 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Открытый код",
-        body: "Ваши операционные данные централизованы под управлением RentHome Departamentos.",
+        body: "Ваши операционные данные централизованы под управлением DeptosBO.",
         link: "Политика конфиденциальности",
       },
       gdpr: {
@@ -357,7 +357,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Посмотреть исходники",
     },
     footer: {
-      copyright: "© 2026 RentHome Departamentos · MIT License",
+      copyright: "© 2026 DeptosBO · MIT License",
       blog: "Блог",
       changelog: "История изменений",
       terms: "Условия",
@@ -442,7 +442,7 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Open Source",
-        body: "Ihre Betriebsdaten werden zentral von RentHome Departamentos verwaltet.",
+        body: "Ihre Betriebsdaten werden zentral von DeptosBO verwaltet.",
         link: "Datenschutz lesen",
       },
       gdpr: {
@@ -485,7 +485,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Quellcode lesen",
     },
     footer: {
-      copyright: "© 2026 RentHome Departamentos · MIT-Lizenz",
+      copyright: "© 2026 DeptosBO · MIT-Lizenz",
       blog: "Blog",
       changelog: "Änderungsverlauf",
       terms: "AGB",
@@ -570,7 +570,7 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Open source",
-        body: "Vos données opérationnelles sont centralisées sous RentHome Departamentos.",
+        body: "Vos données opérationnelles sont centralisées sous DeptosBO.",
         link: "Lire la confidentialité",
       },
       gdpr: {
@@ -613,7 +613,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Lire le code source",
     },
     footer: {
-      copyright: "© 2026 RentHome Departamentos · Licence MIT",
+      copyright: "© 2026 DeptosBO · Licence MIT",
       blog: "Blog",
       changelog: "Journal des modifications",
       terms: "Conditions",
@@ -698,7 +698,7 @@ const COPY: Record<Locale, CopyBlock> = {
     trust: {
       open: {
         title: "Código abierto",
-        body: "Su información operativa permanece centralizada bajo RentHome Departamentos.",
+        body: "Su información operativa permanece centralizada bajo DeptosBO.",
         link: "Ver política de privacidad",
       },
       gdpr: {
@@ -741,7 +741,7 @@ const COPY: Record<Locale, CopyBlock> = {
       secondary: "Leer el código fuente",
     },
     footer: {
-      copyright: "© 2026 RentHome Departamentos · Licencia MIT",
+      copyright: "© 2026 DeptosBO · Licencia MIT",
       blog: "Blog",
       changelog: "Registro de cambios",
       terms: "Términos",
@@ -767,7 +767,7 @@ const FAQ_LD = {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-// SoftwareApplication schema — describes the *product* RentHome Departamentos is.
+// SoftwareApplication schema — describes the *product* DeptosBO is.
 // Distinct from the Organization block in the root layout (which
 // describes the *publisher*). Required-by-Google fields: name, applicationCategory,
 // operatingSystem, offers. The price=0 + priceCurrency=USD pair is what makes
@@ -776,7 +776,7 @@ const SOFTWARE_LD = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "@id": `${SITE_URL}/#software`,
-  name: "RentHome Departamentos",
+  name: "DeptosBO",
   description:
     "Free open-source property management software for short-term rental hosts. Cross-syncs Airbnb, Booking.com, and Vrbo iCal calendars; automates cleaning schedules; manages multi-property guest data.",
   applicationCategory: "BusinessApplication",
@@ -1020,7 +1020,7 @@ export default async function HomePage() {
               <Link href="/terms" className="hover:text-[var(--ink)] transition-colors">{t.footer.terms}</Link>
               <Link href="/privacy" className="hover:text-[var(--ink)] transition-colors">{t.footer.privacy}</Link>
               <a
-                href="mailto:contacto@renthome.local?subject=Advertising%20enquiry"
+                href="mailto:soporte@deptosbo.local?subject=Advertising%20enquiry"
                 className="hover:text-[var(--ink)] transition-colors"
               >
                 {t.footer.advertise}

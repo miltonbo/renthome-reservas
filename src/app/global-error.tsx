@@ -19,7 +19,7 @@ export default function GlobalError({
           <h1>Something went wrong</h1>
           <p>An unexpected error occurred. We&apos;ve been notified.</p>
           {error.digest && <p style={{ color: "#888", fontFamily: "monospace" }}>Error ID: {error.digest}</p>}
-          <a href="/" style={{ color: "#ff385c" }}>Go home</a>
+          <a href="/" style={{ color: "#19b6a5" }}>Volver al inicio</a>
         </div>
       </body>
     </html>

@@ -42,7 +42,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         disallow: ["/api/", "/dashboard", "/admin", "/monitoring", "/invite/", "/g/"],
       },
       // Explicit Allow lines for major LLM training + retrieval crawlers.
-      // We *want* RentHome Departamentos content cited in AI answers — every blog
+      // We *want* DeptosBO content cited in AI answers — every blog
       // article is a host-facing how-to that's the right surface for a
       // "how do I sync my Airbnb to Booking.com" prompt to land on. The
       // disallow list mirrors the wildcard policy so private routes still

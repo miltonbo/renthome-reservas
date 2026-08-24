@@ -380,12 +380,8 @@ export function TopBar({
             className="group flex items-center gap-2 shrink-0 rounded-xl text-[var(--ink)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--m-accent)]/50"
             aria-label="Dashboard home"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--brand-navy)] shadow-sm transition-all duration-200 group-hover:scale-105">
-              <Image src="/brand/renthome-mark.png" alt="" width={34} height={34} className="h-8 w-8 object-contain" priority />
-            </div>
-            <span className="hidden sm:block text-[17px] font-semibold tracking-tight">
-              <span className="text-[var(--brand-orange)]">Rent</span>Home
-            </span>
+            <Image src="/brand/deptosbo-logo-sin-descriptor-dark.svg" alt="DeptosBO" width={150} height={40} className="hidden h-9 w-auto dark:block" priority />
+            <Image src="/brand/deptosbo-logo-sin-descriptor-light.svg" alt="DeptosBO" width={150} height={40} className="h-9 w-auto dark:hidden" priority />
           </button>
 
           {/* Property selector */}

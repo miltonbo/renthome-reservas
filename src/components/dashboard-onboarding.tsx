@@ -116,7 +116,7 @@ const COPY: Record<Locale, CopyShape> = {
     notListing: "Not listing anywhere?",
     manualReservationLink: "Add a manual reservation instead →",
     hubTip:
-      "Tip: connect every platform to RentHome Departamentos, and switch off any calendar links you set up directly between platforms. When RentHome Departamentos is the single hub, each booking is counted once — cross-linking platforms makes the same booking echo around and look like a double-booking.",
+      "Tip: connect every platform to DeptosBO, and switch off any calendar links you set up directly between platforms. When DeptosBO is the single hub, each booking is counted once — cross-linking platforms makes the same booking echo around and look like a double-booking.",
   },
   ru: {
     step1Title: "Назовите свой первый объект",
@@ -143,7 +143,7 @@ const COPY: Record<Locale, CopyShape> = {
     notListing: "Не размещаете нигде?",
     manualReservationLink: "Добавить бронь вручную →",
     hubTip:
-      "Совет: подключайте каждую платформу к RentHome Departamentos и отключите прямые связи календарей между платформами. Когда RentHome Departamentos — единый узел, каждая бронь учитывается один раз. Если же платформы синхронизируются ещё и друг с другом, одна бронь начинает «отражаться» по кругу и выглядит как двойное бронирование.",
+      "Совет: подключайте каждую платформу к DeptosBO и отключите прямые связи календарей между платформами. Когда DeptosBO — единый узел, каждая бронь учитывается один раз. Если же платформы синхронизируются ещё и друг с другом, одна бронь начинает «отражаться» по кругу и выглядит как двойное бронирование.",
   },
   de: {
     step1Title: "Geben Sie Ihrer ersten Unterkunft einen Namen",
@@ -170,7 +170,7 @@ const COPY: Record<Locale, CopyShape> = {
     notListing: "Sie inserieren nirgends?",
     manualReservationLink: "Stattdessen eine Buchung manuell hinzufügen →",
     hubTip:
-      "Tipp: Verbinden Sie jede Plattform mit RentHome Departamentos und schalten Sie direkte Kalender-Verknüpfungen zwischen den Plattformen ab. Wenn RentHome Departamentos der einzige Knotenpunkt ist, wird jede Buchung genau einmal gezählt — synchronisieren sich die Plattformen zusätzlich untereinander, läuft dieselbe Buchung im Kreis und sieht wie eine Doppelbuchung aus.",
+      "Tipp: Verbinden Sie jede Plattform mit DeptosBO und schalten Sie direkte Kalender-Verknüpfungen zwischen den Plattformen ab. Wenn DeptosBO der einzige Knotenpunkt ist, wird jede Buchung genau einmal gezählt — synchronisieren sich die Plattformen zusätzlich untereinander, läuft dieselbe Buchung im Kreis und sieht wie eine Doppelbuchung aus.",
   },
   fr: {
     step1Title: "Nommez votre premier logement",
@@ -197,7 +197,7 @@ const COPY: Record<Locale, CopyShape> = {
     notListing: "Vous ne publiez nulle part ?",
     manualReservationLink: "Ajouter plutôt une réservation manuelle →",
     hubTip:
-      "Astuce : connectez chaque plateforme à RentHome Departamentos, et désactivez les liens de calendrier que vous auriez créés directement entre plateformes. Quand RentHome Departamentos est le point central unique, chaque réservation est comptée une seule fois — si les plateformes se synchronisent aussi entre elles, la même réservation tourne en boucle et ressemble à une double réservation.",
+      "Astuce : connectez chaque plateforme à DeptosBO, et désactivez les liens de calendrier que vous auriez créés directement entre plateformes. Quand DeptosBO est le point central unique, chaque réservation est comptée une seule fois — si les plateformes se synchronisent aussi entre elles, la même réservation tourne en boucle et ressemble à une double réservation.",
   },
   es: {
     step1Title: "Póngale nombre a su primer alojamiento",
@@ -224,7 +224,7 @@ const COPY: Record<Locale, CopyShape> = {
     notListing: "¿No publica en ninguna plataforma?",
     manualReservationLink: "Añadir una reserva manual →",
     hubTip:
-      "Consejo: conecte cada plataforma a RentHome Departamentos y desactive los enlaces de calendario que haya creado directamente entre plataformas. Cuando RentHome Departamentos es el único punto central, cada reserva se cuenta una sola vez — si las plataformas también se sincronizan entre sí, la misma reserva da vueltas en bucle y parece una reserva doble.",
+      "Consejo: conecte cada plataforma a DeptosBO y desactive los enlaces de calendario que haya creado directamente entre plataformas. Cuando DeptosBO es el único punto central, cada reserva se cuenta una sola vez — si las plataformas también se sincronizan entre sí, la misma reserva da vueltas en bucle y parece una reserva doble.",
   },
 };
 
@@ -503,7 +503,7 @@ export function DashboardOnboarding({ onComplete }: DashboardOnboardingProps) {
           {/* Friendly hub-and-spoke guidance. The #1 misconfiguration
               for multi-platform hosts is cross-linking platforms
               directly (Airbnb → Booking, etc.) on top of connecting
-              them to RentHome Departamentos — which makes every booking echo around
+              them to DeptosBO — which makes every booking echo around
               and surface as a phantom double-booking. Surfacing the
               tip right at the connect step is the cheapest place to
               prevent it. */}

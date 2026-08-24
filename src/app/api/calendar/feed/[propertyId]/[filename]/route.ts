@@ -77,7 +77,7 @@ export async function GET(
         select: { id: true, claimedByUserId: true },
       });
       if (draft && !draft.claimedByUserId) {
-        const ical = generateEmptyFeed("RentHome Departamentos onboarding");
+        const ical = generateEmptyFeed("DeptosBO onboarding");
         return icalResponse(ical, forPlatform);
       }
     }

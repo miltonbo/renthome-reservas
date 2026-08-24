@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/i18n/translations";
  * PWA manifest. Per-locale because the `name` / `short_name` /
  * `description` / `lang` fields surface in the OS install dialog and
  * the eventual home-screen label. A Russian visitor installing the
- * app from /ru/ should see "RentHome Departamentos" with a Russian description,
+ * app from /ru/ should see "DeptosBO" with a Russian description,
  * and the OS tags the installed app `lang="ru"` (which influences
  * IME selection + screen-reader voice on some platforms).
  *
@@ -18,33 +18,33 @@ import type { Locale } from "@/lib/i18n/translations";
 
 const LOCALIZED: Record<Locale, { name: string; description: string; lang: string }> = {
   en: {
-    name: "RentHome Departamentos",
+    name: "DeptosBO",
     description:
-      "RentHome Departamentos reservation, calendar and cleaning management.",
+      "DeptosBO property, reservation, calendar and cleaning management.",
     lang: "en",
   },
   ru: {
-    name: "RentHome Departamentos",
+    name: "DeptosBO",
     description:
-      "Управление бронированиями, календарями и уборкой RentHome Departamentos.",
+      "Управление объектами, бронированиями, календарями и уборкой в DeptosBO.",
     lang: "ru",
   },
   de: {
-    name: "RentHome Departamentos",
+    name: "DeptosBO",
     description:
-      "Reservierungs-, Kalender- und Reinigungsverwaltung von RentHome Departamentos.",
+      "Immobilien-, Reservierungs-, Kalender- und Reinigungsverwaltung mit DeptosBO.",
     lang: "de",
   },
   fr: {
-    name: "RentHome Departamentos",
+    name: "DeptosBO",
     description:
-      "Gestion des réservations, calendriers et ménages de RentHome Departamentos.",
+      "Gestion des propriétés, réservations, calendriers et ménages avec DeptosBO.",
     lang: "fr",
   },
   es: {
-    name: "RentHome Departamentos",
+    name: "DeptosBO",
     description:
-      "Gestión de reservas, calendarios y limpiezas de RentHome Departamentos.",
+      "Gestión de propiedades, reservas, calendarios y limpiezas con DeptosBO.",
     lang: "es",
   },
 };
@@ -60,8 +60,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
-    theme_color: "#ff385c",
-    background_color: "#fafaf9",
+    theme_color: "#123b4a",
+    background_color: "#f6f8f9",
     lang: copy.lang,
     icons: [
       // SVG goes first so any browser that can rasterise it gets the

@@ -49,73 +49,73 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: #f6f8f9;
+  --foreground: #17252b;
+  --card: #ffffff;
+  --card-foreground: #17252b;
+  --popover: #ffffff;
+  --popover-foreground: #17252b;
+  --primary: #19b6a5;
+  --primary-foreground: #0b171c;
+  --secondary: #edf2f4;
+  --secondary-foreground: #123b4a;
+  --muted: #edf2f4;
+  --muted-foreground: #65777e;
+  --accent: #d9f5f1;
+  --accent-foreground: #123b4a;
+  --destructive: #d84a4a;
+  --border: #dce4e7;
+  --input: #dce4e7;
+  --ring: #19b6a5;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #10252d;
+  --sidebar-foreground: #f4f7f8;
+  --sidebar-primary: #19b6a5;
+  --sidebar-primary-foreground: #0b171c;
+  --sidebar-accent: #152c34;
+  --sidebar-accent-foreground: #f4f7f8;
+  --sidebar-border: #294049;
+  --sidebar-ring: #19b6a5;
 }
 
 /* Hybrid dark theme: Apple precision + Airbnb warmth */
 .dark {
-  --background: #111113;
-  --foreground: #e0e0e4;
-  --card: #18181b;
-  --card-foreground: #e0e0e4;
-  --popover: #18181b;
-  --popover-foreground: #e0e0e4;
-  --primary: #e8e8ec;
-  --primary-foreground: #111113;
-  --secondary: #1e1e22;
-  --secondary-foreground: #a0a0a8;
-  --muted: #1e1e22;
-  --muted-foreground: #a0a0a8;
-  --accent: #1e1e22;
-  --accent-foreground: #e0e0e4;
-  --destructive: #ef4444;
-  --border: #27272b;
-  --input: #1e1e22;
-  --ring: #e8e8ec;
+  --background: #0b171c;
+  --foreground: #f4f7f8;
+  --card: #152c34;
+  --card-foreground: #f4f7f8;
+  --popover: #152c34;
+  --popover-foreground: #f4f7f8;
+  --primary: #19b6a5;
+  --primary-foreground: #0b171c;
+  --secondary: #10252d;
+  --secondary-foreground: #d8e1e4;
+  --muted: #10252d;
+  --muted-foreground: #9fb0b7;
+  --accent: #123b4a;
+  --accent-foreground: #f4f7f8;
+  --destructive: #d84a4a;
+  --border: #294049;
+  --input: #294049;
+  --ring: #19b6a5;
   --chart-1: #e8e8ec;
   --chart-2: #34d399;
   --chart-3: #fbbf24;
   --chart-4: #a78bfa;
   --chart-5: #fb923c;
-  --sidebar: #111113;
-  --sidebar-foreground: #e0e0e4;
-  --sidebar-primary: #e8e8ec;
-  --sidebar-primary-foreground: #111113;
-  --sidebar-accent: #18181b;
-  --sidebar-accent-foreground: #e0e0e4;
-  --sidebar-border: #27272b;
-  --sidebar-ring: #e8e8ec;
+  --sidebar: #10252d;
+  --sidebar-foreground: #f4f7f8;
+  --sidebar-primary: #19b6a5;
+  --sidebar-primary-foreground: #0b171c;
+  --sidebar-accent: #152c34;
+  --sidebar-accent-foreground: #f4f7f8;
+  --sidebar-border: #294049;
+  --sidebar-ring: #19b6a5;
 }
 
 @layer base {
@@ -124,7 +124,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+    font-family: var(--font-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     /* 16px base — closer to Airbnb / industry comfort. Was 15px which
        made dashboard chrome feel cramped. */
     font-size: 16px;
@@ -151,22 +151,22 @@
    <html>. Other tokens above stay app-only (dashboard, etc.).
 ========================================================= */
 .editorial {
-  --brand-navy: #0d222b;
-  --brand-orange: #ed8423;
-  --brand-orange-soft: #fff1e4;
-  --brand-orange-faint: rgba(237, 132, 35, 0.08);
-  --brand-navy-soft: rgba(13, 34, 43, 0.04);
-  --bg: #fafaf9;
-  --bg-2: #f4f4f2;
-  --bg-3: #ebebe7;
-  --ink: #0e0e10;
-  --ink-2: #3a3a40;
-  --ink-3: #6b6b73;
-  --ink-4: #9a9aa3;
-  --line: rgba(14, 14, 16, 0.09);
-  --line-2: rgba(14, 14, 16, 0.16);
+  --brand-navy: #123b4a;
+  --brand-orange: #19b6a5;
+  --brand-orange-soft: rgba(25, 182, 165, 0.14);
+  --brand-orange-faint: rgba(25, 182, 165, 0.08);
+  --brand-navy-soft: rgba(18, 59, 74, 0.05);
+  --bg: #f6f8f9;
+  --bg-2: #ffffff;
+  --bg-3: #edf2f4;
+  --ink: #17252b;
+  --ink-2: #32464e;
+  --ink-3: #65777e;
+  --ink-4: #91a0a6;
+  --line: #dce4e7;
+  --line-2: #c5d1d5;
   --m-accent: var(--brand-orange);
-  --m-accent-2: #d96f12;
+  --m-accent-2: #14998b;
   --m-accent-soft: var(--brand-orange-soft);
   /* Background-pill tints — strong enough to be readable on the warm
      off-white hero, gentle enough to stay decorative. Tuned per theme. */
@@ -189,22 +189,22 @@
   letter-spacing: -0.011em;
 }
 .dark .editorial {
-  --brand-navy: #102a35;
-  --brand-orange: #f29438;
-  --brand-orange-soft: rgba(242, 148, 56, 0.14);
-  --brand-orange-faint: rgba(242, 148, 56, 0.1);
+  --brand-navy: #123b4a;
+  --brand-orange: #19b6a5;
+  --brand-orange-soft: rgba(25, 182, 165, 0.14);
+  --brand-orange-faint: rgba(25, 182, 165, 0.1);
   --brand-navy-soft: rgba(255, 255, 255, 0.035);
-  --bg: #0d1117;
-  --bg-2: #15191f;
-  --bg-3: #1c2129;
-  --ink: #f0f3f7;
-  --ink-2: #c2c6cd;
-  --ink-3: #8a8f97;
-  --ink-4: #5c616a;
-  --line: rgba(240, 243, 247, 0.08);
-  --line-2: rgba(240, 243, 247, 0.14);
+  --bg: #0b171c;
+  --bg-2: #152c34;
+  --bg-3: #10252d;
+  --ink: #f4f7f8;
+  --ink-2: #d8e1e4;
+  --ink-3: #9fb0b7;
+  --ink-4: #70858d;
+  --line: #294049;
+  --line-2: #3b555e;
   --m-accent: var(--brand-orange);
-  --m-accent-2: #ffad5b;
+  --m-accent-2: #35c9b8;
   --m-accent-soft: var(--brand-orange-soft);
   --pill-coral: rgba(255, 85, 119, 0.16);
   --pill-blue: rgba(110, 168, 254, 0.14);

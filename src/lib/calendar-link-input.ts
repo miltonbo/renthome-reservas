@@ -57,7 +57,7 @@ export function normalizeIcalUrl(raw: unknown): UrlResult {
   return { ok: true, url: parsed.toString() };
 }
 
-/** RentHome Departamentos syncs any iCal-capable platform, so the slug is free-form
+/** DeptosBO syncs any iCal-capable platform, so the slug is free-form
  *  rather than an allowlist — matched to what /api/onboard already accepts
  *  (lowercased, trimmed, capped at 32 chars) so the wizard and the in-app
  *  form can't disagree about what is addable. */

@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n/context";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
@@ -91,39 +92,8 @@ function LoginPageInner() {
                 wordmark — RT-25.7. Same SMIL animation as the header /
                 top-bar; no entry shake. h-20 keeps it prominent
                 without overpowering the form below. */}
-            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--m-accent)] shadow-md shadow-[var(--m-accent)]/30">
-              <svg viewBox="0 0 24 24" className="h-12 w-12" aria-hidden="true">
-                <g fill="white" stroke="white" strokeWidth="0.4" strokeLinejoin="round">
-                  <path d="M3.4 11.6 L12 4.5 L20.6 11.6 L19 11.6 L19 19.5 L5 19.5 L5 11.6 Z" />
-                  <rect x="15.6" y="6.2" width="1.7" height="3.4" rx="0.2" />
-                </g>
-                <g fill="var(--m-accent)">
-                  <rect x="10.6" y="14" width="2.8" height="5.5" rx="0.4" />
-                  <rect x="6.7" y="13" width="2.4" height="2.4" rx="0.3" />
-                  <rect x="14.9" y="13" width="2.4" height="2.4" rx="0.3" />
-                </g>
-                <g fill="white">
-                  <circle cx="16.45" cy="5.5" r="0.6" opacity="0">
-                    <animate attributeName="cy" values="5.5;3.2;1" dur="3s" repeatCount="indefinite" />
-                    <animate attributeName="cx" values="16.45;16.7;17.1" dur="3s" repeatCount="indefinite" />
-                    <animate attributeName="r" values="0.4;0.7;0.9" dur="3s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0;0.85;0" dur="3s" repeatCount="indefinite" />
-                  </circle>
-                  <circle cx="16.45" cy="5.5" r="0.6" opacity="0">
-                    <animate attributeName="cy" values="5.5;3.2;1" dur="3s" begin="1s" repeatCount="indefinite" />
-                    <animate attributeName="cx" values="16.45;16.2;15.9" dur="3s" begin="1s" repeatCount="indefinite" />
-                    <animate attributeName="r" values="0.4;0.7;0.9" dur="3s" begin="1s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0;0.7;0" dur="3s" begin="1s" repeatCount="indefinite" />
-                  </circle>
-                  <circle cx="16.45" cy="5.5" r="0.6" opacity="0">
-                    <animate attributeName="cy" values="5.5;3.2;1" dur="3s" begin="2s" repeatCount="indefinite" />
-                    <animate attributeName="cx" values="16.45;16.6;17" dur="3s" begin="2s" repeatCount="indefinite" />
-                    <animate attributeName="r" values="0.4;0.7;0.9" dur="3s" begin="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0;0.6;0" dur="3s" begin="2s" repeatCount="indefinite" />
-                  </circle>
-                </g>
-              </svg>
-            </div>
+            <Image src="/brand/deptosbo-logo-principal-light.svg" alt="DeptosBO — Gestión de propiedades" width={280} height={96} className="mx-auto mb-6 h-auto w-[240px] dark:hidden" priority />
+            <Image src="/brand/deptosbo-logo-principal-dark.svg" alt="DeptosBO — Gestión de propiedades" width={280} height={96} className="mx-auto mb-6 hidden h-auto w-[240px] dark:block" priority />
             <h1 className="display text-[28px] font-semibold leading-[1.1] tracking-[-0.025em] text-[var(--ink)] sm:text-[32px]">
               {t("login.title")}
             </h1>

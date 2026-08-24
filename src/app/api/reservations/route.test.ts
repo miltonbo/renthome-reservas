@@ -78,7 +78,7 @@ beforeEach(() => {
 });
 
 describe("POST /api/reservations — linked calendar source", () => {
-  it("stores RentHome prices, guarantee and parking for a direct reservation", async () => {
+  it("stores DeptosBO prices, guarantee and parking for a direct reservation", async () => {
     const response = await POST(
       postRequest({
         platform: "direct",

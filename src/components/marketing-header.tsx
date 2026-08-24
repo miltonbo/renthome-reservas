@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useI18n } from "@/lib/i18n/context";
@@ -69,45 +70,11 @@ export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: Ma
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
         <Link
           href={localized("/")}
-          aria-label="RentHome home"
+          aria-label="Inicio de DeptosBO"
           className="group flex shrink-0 items-center gap-2 min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--m-accent)]/50"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--m-accent)] shadow-sm shadow-[var(--m-accent)]/30 transition-all duration-200 ease-out group-hover:scale-110 group-hover:shadow-md group-hover:shadow-[var(--m-accent)]/50 group-active:scale-90 group-active:duration-75">
-            <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" aria-hidden="true">
-              <g fill="white" stroke="white" strokeWidth="0.4" strokeLinejoin="round">
-                <path d="M3.4 11.6 L12 4.5 L20.6 11.6 L19 11.6 L19 19.5 L5 19.5 L5 11.6 Z" />
-                <rect x="15.6" y="6.2" width="1.7" height="3.4" rx="0.2" />
-              </g>
-              <g fill="var(--m-accent)">
-                <rect x="10.6" y="14" width="2.8" height="5.5" rx="0.4" />
-                <rect x="6.7" y="13" width="2.4" height="2.4" rx="0.3" />
-                <rect x="14.9" y="13" width="2.4" height="2.4" rx="0.3" />
-              </g>
-              <g fill="white">
-                <circle cx="16.45" cy="5.5" r="0.6" opacity="0">
-                  <animate attributeName="cy" values="5.5;3.2;1" dur="3s" repeatCount="indefinite" />
-                  <animate attributeName="cx" values="16.45;16.7;17.1" dur="3s" repeatCount="indefinite" />
-                  <animate attributeName="r" values="0.4;0.7;0.9" dur="3s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0;0.85;0" dur="3s" repeatCount="indefinite" />
-                </circle>
-                <circle cx="16.45" cy="5.5" r="0.6" opacity="0">
-                  <animate attributeName="cy" values="5.5;3.2;1" dur="3s" begin="1s" repeatCount="indefinite" />
-                  <animate attributeName="cx" values="16.45;16.2;15.9" dur="3s" begin="1s" repeatCount="indefinite" />
-                  <animate attributeName="r" values="0.4;0.7;0.9" dur="3s" begin="1s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0;0.7;0" dur="3s" begin="1s" repeatCount="indefinite" />
-                </circle>
-                <circle cx="16.45" cy="5.5" r="0.6" opacity="0">
-                  <animate attributeName="cy" values="5.5;3.2;1" dur="3s" begin="2s" repeatCount="indefinite" />
-                  <animate attributeName="cx" values="16.45;16.6;17" dur="3s" begin="2s" repeatCount="indefinite" />
-                  <animate attributeName="r" values="0.4;0.7;0.9" dur="3s" begin="2s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0;0.6;0" dur="3s" begin="2s" repeatCount="indefinite" />
-                </circle>
-              </g>
-            </svg>
-          </div>
-          <span className="display text-[17px] font-semibold tracking-tight text-[var(--ink)]">
-            RentHome
-          </span>
+          <Image src="/brand/deptosbo-logo-sin-descriptor-light.svg" alt="DeptosBO" width={158} height={36} className="h-8 w-auto dark:hidden" priority />
+          <Image src="/brand/deptosbo-logo-sin-descriptor-dark.svg" alt="DeptosBO" width={158} height={36} className="hidden h-8 w-auto dark:block" priority />
         </Link>
 
         {/* Right cluster — uses shrink-0 + whitespace-nowrap on every

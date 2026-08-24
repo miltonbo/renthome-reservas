@@ -8,7 +8,7 @@ import {
   isMethodCurrencyValid,
 } from "./finance";
 
-describe("RentHome finance rules", () => {
+describe("DeptosBO finance rules", () => {
   it("restricts payment methods to the agreed operational currencies", () => {
     expect(allowedCurrencies("qr")).toEqual(["BOB"]);
     expect(allowedCurrencies("transfer")).toEqual(["BOB"]);

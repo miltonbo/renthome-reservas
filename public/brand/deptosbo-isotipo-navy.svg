@@ -5,7 +5,7 @@
 </mask></defs>
 <g mask="url(#cut)">
  <path d="M24 28h86c36 0 59 39 59 100s-23 100-59 100H24Z" fill="#123B4A"/>
- <path d="M128 28h47c36 0 58 18 58 47 0 22-12 37-34 46 25 7 39 25 39 50 0 36-27 57-69 57h-64Z" fill="#19B6A5"/>
+ <path d="M128 28h47c36 0 58 18 58 47 0 22-12 37-34 46 25 7 39 25 39 50 0 36-27 57-69 57h-64Z" fill="#123B4A"/>
 </g>
 <g fill="#123B4A"><rect x="82" y="91" width="23" height="23" rx="3"/><rect x="111" y="91" width="23" height="23" rx="3"/><rect x="82" y="120" width="23" height="23" rx="3"/><rect x="111" y="120" width="23" height="23" rx="3"/></g>
 </svg>

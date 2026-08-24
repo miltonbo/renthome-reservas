@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="DeptosBO DB Modular">
+<defs><mask id="cut"><rect width="256" height="256" fill="white"/>
+ <path d="M119 28h17L111 228H94Z" fill="black"/>
+ <path d="M67 69h93c18 0 29 10 29 24 0 13-8 22-22 26 17 4 27 14 27 30 0 17-13 28-34 28H67Z" fill="black"/>
+</mask></defs>
+<g mask="url(#cut)">
+ <path d="M24 28h86c36 0 59 39 59 100s-23 100-59 100H24Z" fill="#FFFFFF"/>
+ <path d="M128 28h47c36 0 58 18 58 47 0 22-12 37-34 46 25 7 39 25 39 50 0 36-27 57-69 57h-64Z" fill="#FFFFFF"/>
+</g>
+<g fill="#FFFFFF"><rect x="82" y="91" width="23" height="23" rx="3"/><rect x="111" y="91" width="23" height="23" rx="3"/><rect x="82" y="120" width="23" height="23" rx="3"/><rect x="111" y="120" width="23" height="23" rx="3"/></g>
+</svg>

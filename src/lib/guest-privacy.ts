@@ -1,13 +1,13 @@
 // Guest travel-document privacy.
 //
 // A host always sees their own guests' passport / ID data in full — it's
-// theirs. But when a RentHome Departamentos superadmin is *impersonating* a host for
+// theirs. But when a DeptosBO superadmin is *impersonating* a host for
 // support, these document fields are redacted from every API response,
 // so support can still operate the account (calendar, settings, sync)
 // without ever reading a guest's passport details.
 //
 // This is what backs the assurance shown on the reservation page that
-// RentHome Departamentos staff cannot view uploaded passport documents. Redaction is
+// DeptosBO staff cannot view uploaded passport documents. Redaction is
 // applied at the API layer (guest list, guest search, data export) so
 // there is no path — UI, search, or export — that leaks the data to an
 // impersonating session.

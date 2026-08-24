@@ -4,7 +4,7 @@ import { MarketingHeader } from "@/components/marketing-header";
 import { applySeoOverrides } from "@/lib/seo";
 
 const TERMS_TITLE = "Terms of Service";
-const TERMS_DESCRIPTION = "Terms of service for the free hosted instance of RentHome Departamentos at localhost:3000.";
+const TERMS_DESCRIPTION = "Terms of service for the free hosted instance of DeptosBO at localhost:3000.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const base: Metadata = {
@@ -13,14 +13,14 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: "/terms" },
     openGraph: {
       type: "article",
-      title: `${TERMS_TITLE} · RentHome Departamentos`,
+      title: `${TERMS_TITLE} · DeptosBO`,
       description: TERMS_DESCRIPTION,
       url: "/terms",
-      siteName: "RentHome Departamentos",
+      siteName: "DeptosBO",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${TERMS_TITLE} · RentHome Departamentos`,
+      title: `${TERMS_TITLE} · DeptosBO`,
       description: TERMS_DESCRIPTION,
     },
   };
@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const LAST_UPDATED = "2026-05-05";
 const OPERATOR_NAME = "Ilya Asminkin";
-const OPERATOR_EMAIL = "contacto@renthome.local";
+const OPERATOR_EMAIL = "soporte@deptosbo.local";
 
 export default function TermsPage() {
   return (
@@ -46,7 +46,7 @@ export default function TermsPage() {
               These Terms of Service (&quot;Terms&quot;) form a binding agreement between
               you (&quot;you&quot;, &quot;your&quot;) and {OPERATOR_NAME}
               (&quot;we&quot;, &quot;us&quot;, &quot;the Operator&quot;), the
-              independent maintainer of the RentHome Departamentos service hosted at{" "}
+              independent maintainer of the DeptosBO service hosted at{" "}
               <span className="font-mono text-[var(--ink)]">http://localhost:3000</span>{" "}
               (&quot;the Service&quot;). By creating an account or using the Service you
               agree to these Terms. If you do not agree, do not use the Service.
@@ -56,9 +56,9 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-[var(--ink)]">1. About the Service</h2>
             <p>
-              RentHome Departamentos es una plataforma privada para administrar
+              DeptosBO es una plataforma privada para administrar
               propiedades, reservas, calendarios y tareas operativas. Estos términos
-              regulan el uso de la instancia administrada por RentHome Departamentos.
+              regulan el uso de la instancia administrada por DeptosBO.
             </p>
           </section>
 
@@ -105,7 +105,7 @@ export default function TermsPage() {
               </li>
               <li>
                 resell, sublicense, or commercially redistribute the hosted Service
-                outside the terms agreed with RentHome Departamentos;
+                outside the terms agreed with DeptosBO;
               </li>
               <li>
                 use the Service to send spam, malware, or to operate any kind of
@@ -160,7 +160,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-lg font-semibold text-[var(--ink)]">7. Intellectual property</h2>
             <p>
-              The &quot;RentHome Departamentos&quot; name, visual identity and logos remain
+              The &quot;DeptosBO&quot; name, visual identity and logos remain
               the property of the Operator and may not be reused without permission. The third-party
               names mentioned in the application (Airbnb, Booking.com, Google, etc.)
               belong to their respective owners.
@@ -288,7 +288,7 @@ export default function TermsPage() {
                 rel="noopener noreferrer"
                 className="text-sky-400 hover:underline"
               >
-                RentHome Departamentos
+                DeptosBO
               </a>.
             </p>
           </section>
@@ -297,7 +297,7 @@ export default function TermsPage() {
 
       <footer className="border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-[var(--ink-4)] sm:flex-row sm:px-6">
-          <p>© 2026 RentHome Departamentos · MIT License</p>
+          <p>© 2026 DeptosBO · MIT License</p>
           <nav className="flex gap-4">
             <Link href="/" className="hover:text-[var(--ink)]">Home</Link>
             <Link href="/privacy" className="hover:text-[var(--ink)]">Privacy</Link>

@@ -90,12 +90,12 @@ export function addDays(dateStr: string, days: number): string {
  */
 export function generateICal(
   events: ICalEvent[],
-  calendarName: string = "RentHome Departamentos Sync"
+  calendarName: string = "DeptosBO Sync"
 ): string {
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//RentHome//CalendarSync//EN",
+    "PRODID:-//DeptosBO//CalendarSync//EN",
     `X-WR-CALNAME:${calendarName}`,
     "METHOD:PUBLISH",
   ];
@@ -105,7 +105,7 @@ export function generateICal(
   // feed always validates while the property has no real bookings to share.
   const eventsToEmit: ICalEvent[] = events.length > 0 ? events : [{
     uid: "renthome-placeholder",
-    summary: "RentHome Departamentos placeholder",
+    summary: "DeptosBO placeholder",
     startDate: "1970-01-01",
     endDate: "1970-01-02",
   }];

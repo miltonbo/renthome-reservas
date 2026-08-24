@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       extensionRootId = requestedRoot.id;
     }
 
-    // Check overlap with existing RentHome Departamentos reservations on the same
+    // Check overlap with existing DeptosBO reservations on the same
     // property. The host can't have two reservations covering the same
     // night.
     const overlap = await prisma.reservation.findFirst({

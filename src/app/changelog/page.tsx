@@ -45,7 +45,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeHref: "/",
     changelogLabel: "Changelog",
     heroEyebrow: "What's new",
-    heroTitle: "RentHome Departamentos changelog",
+    heroTitle: "DeptosBO changelog",
     heroIntro:
       "User-visible changes, grouped by the day they reached production. New capabilities, useful improvements, and the bug fixes that actually mattered — internal refactors and dependency bumps live in the commit log, not here.",
     kindLabels: { added: "Added", improved: "Improved", fixed: "Fixed" },
@@ -61,7 +61,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeHref: "/",
     changelogLabel: "История изменений",
     heroEyebrow: "Что нового",
-    heroTitle: "История изменений RentHome Departamentos",
+    heroTitle: "История изменений DeptosBO",
     heroIntro:
       "Заметные пользователю изменения, сгруппированные по дате выхода. Новые возможности, полезные улучшения и значимые исправления — внутренние рефакторинги и обновления зависимостей живут в git-логе, а не здесь.",
     kindLabels: { added: "Добавлено", improved: "Улучшено", fixed: "Исправлено" },
@@ -77,7 +77,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeHref: "/",
     changelogLabel: "Änderungsverlauf",
     heroEyebrow: "Was ist neu",
-    heroTitle: "RentHome Departamentos-Änderungsverlauf",
+    heroTitle: "DeptosBO-Änderungsverlauf",
     heroIntro:
       "Für Nutzer sichtbare Änderungen, gruppiert nach dem Tag, an dem sie live gingen. Neue Funktionen, sinnvolle Verbesserungen und wirklich relevante Fehlerbehebungen — interne Refactorings und Abhängigkeits-Updates bleiben im Commit-Log.",
     kindLabels: { added: "Neu", improved: "Verbessert", fixed: "Behoben" },
@@ -93,7 +93,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeHref: "/",
     changelogLabel: "Journal des modifications",
     heroEyebrow: "Quoi de neuf",
-    heroTitle: "Journal des modifications de RentHome Departamentos",
+    heroTitle: "Journal des modifications de DeptosBO",
     heroIntro:
       "Changements visibles par les utilisateurs, regroupés par date de mise en production. Nouvelles fonctionnalités, améliorations utiles et corrections de bugs qui comptent vraiment — les refactorisations internes et les mises à jour de dépendances restent dans l'historique Git.",
     kindLabels: { added: "Ajouté", improved: "Amélioré", fixed: "Corrigé" },
@@ -109,7 +109,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeHref: "/",
     changelogLabel: "Registro de cambios",
     heroEyebrow: "Novedades",
-    heroTitle: "Registro de cambios de RentHome Departamentos",
+    heroTitle: "Registro de cambios de DeptosBO",
     heroIntro:
       "Cambios visibles para los usuarios, agrupados por el día en que se desplegaron. Nuevas funciones, mejoras útiles y correcciones de errores que sí importaban — los refactores internos y actualizaciones de dependencias viven en el historial de commits, no aquí.",
     kindLabels: { added: "Añadido", improved: "Mejorado", fixed: "Corregido" },
@@ -137,15 +137,15 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: "/changelog" },
     openGraph: {
       type: "article",
-      title: `${copy.heroTitle} · RentHome Departamentos`,
+      title: `${copy.heroTitle} · DeptosBO`,
       description: copy.heroIntro,
       url: `${SITE_URL}/changelog`,
-      siteName: "RentHome Departamentos",
+      siteName: "DeptosBO",
       locale: copy.ogLocale,
     },
     twitter: {
       card: "summary",
-      title: `${copy.heroTitle} · RentHome Departamentos`,
+      title: `${copy.heroTitle} · DeptosBO`,
       description: copy.heroIntro,
     },
   };
@@ -209,7 +209,7 @@ export default async function ChangelogPage() {
 
       <footer className="mt-16 border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-[var(--ink-4)] sm:flex-row sm:px-6">
-          <p>© 2026 RentHome Departamentos · MIT License</p>
+          <p>© 2026 DeptosBO · MIT License</p>
           <nav className="flex gap-4">
             <Link
               href={localePath("/", locale)}

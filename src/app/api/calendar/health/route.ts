@@ -27,7 +27,7 @@ async function checkFeed(url: string | undefined): Promise<FeedStatus> {
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "RentHome-CalendarSync/1.0",
+        "User-Agent": "DeptosBO-CalendarSync/1.0",
         Accept: "text/calendar, text/plain, */*",
       },
     });

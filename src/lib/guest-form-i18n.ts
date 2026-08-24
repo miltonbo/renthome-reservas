@@ -164,17 +164,17 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
     privacy: {
       title: "Privacy & data handling",
       summary:
-        "Only your host sees your answers. Stored securely by RentHome Departamentos using HTTPS and no tracking.",
+        "Only your host sees your answers. Stored securely by DeptosBO using HTTPS and no tracking.",
       showDetails: "Details",
       hideDetails: "Hide",
       bullets: [
         {
           title: "Who sees this",
-          body: "Only the host of the property you booked. Answers go straight to their RentHome Departamentos account. Nothing is shared, sold, or used for advertising.",
+          body: "Only the host of the property you booked. Answers go straight to their DeptosBO account. Nothing is shared, sold, or used for advertising.",
         },
         {
           title: "Where it's stored",
-          body: "RentHome Departamentos stores this information for operational use. The connection to this form is HTTPS-encrypted.",
+          body: "DeptosBO stores this information for operational use. The connection to this form is HTTPS-encrypted.",
         },
         {
           title: "No tracking",
@@ -182,10 +182,10 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
         },
         {
           title: "Your rights (GDPR / UK GDPR)",
-          body: "You can ask your host to delete your answers at any time, or contact the operator at contacto@renthome.local for any privacy question, access request, or complaint.",
+          body: "You can ask your host to delete your answers at any time, or contact the operator at soporte@deptosbo.local for any privacy question, access request, or complaint.",
         },
       ],
-      fullPolicyLabel: "Read the full RentHome Departamentos privacy policy",
+      fullPolicyLabel: "Read the full DeptosBO privacy policy",
     },
   },
   ru: {
@@ -205,17 +205,17 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
     privacy: {
       title: "Конфиденциальность и обработка данных",
       summary:
-        "Ваши ответы видит только хозяин объекта. Данные хранятся на RentHome Departamentos — открытое ПО, только HTTPS, без отслеживания.",
+        "Ваши ответы видит только хозяин объекта. Данные хранятся на DeptosBO — открытое ПО, только HTTPS, без отслеживания.",
       showDetails: "Подробнее",
       hideDetails: "Свернуть",
       bullets: [
         {
           title: "Кто видит эти данные",
-          body: "Только хозяин выбранного вами объекта. Ответы попадают сразу в его аккаунт RentHome Departamentos. Мы не передаём, не продаём и не используем их в рекламных целях.",
+          body: "Только хозяин выбранного вами объекта. Ответы попадают сразу в его аккаунт DeptosBO. Мы не передаём, не продаём и не используем их в рекламных целях.",
         },
         {
           title: "Где хранятся данные",
-          body: "RentHome Departamentos — это открытое программное обеспечение, исходный код общедоступен, поэтому любой может проверить, что происходит с вашими данными. Соединение с этой формой защищено HTTPS-шифрованием.",
+          body: "DeptosBO — это открытое программное обеспечение, исходный код общедоступен, поэтому любой может проверить, что происходит с вашими данными. Соединение с этой формой защищено HTTPS-шифрованием.",
         },
         {
           title: "Никакого отслеживания",
@@ -223,10 +223,10 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
         },
         {
           title: "Ваши права (GDPR)",
-          body: "Вы можете в любой момент попросить хозяина удалить ваши ответы или написать оператору по адресу contacto@renthome.local по любому вопросу о конфиденциальности, доступе к данным или жалобе.",
+          body: "Вы можете в любой момент попросить хозяина удалить ваши ответы или написать оператору по адресу soporte@deptosbo.local по любому вопросу о конфиденциальности, доступе к данным или жалобе.",
         },
       ],
-      fullPolicyLabel: "Полная политика конфиденциальности RentHome Departamentos",
+      fullPolicyLabel: "Полная политика конфиденциальности DeptosBO",
     },
   },
   de: {
@@ -246,17 +246,17 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
     privacy: {
       title: "Datenschutz & Datenverarbeitung",
       summary:
-        "Nur Ihr Gastgeber sieht Ihre Antworten. Sicher bei RentHome Departamentos gespeichert, ausschließlich über HTTPS und ohne Tracking.",
+        "Nur Ihr Gastgeber sieht Ihre Antworten. Sicher bei DeptosBO gespeichert, ausschließlich über HTTPS und ohne Tracking.",
       showDetails: "Details",
       hideDetails: "Ausblenden",
       bullets: [
         {
           title: "Wer sieht diese Angaben",
-          body: "Nur der Gastgeber der von Ihnen gebuchten Unterkunft. Ihre Antworten gehen direkt in dessen RentHome Departamentos-Konto. Es findet keine Weitergabe, kein Verkauf und keine Verwendung für Werbung statt.",
+          body: "Nur der Gastgeber der von Ihnen gebuchten Unterkunft. Ihre Antworten gehen direkt in dessen DeptosBO-Konto. Es findet keine Weitergabe, kein Verkauf und keine Verwendung für Werbung statt.",
         },
         {
           title: "Wo werden die Daten gespeichert",
-          body: "RentHome Departamentos speichert diese Angaben für den operativen Gebrauch. Die Verbindung zu diesem Formular ist HTTPS-verschlüsselt.",
+          body: "DeptosBO speichert diese Angaben für den operativen Gebrauch. Die Verbindung zu diesem Formular ist HTTPS-verschlüsselt.",
         },
         {
           title: "Kein Tracking",
@@ -264,10 +264,10 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
         },
         {
           title: "Ihre Rechte (DSGVO)",
-          body: "Sie können Ihren Gastgeber jederzeit auffordern, Ihre Antworten zu löschen, oder den Betreiber unter contacto@renthome.local zu allen Fragen rund um Datenschutz, Auskunft oder Beschwerde kontaktieren.",
+          body: "Sie können Ihren Gastgeber jederzeit auffordern, Ihre Antworten zu löschen, oder den Betreiber unter soporte@deptosbo.local zu allen Fragen rund um Datenschutz, Auskunft oder Beschwerde kontaktieren.",
         },
       ],
-      fullPolicyLabel: "Vollständige Datenschutzerklärung von RentHome Departamentos",
+      fullPolicyLabel: "Vollständige Datenschutzerklärung von DeptosBO",
     },
   },
   fr: {
@@ -287,17 +287,17 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
     privacy: {
       title: "Confidentialité et traitement des données",
       summary:
-        "Seul votre hôte voit vos réponses. Stockées de façon sécurisée par RentHome Departamentos via HTTPS, sans pistage.",
+        "Seul votre hôte voit vos réponses. Stockées de façon sécurisée par DeptosBO via HTTPS, sans pistage.",
       showDetails: "Détails",
       hideDetails: "Masquer",
       bullets: [
         {
           title: "Qui voit ces informations",
-          body: "Uniquement l'hôte du logement que vous avez réservé. Vos réponses sont transmises directement à son compte RentHome Departamentos. Aucun partage, aucune vente, aucune utilisation à des fins publicitaires.",
+          body: "Uniquement l'hôte du logement que vous avez réservé. Vos réponses sont transmises directement à son compte DeptosBO. Aucun partage, aucune vente, aucune utilisation à des fins publicitaires.",
         },
         {
           title: "Où elles sont stockées",
-          body: "RentHome Departamentos conserve ces informations pour les besoins opérationnels. La connexion à ce formulaire est chiffrée en HTTPS.",
+          body: "DeptosBO conserve ces informations pour les besoins opérationnels. La connexion à ce formulaire est chiffrée en HTTPS.",
         },
         {
           title: "Aucun pistage",
@@ -305,10 +305,10 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
         },
         {
           title: "Vos droits (RGPD)",
-          body: "Vous pouvez à tout moment demander à votre hôte de supprimer vos réponses, ou écrire à l'opérateur à contacto@renthome.local pour toute question, demande d'accès ou réclamation concernant la confidentialité.",
+          body: "Vous pouvez à tout moment demander à votre hôte de supprimer vos réponses, ou écrire à l'opérateur à soporte@deptosbo.local pour toute question, demande d'accès ou réclamation concernant la confidentialité.",
         },
       ],
-      fullPolicyLabel: "Politique de confidentialité complète de RentHome Departamentos",
+      fullPolicyLabel: "Politique de confidentialité complète de DeptosBO",
     },
   },
   es: {
@@ -328,17 +328,17 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
     privacy: {
       title: "Privacidad y tratamiento de datos",
       summary:
-        "Solo su anfitrión ve sus respuestas. Almacenadas en RentHome Departamentos — software de código abierto, solo HTTPS, sin rastreo.",
+        "Solo su anfitrión ve sus respuestas. Almacenadas en DeptosBO — software de código abierto, solo HTTPS, sin rastreo.",
       showDetails: "Detalles",
       hideDetails: "Ocultar",
       bullets: [
         {
           title: "Quién ve estos datos",
-          body: "Solo el anfitrión del alojamiento que ha reservado. Sus respuestas llegan directamente a su cuenta de RentHome Departamentos. No se comparten, no se venden y no se utilizan con fines publicitarios.",
+          body: "Solo el anfitrión del alojamiento que ha reservado. Sus respuestas llegan directamente a su cuenta de DeptosBO. No se comparten, no se venden y no se utilizan con fines publicitarios.",
         },
         {
           title: "Dónde se almacenan",
-          body: "RentHome Departamentos es una herramienta de código abierto — el código fuente es público, por lo que cualquiera puede verificar qué se hace con sus datos. La conexión con este formulario está cifrada por HTTPS.",
+          body: "DeptosBO es una herramienta de código abierto — el código fuente es público, por lo que cualquiera puede verificar qué se hace con sus datos. La conexión con este formulario está cifrada por HTTPS.",
         },
         {
           title: "Sin rastreo",
@@ -346,10 +346,10 @@ export const GUEST_UI_COPY: Record<GuestFormLocale, GuestUiCopy> = {
         },
         {
           title: "Sus derechos (RGPD)",
-          body: "Puede pedir a su anfitrión que elimine sus respuestas en cualquier momento, o escribir al operador a contacto@renthome.local para cualquier consulta, solicitud de acceso o reclamación de privacidad.",
+          body: "Puede pedir a su anfitrión que elimine sus respuestas en cualquier momento, o escribir al operador a soporte@deptosbo.local para cualquier consulta, solicitud de acceso o reclamación de privacidad.",
         },
       ],
-      fullPolicyLabel: "Política de privacidad completa de RentHome Departamentos",
+      fullPolicyLabel: "Política de privacidad completa de DeptosBO",
     },
   },
 };

@@ -11,7 +11,7 @@
 // without a key still runs (the caller surfaces a friendly error).
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const EMAIL_FROM = process.env.EMAIL_FROM || "RentHome Departamentos <noreply@localhost>";
+const EMAIL_FROM = process.env.EMAIL_FROM || "DeptosBO <noreply@localhost>";
 
 export interface SendEmailResult {
   ok: boolean;
@@ -65,7 +65,7 @@ function codeEmailHtml(heading: string, intro: string, code: string, note: strin
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#ffffff;border-radius:14px;border:1px solid #e7e5e4;overflow:hidden;">
           <tr><td style="padding:28px 32px 8px;">
-            <div style="font-size:15px;font-weight:600;color:#1c1917;letter-spacing:-0.01em;">RentHome Departamentos</div>
+            <div style="font-size:15px;font-weight:600;color:#1c1917;letter-spacing:-0.01em;">DeptosBO</div>
           </td></tr>
           <tr><td style="padding:8px 32px 0;">
             <h1 style="margin:0;font-size:19px;font-weight:600;color:#1c1917;letter-spacing:-0.02em;">${heading}</h1>
@@ -91,15 +91,15 @@ export async function sendVerificationCodeEmail(
 ): Promise<SendEmailResult> {
   return sendEmail({
     to,
-    subject: `${code} is your RentHome Departamentos verification code`,
+    subject: `${code} is your DeptosBO verification code`,
     html: codeEmailHtml(
       "Confirm your email",
-      "Enter this code on the sign-up page to finish creating your RentHome Departamentos account.",
+      "Enter this code on the sign-up page to finish creating your DeptosBO account.",
       code,
       "This code expires in 15 minutes. If you didn't request it, you can ignore this email.",
     ),
     text:
-      `Your RentHome Departamentos verification code is ${code}\n\n` +
+      `Your DeptosBO verification code is ${code}\n\n` +
       `Enter it on the sign-up page to finish creating your account.\n` +
       `The code expires in 15 minutes. If you didn't request it, ignore this email.`,
   });
@@ -112,7 +112,7 @@ export async function sendPasswordResetEmail(
 ): Promise<SendEmailResult> {
   return sendEmail({
     to,
-    subject: `${code} is your RentHome Departamentos password reset code`,
+    subject: `${code} is your DeptosBO password reset code`,
     html: codeEmailHtml(
       "Reset your password",
       "Enter this code on the password-reset page to choose a new password.",
@@ -120,7 +120,7 @@ export async function sendPasswordResetEmail(
       "This code expires in 15 minutes. If you didn't request a reset, ignore this email — your password is unchanged.",
     ),
     text:
-      `Your RentHome Departamentos password reset code is ${code}\n\n` +
+      `Your DeptosBO password reset code is ${code}\n\n` +
       `Enter it on the password-reset page to choose a new password.\n` +
       `The code expires in 15 minutes. If you didn't request this, ignore this email.`,
   });

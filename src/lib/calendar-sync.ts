@@ -12,7 +12,7 @@ async function fetchICal(url: string): Promise<{ events: ICalEvent[]; error?: st
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "RentHome-CalendarSync/1.0",
+        "User-Agent": "DeptosBO-CalendarSync/1.0",
         Accept: "text/calendar, text/plain, */*",
       },
     });
@@ -127,11 +127,11 @@ export async function syncAllCalendars(opts?: {
           continue;
         }
 
-        // Filter to future events only, and skip events created by our own RentHome feed
+        // Filter to future events only, and skip events created by our own DeptosBO feed
         // (prevents feedback loop: our buffer → imported by platform → re-synced as booking)
         const today = new Date().toISOString().substring(0, 10);
 
-        // Skip events created by our own RentHome feed (feedback loop prevention)
+        // Skip events created by our own DeptosBO feed (feedback loop prevention)
         const filteredEvents = events.filter((e) => {
           if (e.endDate < today) return false;
           if (e.uid.startsWith("renthome-")) return false;

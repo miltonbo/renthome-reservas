@@ -473,7 +473,7 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
   // Cross-platform echo collapse. A host who runs the normal multi-
   // platform setup syncs their master calendar (usually Airbnb) INTO
   // Booking / Trip.com / Agoda, so every confirmed booking is
-  // reflected back out in EVERY platform's exported iCal. RentHome Departamentos
+  // reflected back out in EVERY platform's exported iCal. DeptosBO
   // imports all those feeds and ends up with N copies of the same
   // booking — and detectDoubleBookings() then flags (N-1) false
   // "double booking" conflicts for every single reservation.
@@ -710,7 +710,7 @@ export function Dashboard({
   const [cleanerConflictDates, setCleanerConflictDates] = useState<string[]>([]);
 
   // Fetch all calendar data in three account-scoped requests. The previous
-  // per-property fan-out made 69 simultaneous requests for RentHome's 23
+  // per-property fan-out made 69 simultaneous requests for DeptosBO's 23
   // units (and twice that under React Strict Mode), which could exhaust the
   // development server and leave the master calendar partially populated.
   const fetchAllCalendarData = useCallback(async () => {

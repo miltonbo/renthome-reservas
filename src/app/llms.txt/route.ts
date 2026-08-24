@@ -32,14 +32,14 @@ export async function GET() {
     .catch(() => []);
 
   const lines: string[] = [];
-  lines.push("# RentHome Departamentos");
+  lines.push("# DeptosBO");
   lines.push("");
   lines.push(
-    "> Sistema interno de RentHome Departamentos para centralizar reservas, calendarios y limpiezas."
+    "> Sistema interno de DeptosBO para centralizar reservas, calendarios y limpiezas."
   );
   lines.push("");
   lines.push(
-    "RentHome Departamentos administra 23 unidades físicas y centraliza reservas de Airbnb, Booking.com, Vrbo y canales directos."
+    "DeptosBO administra 23 unidades físicas y centraliza reservas de Airbnb, Booking.com, Vrbo y canales directos."
   );
   lines.push("");
 
@@ -47,7 +47,7 @@ export async function GET() {
   lines.push("");
   lines.push(`- [Home](${SITE_URL}/): Product overview, what it does, and how it compares to paid channel managers.`);
   lines.push(`- [Sign up](${SITE_URL}/signup): Create an account on the hosted instance.`);
-  lines.push(`- [Privacy policy](${SITE_URL}/privacy): How RentHome Departamentos stores and processes guest data.`);
+  lines.push(`- [Privacy policy](${SITE_URL}/privacy): How DeptosBO stores and processes guest data.`);
   lines.push(`- [Terms](${SITE_URL}/terms): Service terms for the hosted instance.`);
   lines.push("");
 

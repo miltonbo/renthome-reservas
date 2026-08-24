@@ -215,12 +215,12 @@ export async function GET(request: NextRequest) {
     note: movement.note || "",
   })));
   const buffer = await workbook.xlsx.writeBuffer();
-  return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="informe-renthome-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
+  return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="informe-deptosbo-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
 }
 
 export function buildFinancialWorkbook(data: any, movements: any[]) {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "RentHome Departamentos";
+  workbook.creator = "DeptosBO";
   workbook.created = new Date();
   const orange = "F28C28", navy = "10252E", pale = "FFF2E4";
   const styleSheet = (sheet: ExcelJS.Worksheet) => {

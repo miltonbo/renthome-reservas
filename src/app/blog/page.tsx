@@ -70,7 +70,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeLabel: "Home",
     homeHref: "/",
     blogLabel: "Blog",
-    heroEyebrow: "The RentHome Departamentos blog",
+    heroEyebrow: "The DeptosBO blog",
     heroTitle: "Field notes for short-term rental hosts",
     heroIntro:
       "Calendar sync that actually works, cleaning automation that doesn't double-book the cleaner, and a host's GDPR checklist that fits on one page. Written by people who run listings, not affiliate sites.",
@@ -92,7 +92,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeLabel: "Главная",
     homeHref: "/ru",
     blogLabel: "Блог",
-    heroEyebrow: "Блог RentHome Departamentos",
+    heroEyebrow: "Блог DeptosBO",
     heroTitle: "Полевые заметки для хостов краткосрочной аренды",
     heroIntro:
       "Синхронизация календарей, которая правда работает, автоматизация уборок без двойных назначений и чек-лист GDPR на одну страницу. Писали те, кто сами сдают, а не те, кто пишет для трафика.",
@@ -114,7 +114,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeLabel: "Start",
     homeHref: "/de",
     blogLabel: "Blog",
-    heroEyebrow: "Der RentHome Departamentos-Blog",
+    heroEyebrow: "Der DeptosBO-Blog",
     heroTitle: "Feldnotizen für Kurzzeitvermieter",
     heroIntro:
       "Kalendersynchronisation, die wirklich funktioniert, Reinigungsautomatisierung ohne Doppelbelegung der Reinigungskraft und eine DSGVO-Checkliste auf einer Seite. Geschrieben von Leuten, die selbst vermieten — nicht von Affiliate-Seiten.",
@@ -136,7 +136,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeLabel: "Accueil",
     homeHref: "/fr",
     blogLabel: "Blog",
-    heroEyebrow: "Le blog RentHome Departamentos",
+    heroEyebrow: "Le blog DeptosBO",
     heroTitle: "Notes de terrain pour hôtes de location courte durée",
     heroIntro:
       "Une synchronisation de calendriers qui fonctionne vraiment, une automatisation du ménage qui ne fait pas double emploi sur la femme de ménage, et une checklist RGPD qui tient sur une page. Écrit par des gens qui louent eux-mêmes, pas par des sites d’affiliation.",
@@ -158,7 +158,7 @@ const COPY: Record<Locale, CopyShape> = {
     homeLabel: "Inicio",
     homeHref: "/es",
     blogLabel: "Blog",
-    heroEyebrow: "El blog de RentHome Departamentos",
+    heroEyebrow: "El blog de DeptosBO",
     heroTitle: "Notas de campo para anfitriones de alquiler vacacional",
     heroIntro:
       "Sincronización de calendarios que funciona de verdad, automatización de limpiezas que no duplica turnos al personal y un checklist de RGPD que cabe en una página. Escrito por gente que gestiona alojamientos, no por webs de afiliación.",
@@ -186,15 +186,15 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: alts,
     openGraph: {
       type: "website",
-      title: `${copy.title} · RentHome Departamentos`,
+      title: `${copy.title} · DeptosBO`,
       description: copy.description,
       url: alts.canonical,
-      siteName: "RentHome Departamentos",
+      siteName: "DeptosBO",
       locale: COPY[locale].ogLocale,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${copy.title} · RentHome Departamentos`,
+      title: `${copy.title} · DeptosBO`,
       description: copy.description,
     },
   };
@@ -297,7 +297,7 @@ export default async function BlogIndexPage({
         "@type": "Blog",
         "@id": `${SITE_URL}/blog#blog`,
         url: `${SITE_URL}/blog`,
-        name: "RentHome Departamentos blog",
+        name: "DeptosBO blog",
         description:
           "Field notes for short-term rental hosts: calendar sync, cleaning automation, GDPR, and the boring parts of running a listing.",
         publisher: { "@id": `${SITE_URL}/#organization` },
@@ -574,7 +574,7 @@ export default async function BlogIndexPage({
 
       <footer className="mt-16 border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-[var(--ink-4)] sm:flex-row sm:px-6">
-          <p>© 2026 RentHome Departamentos · MIT License</p>
+          <p>© 2026 DeptosBO · MIT License</p>
           <nav className="flex gap-4">
             <Link href={localePath("/", locale)} className="hover:text-[var(--ink)]">
               {t.footerHome}

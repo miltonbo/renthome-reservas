@@ -19,9 +19,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-const SITE_NAME = "RentHome Reservas";
+const SITE_NAME = "DeptosBO";
 const SITE_TAGLINE =
-  "Sistema de RentHome Departamentos para centralizar reservas, calendarios, limpiezas y datos operativos.";
+  "Gestión de propiedades, reservas, calendarios, limpiezas y datos operativos en un solo lugar.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     title: `${SITE_NAME} — Gestión de reservas`,
     description: SITE_TAGLINE,
     url: SITE_URL,
-    locale: "en_US",
+    locale: "es_BO",
   },
   twitter: {
     card: "summary_large_image",
@@ -72,8 +72,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d1117" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f8f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b171c" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -109,13 +109,6 @@ const ORGANIZATION_JSON_LD = {
     width: 512,
     height: 512,
   },
-  founder: { "@type": "Person", name: "Ilya Asminkin" },
-  contactPoint: {
-    "@type": "ContactPoint",
-    contactType: "customer support",
-    email: "contacto@renthome.local",
-    availableLanguage: ["en", "ru"],
-  },
 };
 
 const WEBSITE_JSON_LD = {
@@ -125,7 +118,7 @@ const WEBSITE_JSON_LD = {
   url: SITE_URL,
   name: SITE_NAME,
   description: SITE_TAGLINE,
-  inLanguage: ["en", "ru"],
+  inLanguage: ["es", "en", "ru", "de", "fr"],
   publisher: { "@id": `${SITE_URL}/#organization` },
 };
 

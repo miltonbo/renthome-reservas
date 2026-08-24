@@ -5,34 +5,34 @@ import { localizedAlternates } from "@/lib/i18n/alternates";
 import { toOgLocale } from "@/lib/i18n/locale-tags";
 import type { Locale } from "@/lib/i18n/translations";
 
-// "RentHome Departamentos" is appended automatically by the root layout's title template
-// (`%s · RentHome Departamentos`) — keeping the brand off the per-page title avoids the
-// duplicated "Sign up — RentHome Departamentos · RentHome Departamentos" we shipped briefly.
+// "DeptosBO" is appended automatically by the root layout's title template
+// (`%s · DeptosBO`) — keeping the brand off the per-page title avoids the
+// duplicated "Sign up — DeptosBO · DeptosBO" we shipped briefly.
 const SIGNUP_COPY: Record<Locale, { title: string; description: string }> = {
   en: {
     title: "Sign up",
     description:
-      "Create a free RentHome Departamentos account. Sync Airbnb + Booking.com calendars, automate cleaning, manage multiple properties from one dashboard.",
+      "Create a free DeptosBO account. Sync Airbnb + Booking.com calendars, automate cleaning, manage multiple properties from one dashboard.",
   },
   ru: {
     title: "Регистрация",
     description:
-      "Создайте бесплатный аккаунт RentHome Departamentos. Синхронизация Airbnb и Booking.com, автоматизация уборок, несколько объектов в одной панели.",
+      "Создайте бесплатный аккаунт DeptosBO. Синхронизация Airbnb и Booking.com, автоматизация уборок, несколько объектов в одной панели.",
   },
   de: {
     title: "Registrieren",
     description:
-      "Erstellen Sie ein kostenloses RentHome Departamentos-Konto. Airbnb und Booking.com synchronisieren, Reinigung automatisieren, mehrere Unterkünfte in einem Dashboard verwalten.",
+      "Erstellen Sie ein kostenloses DeptosBO-Konto. Airbnb und Booking.com synchronisieren, Reinigung automatisieren, mehrere Unterkünfte in einem Dashboard verwalten.",
   },
   fr: {
     title: "S’inscrire",
     description:
-      "Créez un compte RentHome Departamentos gratuit. Synchronisez Airbnb et Booking.com, automatisez le ménage, gérez plusieurs logements depuis un seul tableau de bord.",
+      "Créez un compte DeptosBO gratuit. Synchronisez Airbnb et Booking.com, automatisez le ménage, gérez plusieurs logements depuis un seul tableau de bord.",
   },
   es: {
     title: "Registrarse",
     description:
-      "Cree una cuenta gratuita de RentHome Departamentos. Sincronice Airbnb y Booking.com, automatice las limpiezas y gestione varios alojamientos desde un único panel.",
+      "Cree una cuenta gratuita de DeptosBO. Sincronice Airbnb y Booking.com, automatice las limpiezas y gestione varios alojamientos desde un único panel.",
   },
 };
 
@@ -53,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: copy.title,
       description: copy.description,
       url: alts.canonical,
-      siteName: "RentHome Departamentos",
+      siteName: "DeptosBO",
       locale: toOgLocale(locale),
     },
     twitter: { card: "summary_large_image", title: copy.title, description: copy.description },
