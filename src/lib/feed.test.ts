@@ -76,7 +76,7 @@ describe("generateFeed — Direct linked extensions", () => {
     ]);
   });
 
-  it("merges the source stay and Direct segment for another platform", async () => {
+  it("exports only the local Direct segment to another platform", async () => {
     const result = await generateFeed(12, "booking");
     expect(result).not.toHaveProperty("error");
     if ("error" in result) throw new Error(result.error);
@@ -86,7 +86,7 @@ describe("generateFeed — Direct linked extensions", () => {
     );
     expect(events).toEqual([
       expect.objectContaining({
-        startDate: "2099-08-19",
+        startDate: "2099-08-23",
         endDate: "2099-08-25",
       }),
     ]);
@@ -108,5 +108,39 @@ describe("generateFeed — Direct linked extensions", () => {
         endDate: "2099-08-25",
       }),
     ]);
+  });
+
+  it("never echoes imported calendar blocks into an outbound feed", async () => {
+    mocks.reservationFindMany.mockResolvedValue([]);
+    mocks.calendarEventFindMany.mockResolvedValue([
+      { ...source, summary: "Not available" },
+    ]);
+
+    const result = await generateFeed(12, "airbnb");
+    if ("error" in result) throw new Error(result.error);
+    const events = parseICal(result.ical).filter((event) => event.uid !== "renthome-placeholder");
+    expect(events).toEqual([]);
+  });
+
+  it("does not echo a reservation back to its own channel", async () => {
+    mocks.reservationFindMany.mockResolvedValue([
+      { ...extension, platform: "airbnb", linkedEventRole: "claim" },
+    ]);
+
+    const result = await generateFeed(12, "airbnb");
+    if ("error" in result) throw new Error(result.error);
+    const events = parseICal(result.ical).filter((event) => event.uid !== "renthome-placeholder");
+    expect(events).toEqual([]);
+  });
+
+  it("exports exact reservation dates without cleaning buffers", async () => {
+    mocks.calendarLinkFindMany.mockResolvedValue([
+      { platform: "airbnb", bufferBefore: 3, bufferAfter: 3 },
+    ]);
+
+    const result = await generateFeed(12, "airbnb");
+    if ("error" in result) throw new Error(result.error);
+    const events = parseICal(result.ical).filter((event) => event.uid !== "renthome-placeholder");
+    expect(events[0]).toEqual(expect.objectContaining({ startDate: "2099-08-23", endDate: "2099-08-25" }));
   });
 });
