@@ -157,7 +157,7 @@ export function CalendarDatePopover({
     // reservation (for trim / cancel-cleaning-on-booked / manual chip
     // controls), and we leave calendar-grid.tsx's hasBarOnDay inclusive
     // so the bar still paints across the checkout cell.
-    if (bars.some((b) => d >= b.startDate && d < b.endDate)) countBooked++;
+    if (bars.some((b) => !b.platform.endsWith("-block") && d >= b.startDate && d < b.endDate)) countBooked++;
     if (openOverrides.has(d)) countOpenOverride++;
     if (closedOverrides.has(d)) countClosedOverride++;
     if (cleaningOverrides.has(d)) countCleaningOverride++;

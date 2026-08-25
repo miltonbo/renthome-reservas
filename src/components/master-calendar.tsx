@@ -49,7 +49,7 @@ const VISIBLE_DAYS = 42;
 
 const PLATFORM_COLORS: Record<string, { background: string; foreground: string }> = {
   airbnb: { background: "#ff385c", foreground: "#ffffff" },
-  "airbnb-block": { background: "#64748b", foreground: "#ffffff" },
+  "airbnb-block": { background: "transparent", foreground: "#64748b" },
   booking: { background: "#1769aa", foreground: "#ffffff" },
   direct: { background: "#159a73", foreground: "#ffffff" },
   vrbo: { background: "#5b4bc4", foreground: "#ffffff" },
@@ -272,6 +272,7 @@ export function MasterCalendar({
                     </div>
 
                     {visibleStays.map((stay, stayIndex) => {
+                      const isAvailabilityBlock = stay.platform.endsWith("-block");
                       const clippedStart = stay.start < windowStart ? windowStart : stay.start;
                       const clippedEnd = stay.end > windowEnd ? windowEnd : stay.end;
                       const left = dayDiff(clippedStart, windowStart) * DAY_WIDTH +
@@ -287,12 +288,16 @@ export function MasterCalendar({
                           onClick={() => stay.reservationId
                             ? onOpenReservation(property.id, stay.reservationId)
                             : onOpenImportedStay(property.id, stay)}
-                          className={`absolute top-2 z-[2] h-8 overflow-hidden text-left text-[11px] font-semibold shadow-sm transition-[filter,box-shadow] hover:z-[3] hover:brightness-110 hover:ring-1 hover:ring-inset hover:ring-white/45 focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1 ${
+                          className={`absolute top-2 h-8 overflow-hidden text-left text-[11px] font-semibold transition-[filter,box-shadow] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1 ${
+                            isAvailabilityBlock
+                              ? "z-[1] rounded-lg border border-dashed border-slate-500/55 bg-slate-500/[0.06] px-2 text-slate-500 shadow-none hover:bg-slate-500/[0.10]"
+                              : "z-[2] shadow-sm hover:z-[3] hover:brightness-110 hover:ring-1 hover:ring-inset hover:ring-white/45"
+                          } ${
                             stay.extensionOfId
                               ? "rounded-l-sm rounded-r-lg border-l-2 border-dashed border-white/75 pl-1.5 pr-2"
-                              : "rounded-lg px-2"
+                              : isAvailabilityBlock ? "" : "rounded-lg px-2"
                           }`}
-                          style={{ left, width, backgroundColor: color.background, color: color.foreground }}
+                          style={{ left, width, backgroundColor: isAvailabilityBlock ? undefined : color.background, color: isAvailabilityBlock ? undefined : color.foreground }}
                           title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
                           <span className="flex items-center gap-1 truncate">
@@ -323,10 +328,10 @@ export function MasterCalendar({
 
       <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--line)] px-4 py-2 text-[10px] text-[var(--ink-4)] sm:flex">
         {[
-          ["#ff385c", "Airbnb"], ["#64748b", "No disponible"], ["#1769aa", "Booking"], ["#159a73", "Directa"], ["#5b4bc4", "Vrbo"],
+          ["#ff385c", "Airbnb"], ["transparent", "No disponible"], ["#1769aa", "Booking"], ["#159a73", "Directa"], ["#5b4bc4", "Vrbo"],
         ].map(([color, label]) => (
           <span key={label} className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+            <span className={`h-2 w-2 rounded-full ${label === "No disponible" ? "border border-dashed border-slate-500/70 bg-slate-500/5" : ""}`} style={{ backgroundColor: color }} />
             {label}
           </span>
         ))}

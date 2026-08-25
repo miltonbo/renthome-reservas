@@ -6,6 +6,7 @@ import { canManageProperty, listAccessiblePropertyIds } from "@/lib/ownership";
 import { normalizePlatformSlug } from "@/lib/platforms";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
+import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
 import { amountToMinor, bookingCommission, bookingCommissionLiability, isCurrency } from "@/lib/finance";
 
 export async function GET(request: NextRequest) {
@@ -287,15 +288,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const syncedOverlap = await prisma.calendarEvent.findFirst({
-      where: {
+    const syncedOverlapWhere = {
         propertyId,
         startDate: { lt: endDateStr },
         endDate: { gt: startDateStr },
         ...(sourceIdentity ? { NOT: sourceIdentity } : {}),
-      },
+    };
+    let syncedOverlap = await prisma.calendarEvent.findFirst({
+      where: syncedOverlapWhere,
       select: { summary: true, platform: true, startDate: true, endDate: true },
     });
+    const ignoredAvailabilityBlocks: Array<{
+      summary: string;
+      platform: string;
+      startDate: string;
+      endDate: string;
+    }> = [];
+    while (
+      syncedOverlap &&
+      isAvailabilityBlockSummary(syncedOverlap.summary) &&
+      ignoredAvailabilityBlocks.length < 100
+    ) {
+      ignoredAvailabilityBlocks.push(syncedOverlap);
+      syncedOverlap = await prisma.calendarEvent.findFirst({
+        where: {
+          ...syncedOverlapWhere,
+          AND: ignoredAvailabilityBlocks.map((block) => ({ NOT: block })),
+        },
+        select: { summary: true, platform: true, startDate: true, endDate: true },
+      });
+    }
     if (syncedOverlap) {
       return NextResponse.json(
         {

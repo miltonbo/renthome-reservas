@@ -6,6 +6,7 @@ import { canManageProperty } from "@/lib/ownership";
 import { normalizePhone } from "@/lib/sanitize";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
+import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
 import { amountToMinor, bookingCommission, bookingCommissionLiability, financialAllocations, isCurrency } from "@/lib/finance";
 
 async function loadManageableReservation(
@@ -325,8 +326,7 @@ export async function PATCH(
           }
         }
 
-        const syncedOverlap = await prisma.calendarEvent.findFirst({
-          where: {
+        const syncedOverlapWhere = {
             propertyId: current.propertyId,
             startDate: { lt: newEndStr },
             endDate: { gt: newStartStr },
@@ -338,9 +338,31 @@ export async function PATCH(
             // event conflict with its own local reservation; every
             // other synced event must still block the edit.
             ...(sourceIdentity ? { NOT: sourceIdentity } : {}),
-          },
+        };
+        let syncedOverlap = await prisma.calendarEvent.findFirst({
+          where: syncedOverlapWhere,
           select: { summary: true, platform: true, startDate: true, endDate: true },
         });
+        const ignoredAvailabilityBlocks: Array<{
+          summary: string;
+          platform: string;
+          startDate: string;
+          endDate: string;
+        }> = [];
+        while (
+          syncedOverlap &&
+          isAvailabilityBlockSummary(syncedOverlap.summary) &&
+          ignoredAvailabilityBlocks.length < 100
+        ) {
+          ignoredAvailabilityBlocks.push(syncedOverlap);
+          syncedOverlap = await prisma.calendarEvent.findFirst({
+            where: {
+              ...syncedOverlapWhere,
+              AND: ignoredAvailabilityBlocks.map((block) => ({ NOT: block })),
+            },
+            select: { summary: true, platform: true, startDate: true, endDate: true },
+          });
+        }
         if (syncedOverlap) {
           return NextResponse.json(
             {

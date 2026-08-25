@@ -9,6 +9,7 @@ import { MasterCalendar, type MasterCalendarStay } from "@/components/master-cal
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, Reservation, CalendarLink, DateOverride } from "@/lib/types";
+import { isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
 
 interface CopyShape {
   dateLocale: string;
@@ -348,10 +349,7 @@ function friendlyIcalName(summary: string | null | undefined, platform: string):
 /** Imported availability blocks belong in the operational calendar, but
  * they are not guest reservations and must not affect reservation stats. */
 function isAvailabilityBlock(event: CalendarEvent): boolean {
-  const summary = (event.summary || "").toLowerCase();
-  return summary.includes("not available") ||
-    summary.includes("blocked") ||
-    /^\s*closed\b/.test(summary);
+  return isAvailabilityBlockEvent(event);
 }
 
 /** Build a deduped list of stays for one property from Reservation rows
@@ -1045,6 +1043,7 @@ export function Dashboard({
     }
     const events = allSyncedEvents[pid] || [];
     for (const ev of events) {
+      if (isAvailabilityBlock(ev)) continue;
       const startDate = reservationDateKey(ev.startDate);
       const endDate = reservationDateKey(ev.endDate);
       if (startDate < formCheckOut && endDate > formCheckIn) {
@@ -1096,6 +1095,7 @@ export function Dashboard({
     }
     const events = allSyncedEvents[pid] || [];
     for (const ev of events) {
+      if (isAvailabilityBlock(ev)) continue;
       addRange(ev.startDate, ev.endDate);
     }
     return set;

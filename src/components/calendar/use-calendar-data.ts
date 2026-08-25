@@ -4,6 +4,7 @@ import { bookingWindowCutoff } from "@/lib/types";
 import { toReservationDateInput } from "@/lib/reservation-dates";
 import { addDaysStr } from "./utils";
 import type { CalendarEvent, CalendarBar, ConflictInfo } from "./types";
+import { isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
 import {
   calendarEventIdentity,
   linkedSourcePlatform,
@@ -31,12 +32,7 @@ interface CalendarEntry {
 export function isCalendarAvailabilityBlock(
   event: Pick<CalendarEvent, "summary">,
 ): boolean {
-  const summary = (event.summary || "").toLowerCase();
-  return (
-    summary.includes("not available") ||
-    summary.includes("blocked") ||
-    /^\s*closed\b/.test(summary)
-  );
+  return isAvailabilityBlockEvent(event);
 }
 
 /**

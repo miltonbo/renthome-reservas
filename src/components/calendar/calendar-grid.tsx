@@ -366,6 +366,7 @@ export function CalendarGrid({
                   )}
 
                   {segments.map((seg, si) => {
+                    const isAvailabilityBlock = seg.platform.endsWith("-block");
                     // Vertical stacking: rowIdx 0 keeps the original
                     // top-7 sm:top-9 position. rowIdx 1 sits below by
                     // ~16/22 px so it lands cleanly in the enlarged
@@ -449,12 +450,12 @@ export function CalendarGrid({
                         role={(seg.reservationId || seg.eventUid) ? "button" : undefined}
                         tabIndex={(seg.reservationId || seg.eventUid) ? 0 : undefined}
                         aria-label={seg.isExtension ? directTitle : regularTitle}
-                        className={`absolute ${topClass} ${heightClass} flex items-center px-1.5 sm:px-2.5 text-[10.5px] sm:text-[12.5px] font-semibold text-white/95 truncate shadow-[0_1px_2px_rgba(0,0,0,0.06)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 ${radiusClass} ${isConflict ? "ring-1 ring-rose-500/40" : ""} ${(seg.reservationId || seg.eventUid) ? "hover:brightness-110" : ""} ${seg.isExtension ? "ring-1 ring-white/30 ring-dashed" : ""}`}
+                        className={`absolute ${topClass} ${heightClass} flex items-center px-1.5 sm:px-2.5 text-[10.5px] sm:text-[12.5px] font-semibold truncate cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 ${radiusClass} ${isAvailabilityBlock ? "border border-dashed border-slate-500/55 bg-slate-500/[0.06] text-slate-500 shadow-none hover:bg-slate-500/[0.10]" : "text-white/95 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"} ${isConflict ? "ring-1 ring-rose-500/40" : ""} ${(seg.reservationId || seg.eventUid) && !isAvailabilityBlock ? "hover:brightness-110" : ""} ${seg.isExtension ? "ring-1 ring-white/30 ring-dashed" : ""}`}
                         style={{
                           left: leftStyle,
                           width: widthStyle,
-                          zIndex: 10,
-                          backgroundColor: isConflict ? "#f43f5e" : platformColor(seg.platform),
+                          zIndex: isAvailabilityBlock ? 5 : 10,
+                          backgroundColor: isAvailabilityBlock ? undefined : isConflict ? "#f43f5e" : platformColor(seg.platform),
                           backgroundImage: seg.isExtension
                             ? "repeating-linear-gradient(-45deg, transparent 0 6px, rgba(255,255,255,0.22) 6px 8px)"
                             : undefined,

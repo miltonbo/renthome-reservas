@@ -18,6 +18,27 @@ const range = (from: number, to: number) =>
   Array.from({ length: to - from + 1 }, (_, i) => `2026-09-${String(from + i).padStart(2, "0")}`);
 
 describe("planStay", () => {
+  it("treats an OTA availability block as a bookable migration reference", () => {
+    const plan = planStay(
+      ["2026-08-20", "2026-08-21"],
+      [{
+        name: "No disponible",
+        platform: "airbnb-block",
+        startDate: "2026-08-19",
+        endDate: "2026-08-23",
+        segments: [],
+      }],
+      { cleaningEnabled: true, bufferBefore: 0 },
+    );
+
+    expect(plan).toMatchObject({
+      checkIn: "2026-08-20",
+      checkOut: "2026-08-22",
+      nights: 2,
+      blockedBy: null,
+    });
+  });
+
   it("returns null for an empty selection", () => {
     expect(planStay([], [airbnb], quick)).toBeNull();
   });

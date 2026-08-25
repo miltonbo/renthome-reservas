@@ -78,6 +78,44 @@ beforeEach(() => {
 });
 
 describe("POST /api/reservations — linked calendar source", () => {
+  it("allows a manual reservation over an Airbnb host availability block", async () => {
+    mocks.calendarEventFindFirst
+      .mockResolvedValueOnce({
+        summary: "Not available",
+        platform: "airbnb",
+        startDate: "2026-08-19",
+        endDate: "2026-08-23",
+      })
+      .mockResolvedValueOnce(null);
+
+    const response = await POST(postRequest({ platform: "direct" }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.reservationCreate).toHaveBeenCalled();
+    expect(mocks.calendarEventFindFirst).toHaveBeenCalledTimes(2);
+  });
+
+  it("still rejects a real synced booking behind an overlapping host block", async () => {
+    mocks.calendarEventFindFirst
+      .mockResolvedValueOnce({
+        summary: "Not available",
+        platform: "airbnb",
+        startDate: "2026-08-19",
+        endDate: "2026-08-23",
+      })
+      .mockResolvedValueOnce({
+        summary: "Airbnb",
+        platform: "airbnb",
+        startDate: "2026-08-20",
+        endDate: "2026-08-22",
+      });
+
+    const response = await POST(postRequest({ platform: "direct" }));
+
+    expect(response.status).toBe(409);
+    expect(mocks.reservationCreate).not.toHaveBeenCalled();
+  });
+
   it("stores DeptosBO prices, guarantee and parking for a direct reservation", async () => {
     const response = await POST(
       postRequest({

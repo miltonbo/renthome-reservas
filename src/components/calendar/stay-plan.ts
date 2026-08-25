@@ -56,8 +56,9 @@ export function planStay(
 
   // Half-open, matching the server's overlap rule and countBooked: a
   // bar's endDate is its check-OUT day, whose night is free.
-  const isOccupied = (d: string) => bars.some((b) => d >= b.startDate && d < b.endDate);
-  const isCheckInDay = (d: string) => bars.some((b) => d === b.startDate);
+  const guestBars = bars.filter((bar) => !bar.platform.endsWith("-block"));
+  const isOccupied = (d: string) => guestBars.some((b) => d >= b.startDate && d < b.endDate);
+  const isCheckInDay = (d: string) => guestBars.some((b) => d === b.startDate);
 
   const occupiedDates = selectedDates.filter(isOccupied);
 
