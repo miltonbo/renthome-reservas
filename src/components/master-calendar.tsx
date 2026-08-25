@@ -296,11 +296,20 @@ export function MasterCalendar({
                             stay.extensionOfId
                               ? "rounded-l-sm rounded-r-lg border-l-2 border-dashed border-white/75 pl-1.5 pr-2"
                               : isAvailabilityBlock ? "" : "rounded-lg px-2"
-                          }`}
+                          } ${stay.hasOutstandingBalance && !isAvailabilityBlock ? "ring-1 ring-inset ring-amber-300/80" : ""}`}
                           style={{ left, width, backgroundColor: isAvailabilityBlock ? undefined : color.background, color: isAvailabilityBlock ? undefined : color.foreground }}
                           title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
-                          <span className="flex items-center gap-1 truncate">
+                          {stay.hasOutstandingBalance && !isAvailabilityBlock && (
+                            <span
+                              className="absolute right-0 top-0 z-10 flex h-4 w-4 items-center justify-center rounded-bl-md bg-amber-300 text-[9px] font-black leading-none text-amber-950 shadow-sm"
+                              title="Saldo pendiente"
+                              aria-label="Saldo pendiente"
+                            >
+                              !
+                            </span>
+                          )}
+                          <span className={`flex items-center gap-1 truncate ${stay.hasOutstandingBalance ? "pr-3" : ""}`}>
                             {stay.extensionOfId && (
                               <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-white/25 text-[10px] leading-none" aria-hidden>↳</span>
                             )}
@@ -310,9 +319,6 @@ export function MasterCalendar({
                             <span className="truncate">{stay.extensionOfId ? `Extensión · ${platformLabel(stay.platform)}` : platformLabel(stay.platform)}</span>
                             {stay.totalPrice != null && (
                               <span className="shrink-0 text-[10px] font-bold tracking-tight">{stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}</span>
-                            )}
-                            {stay.hasOutstandingBalance && (
-                              <span className="ml-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-amber-300 text-[9px] font-black text-amber-950" title="Saldo pendiente" aria-label="Saldo pendiente">!</span>
                             )}
                           </span>
                         </button>
