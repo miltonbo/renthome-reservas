@@ -468,9 +468,12 @@ export function computeCleaningDays(
     if (root.linkedSourceKey) {
       const source = sourceByKey.get(root.linkedSourceKey);
       if (source) {
+        // The local confirmed reservation family is the physical stay and is
+        // authoritative for housekeeping. A claimed Airbnb block can be
+        // wider than the entered reservation during migration; consume it to
+        // avoid a duplicate cleaning, but never let its bounds postpone the
+        // family's real checkout.
         consumed.add(source);
-        if (source.start < start) start = source.start;
-        if (source.end > end) end = source.end;
       }
     }
     connectedBookings.push({

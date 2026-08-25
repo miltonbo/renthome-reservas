@@ -238,4 +238,38 @@ describe("connected-stay cleaning boundaries", () => {
       prevReservationId: 40,
     });
   });
+
+  it("uses an extended reservation's final checkout instead of a wider claimed block", () => {
+    const initial = reservation({
+      id: 50,
+      name: "Sebastian Vaca",
+      checkIn: "2026-08-23T00:00:00.000Z",
+      checkOut: "2026-08-24T00:00:00.000Z",
+      linkedEventRole: "claim",
+    });
+    const extension = reservation({
+      id: 51,
+      name: "Sebastian Vaca",
+      checkIn: "2026-08-24T00:00:00.000Z",
+      checkOut: "2026-08-25T00:00:00.000Z",
+      extensionOfId: 50,
+      linkedEventUid: null,
+      linkedEventPlatform: null,
+      linkedEventRole: null,
+    });
+
+    const cleanings = computeCleaningDays(
+      property([initial, extension]),
+      [source({ startDate: "2026-08-23", endDate: "2026-08-26", summary: "Not available" })],
+      [link({ bufferBefore: 1, bufferAfter: 1 })],
+    ).filter((day) => day.type === "cleaning");
+
+    expect(cleanings).toHaveLength(1);
+    expect(cleanings[0]).toMatchObject({
+      date: "2026-08-25",
+      kind: "after",
+      prevGuest: "Sebastian Vaca",
+      prevReservationId: 50,
+    });
+  });
 });
