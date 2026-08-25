@@ -212,4 +212,30 @@ describe("connected-stay cleaning boundaries", () => {
       hoursAvailable: 2,
     });
   });
+
+  it("keeps a departure on checkout day instead of shifting it by iCal buffers", () => {
+    const outgoing = reservation({
+      id: 40,
+      name: "Imar Tarraga",
+      checkIn: "2026-08-22T00:00:00.000Z",
+      checkOut: "2026-08-25T00:00:00.000Z",
+      linkedEventUid: null,
+      linkedEventPlatform: null,
+      linkedEventRole: null,
+    });
+
+    const cleanings = computeCleaningDays(
+      property([outgoing]),
+      [],
+      [link({ bufferBefore: 1, bufferAfter: 1 })],
+    ).filter((day) => day.type === "cleaning");
+
+    expect(cleanings).toHaveLength(1);
+    expect(cleanings[0]).toMatchObject({
+      date: "2026-08-25",
+      kind: "after",
+      prevGuest: "Imar Tarraga",
+      prevReservationId: 40,
+    });
+  });
 });

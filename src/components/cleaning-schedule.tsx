@@ -338,8 +338,13 @@ export function computeCleaningDays(
 ): CleaningDay[] {
   const result: CleaningDay[] = [];
   const allBooked = new Set<string>();
-  const maxBefore = Math.max(0, ...links.map(l => l.bufferBefore), 0);
-  const maxAfter = Math.max(0, ...links.map(l => l.bufferAfter), 0);
+  // Channel buffers describe booking availability, not when housekeeping
+  // happens. Operationally every occupied stay is cleaned on its checkout
+  // date (and becomes a turnover when another guest arrives that same day).
+  // Applying iCal bufferBefore/bufferAfter here shifted real departures to a
+  // different day and could hide them when that buffer date was occupied.
+  const maxBefore = 0;
+  const maxAfter = 0;
   const minStay = property.minNights || 3;
 
   // Booking window cutoff — ignore events starting beyond this date
