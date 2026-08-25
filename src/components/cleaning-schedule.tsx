@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import { EmptyState } from "@/components/empty-state";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
-import type { Property, CalendarLink, DateOverride } from "@/lib/types";
+import type { Property, CalendarLink, DateOverride, Reservation } from "@/lib/types";
 import { bookingWindowCutoff } from "@/lib/types";
 import { toReservationDateInput } from "@/lib/reservation-dates";
 
@@ -281,6 +281,47 @@ interface CleaningScheduleProps {
    *  events / links / overrides fetches are still in flight, so
    *  the page doesn't grow as data lands. */
   loading?: boolean;
+  /** Adds the host-facing arrivals/departures overview above cleaning. */
+  operationsMode?: boolean;
+}
+
+export interface StayMovement {
+  date: string;
+  kind: "checkin" | "checkout";
+  propertyId: number;
+  propertyName: string;
+  reservationId: number;
+  guestName: string;
+  platform: string;
+  time: string;
+}
+
+/** Build physical arrivals and final departures from confirmed local stays.
+ * Extensions are never new arrivals and only the final family checkout is
+ * exposed, so internal extension boundaries do not create false movements. */
+export function computeStayMovements(properties: Property[]): StayMovement[] {
+  const movements: StayMovement[] = [];
+  for (const property of properties) {
+    const reservations = property.reservations.filter((reservation) => reservation.status !== "cancelled");
+    const byRoot = new Map<number, Reservation[]>();
+    for (const reservation of reservations) {
+      const rootId = reservation.extensionOfId || reservation.id;
+      const family = byRoot.get(rootId) ?? [];
+      family.push(reservation);
+      byRoot.set(rootId, family);
+    }
+    for (const family of byRoot.values()) {
+      const root = family.find((reservation) => !reservation.extensionOfId);
+      if (root) {
+        movements.push({ date: toReservationDateInput(root.checkIn), kind: "checkin", propertyId: property.id, propertyName: property.name, reservationId: root.id, guestName: root.name, platform: root.platform, time: property.checkInTime || "14:00" });
+      }
+      const finalSegment = [...family].sort((a, b) => toReservationDateInput(b.checkOut).localeCompare(toReservationDateInput(a.checkOut)) || b.id - a.id)[0];
+      if (finalSegment) {
+        movements.push({ date: toReservationDateInput(finalSegment.checkOut), kind: "checkout", propertyId: property.id, propertyName: property.name, reservationId: finalSegment.id, guestName: finalSegment.name, platform: finalSegment.platform, time: property.checkOutTime || "11:00" });
+      }
+    }
+  }
+  return movements.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time) || a.propertyName.localeCompare(b.propertyName));
 }
 
 function addDaysStr(dateStr: string, days: number): string {
@@ -810,6 +851,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
   cleanerAssignments,
   onCleanerConflictDatesChange,
   loading = false,
+  operationsMode = false,
 }, ref) {
   const { t, locale } = useI18n();
   const c = COPY[locale];
@@ -977,6 +1019,15 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     [futureDays, includePotential]
   );
   const tomorrowStr = addDaysStr(todayStr, 1);
+  const targetProperties = useMemo(
+    () => mode === "property" && selectedPropertyId ? properties.filter((property) => property.id === selectedPropertyId) : properties,
+    [mode, properties, selectedPropertyId],
+  );
+  const stayMovements = useMemo(() => computeStayMovements(targetProperties), [targetProperties]);
+  const nearMovements = useMemo(() => ({
+    today: stayMovements.filter((movement) => movement.date === todayStr),
+    tomorrow: stayMovements.filter((movement) => movement.date === tomorrowStr),
+  }), [stayMovements, todayStr, tomorrowStr]);
   const displayedDays = useMemo(
     () => showAllFuture
       ? visibleDays
@@ -1240,6 +1291,33 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     return <span className="flex flex-wrap items-center gap-1"><span>{c.leaves}</span>{renderGuest(day.prevGuest, day.prevReservationId, day.prevPlatform)}</span>;
   };
 
+  const renderStayMovementGroup = (date: string, label: string, movements: StayMovement[]) => (
+    <section aria-labelledby={`movements-${date}`} className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm">
+      <div className="flex items-center justify-between border-b-2 border-[var(--m-accent)]/35 bg-[var(--bg-3)] px-4 py-3">
+        <h3 id={`movements-${date}`} className="text-base font-bold text-[var(--ink)]">{label}</h3>
+        <span className="rounded-full bg-[var(--m-accent)]/12 px-2.5 py-1 text-xs font-bold text-[var(--m-accent)]">{movements.length}</span>
+      </div>
+      {movements.length === 0 ? (
+        <div className="px-4 py-5 text-sm text-[var(--ink-4)]">Sin ingresos ni salidas.</div>
+      ) : (
+        <div className="divide-y divide-[var(--line)]/50">
+          {movements.map((movement) => (
+            <div key={`${movement.kind}-${movement.reservationId}`} className="grid gap-2 px-4 py-3 hover:bg-[var(--bg-3)]/70 sm:grid-cols-[minmax(150px,0.8fr)_minmax(280px,2fr)_auto] sm:items-center">
+              <div className="truncate text-sm font-semibold text-[var(--ink)]">{movement.propertyName}</div>
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--ink-2)]">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${movement.kind === "checkin" ? "bg-cyan-500/12 text-cyan-400" : "bg-slate-500/15 text-slate-300"}`}>
+                  {movement.kind === "checkin" ? "Ingreso" : "Salida"}
+                </span>
+                {renderGuest(movement.guestName, movement.reservationId, movement.platform)}
+              </div>
+              <span className="text-xs font-semibold tabular-nums text-[var(--ink-3)] sm:text-right">{movement.time}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
   const platformLabel = (platform: string) => ({
     direct: "Directo",
     airbnb: "Airbnb",
@@ -1249,6 +1327,18 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
 
   return (
     <div className="space-y-4">
+      {operationsMode && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-base font-bold text-[var(--ink)]">Ingresos y salidas</h2>
+            <p className="mt-1 text-xs text-[var(--ink-3)]">Movimientos físicos confirmados. Las extensiones no se cuentan como nuevos ingresos.</p>
+          </div>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {renderStayMovementGroup(todayStr, "Movimientos hoy", nearMovements.today)}
+            {renderStayMovementGroup(tomorrowStr, "Movimientos mañana", nearMovements.tomorrow)}
+          </div>
+        </div>
+      )}
       {/* Cleaner conflicts (RT-25.10 tick 3) — same cleaner is the
           priority-0 across two or more properties on the same cleaning
           date. Hint at backups but do not auto-reassign. Also gated
@@ -1296,7 +1386,10 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
       {/* Schedule table */}
       <div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3">
-          <h2 className="text-sm font-medium text-[var(--ink-3)]">{t("cleaning.title")}</h2>
+          <div>
+            <h2 className="text-sm font-bold text-[var(--ink)]">Limpiezas</h2>
+            {operationsMode && <p className="mt-0.5 text-xs text-[var(--ink-4)]">Tareas derivadas de las salidas y cambios de huésped.</p>}
+          </div>
           {/* Inline header controls — Copy + Print only. The
               include-potential toggle lives in the parent's sidebar
               (PropertyCleaningView / GlobalCleaningView) where view

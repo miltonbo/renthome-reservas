@@ -38,7 +38,7 @@ const COPY: Record<Locale, CopyShape> = {
     includePotentialHint: "Ménages utiles uniquement si un voyageur réserve sur la période libre.",
   },
   es: {
-    cleaning: "Limpieza",
+    cleaning: "Check-ins / Check-outs",
     view: "Vista",
     includePotentialHint: "Limpiezas que solo importan si un huésped reserva el hueco intermedio.",
   },
@@ -182,8 +182,7 @@ export function PropertyCleaningView({ property, properties, onCleaningEnabledCh
           </div>
         )}
         <div className="min-w-0 lg:flex-1 space-y-3">
-          {cleaningEnabled ? (
-            <CleaningSchedule
+          <CleaningSchedule
               properties={[property]}
               syncedEvents={{ [property.id]: syncedEvents }}
               links={{ [property.id]: links }}
@@ -195,22 +194,8 @@ export function PropertyCleaningView({ property, properties, onCleaningEnabledCh
               onIncludePotentialChange={setIncludePotential}
               cleanerAssignments={assignmentsByProperty}
               loading={loading}
+              operationsMode
             />
-          ) : (
-            <div className="rounded-lg border border-dashed border-[var(--line-2)] bg-[var(--bg-2)] p-8 text-center">
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--line-2)]/40 text-[var(--ink-3)]">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-semibold text-[var(--ink)]">
-                {tr("cleaning.offTitle")}
-              </h3>
-              <p className="mx-auto mt-1 max-w-md text-xs text-[var(--ink-3)]">
-                {tr("cleaning.offDesc")}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Settings sidebar — borderless rounded panel + soft shadow.

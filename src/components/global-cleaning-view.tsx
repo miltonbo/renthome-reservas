@@ -72,7 +72,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   es: {
     emptyState: "Añada un alojamiento para ver el calendario de limpiezas.",
-    cleaning: "Limpieza",
+    cleaning: "Check-ins / Check-outs",
     acrossAllProperties: (count) =>
       `En todos los ${count} ${count === 1 ? "alojamiento" : "alojamientos"}`,
     allPropertiesLabel: (count) => `Todos los alojamientos (${count})`,
@@ -241,6 +241,7 @@ export function GlobalCleaningView({ properties }: GlobalCleaningViewProps) {
             onIncludePotentialChange={setIncludePotential}
             cleanerAssignments={assignmentsByProperty}
             loading={loading}
+            operationsMode
           />
         </div>
 

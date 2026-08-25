@@ -147,7 +147,7 @@ const COPY: Record<Locale, CopyShape> = {
   es: {
     tabDashboard: "Panel",
     tabCalendar: "Calendario",
-    tabCleaning: "Limpieza",
+    tabCleaning: "Check-ins / Check-outs",
     tabReports: "Informes",
     tabProperty: "Alojamiento",
     allProperties: "Todos los alojamientos",
