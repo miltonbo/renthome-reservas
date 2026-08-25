@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CalendarLink, Property, Reservation } from "@/lib/types";
-import { computeCleaningDays } from "./cleaning-schedule";
+import { computeCleaningDays, toOperationsDateStr } from "./cleaning-schedule";
 
 function reservation(overrides: Partial<Reservation> = {}): Reservation {
   return {
@@ -63,6 +63,10 @@ function source(overrides: Record<string, unknown> = {}) {
 }
 
 describe("connected-stay cleaning boundaries", () => {
+  it("uses Bolivia's calendar date before the UTC rollover", () => {
+    expect(toOperationsDateStr(new Date("2026-08-25T03:30:00.000Z"))).toBe("2026-08-24");
+  });
+
   it("removes the internal source-to-Direct cleaning and keeps final checkout", () => {
     const days = computeCleaningDays(
       property([reservation()]),

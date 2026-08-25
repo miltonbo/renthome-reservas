@@ -293,6 +293,18 @@ function toDateStr(d: Date): string {
   return d.toISOString().substring(0, 10);
 }
 
+export function toOperationsDateStr(d: Date): string {
+  // Cleaning is coordinated in Bolivia. Using toISOString() here made the
+  // schedule roll over at 20:00 local time because UTC was already on the
+  // following date, moving tomorrow's work into the "today" group.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/La_Paz",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
 function linkedSourceKey(platform: string, uid: string): string {
   return `${platform.trim().toLowerCase()}\u0000${uid.trim()}`;
 }
@@ -911,7 +923,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     return out;
   }, [cleaningDays, cleanerAssignments]);
 
-  const todayStr = toDateStr(new Date());
+  const todayStr = toOperationsDateStr(new Date());
   const futureDays = cleaningDays.filter(d => d.date >= todayStr);
   const futureCleanerConflicts = useMemo(
     () => cleanerConflicts.filter((c) => c.date >= todayStr),
