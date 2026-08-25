@@ -373,7 +373,11 @@ export function computeCleaningDays(
     const isAirbnbBlock = ev.platform === "airbnb" && (
       ev.summary.includes("Not available") || ev.summary.includes("Blocked")
     );
-    const name = isAirbnbBlock ? "Airbnb block" : ev.summary;
+    // A channel availability block has no departing guest and therefore no
+    // cleaning. Keep its dates in allBooked for gap calculations, but do not
+    // let it merge with a physical reservation registered over the block.
+    if (isAirbnbBlock) continue;
+    const name = ev.summary;
     const sourceKey = ev.uid ? linkedSourceKey(ev.platform, ev.uid) : undefined;
     const booking: Booking = {
       start: ev.startDate,

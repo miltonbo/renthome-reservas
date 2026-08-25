@@ -245,7 +245,9 @@ describe("connected-stay cleaning boundaries", () => {
       name: "Sebastian Vaca",
       checkIn: "2026-08-23T00:00:00.000Z",
       checkOut: "2026-08-24T00:00:00.000Z",
-      linkedEventRole: "claim",
+      linkedEventUid: null,
+      linkedEventPlatform: null,
+      linkedEventRole: null,
     });
     const extension = reservation({
       id: 51,
@@ -260,7 +262,7 @@ describe("connected-stay cleaning boundaries", () => {
 
     const cleanings = computeCleaningDays(
       property([initial, extension]),
-      [source({ startDate: "2026-08-23", endDate: "2026-08-26", summary: "Not available" })],
+      [source({ startDate: "2026-08-23", endDate: "2026-08-28", summary: "Airbnb (Not available)" })],
       [link({ bufferBefore: 1, bufferAfter: 1 })],
     ).filter((day) => day.type === "cleaning");
 
