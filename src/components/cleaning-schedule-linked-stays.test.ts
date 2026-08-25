@@ -34,7 +34,7 @@ function property(reservations: Reservation[]): Property {
   };
 }
 
-function link(): CalendarLink {
+function link(overrides: Partial<CalendarLink> = {}): CalendarLink {
   return {
     id: 1,
     propertyId: 68,
@@ -46,6 +46,7 @@ function link(): CalendarLink {
     lastError: null,
     failureCount: 0,
     createdAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
   };
 }
 
@@ -168,6 +169,42 @@ describe("connected-stay cleaning boundaries", () => {
       kind: "turnover",
       prevReservationId: 20,
       nextReservationId: 21,
+      hoursAvailable: 2,
+    });
+  });
+
+  it("keeps an adjacent confirmed turnover visible when the channel link has buffers", () => {
+    const outgoing = reservation({
+      id: 30,
+      name: "Bayron",
+      checkIn: "2026-08-21T00:00:00.000Z",
+      checkOut: "2026-08-25T00:00:00.000Z",
+      linkedEventUid: null,
+      linkedEventPlatform: null,
+      linkedEventRole: null,
+    });
+    const incoming = reservation({
+      id: 31,
+      name: "Veronica",
+      checkIn: "2026-08-25T00:00:00.000Z",
+      checkOut: "2026-08-28T00:00:00.000Z",
+      linkedEventUid: null,
+      linkedEventPlatform: null,
+      linkedEventRole: null,
+    });
+
+    const turnover = computeCleaningDays(
+      property([outgoing, incoming]),
+      [],
+      [link({ bufferBefore: 1, bufferAfter: 1 })],
+    ).find((day) => day.date === "2026-08-25");
+
+    expect(turnover).toMatchObject({
+      kind: "turnover",
+      prevGuest: "Bayron",
+      nextGuest: "Veronica",
+      prevReservationId: 30,
+      nextReservationId: 31,
       hoursAvailable: 2,
     });
   });

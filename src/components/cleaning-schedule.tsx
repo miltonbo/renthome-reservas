@@ -541,9 +541,50 @@ export function computeCleaningDays(
   for (let bi = 0; bi < deduped.length; bi++) {
     const b = deduped[bi];
     const prev = bi > 0 ? deduped[bi - 1] : null;
+    const next = bi < deduped.length - 1 ? deduped[bi + 1] : null;
     const displayName = b.name.includes("CLOSED") || b.name.includes("Reserved")
       ? (b.platform === "airbnb" ? "Airbnb" : "Booking") + " guest"
       : b.name;
+
+    // A confirmed guest arriving on the checkout date always creates an
+    // operational turnover, even when the channel link still carries a
+    // before/after buffer. Previously the full-buffer branch tried to place
+    // the cleaning on the following day; because that date was occupied by
+    // the incoming stay, the cleaning disappeared from the schedule entirely.
+    // Existing adjacent bookings must remain actionable as a same-day change.
+    if ((maxBefore > 0 || maxAfter > 0) && next?.start === b.end) {
+      const nextDisplayName = next.name.includes("CLOSED") || next.name.includes("Reserved")
+        ? (next.platform === "airbnb" ? "Airbnb" : "Booking") + " guest"
+        : next.name;
+      const parseTime = (time: string) => {
+        const [hours, minutes] = (time || "12:00").split(":").map(Number);
+        return (hours || 0) * 60 + (minutes || 0);
+      };
+      const checkOutMin = parseTime(property.checkOutTime || "12:00");
+      const checkInMin = parseTime(property.checkInTime || "14:00");
+      const diffMinutes = checkInMin - checkOutMin;
+      const availableMinutes = diffMinutes > 0 ? diffMinutes : 24 * 60 + diffMinutes;
+
+      result.push({
+        date: b.end,
+        type: "cleaning",
+        property: property.name,
+        propertyId: property.id,
+        kind: "turnover",
+        bufferMode: "quick",
+        prevGuest: displayName,
+        prevReservationId: b.reservationId,
+        prevPlatform: b.platform,
+        prevEndDate: b.end,
+        nextGuest: nextDisplayName,
+        nextReservationId: next.reservationId,
+        nextPlatform: next.platform,
+        nextStartDate: next.start,
+        hoursAvailable: availableMinutes > 0 && availableMinutes < 24 * 60
+          ? availableMinutes / 60
+          : undefined,
+      });
+    }
 
     if (!skipBeforeFor.has(bi)) {
       if (bi === 0 || !prev) {
