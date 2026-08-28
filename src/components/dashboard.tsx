@@ -242,6 +242,7 @@ export interface UnifiedStay {
   extensionOfId?: number | null;
   currency?: "BOB" | "USD";
   hasOutstandingBalance?: boolean;
+  hasMissingAirbnbDetails?: boolean;
   uid?: string;
 }
 
@@ -446,6 +447,8 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
       extensionOfId: r.extensionOfId,
       currency: r.priceCurrency || "BOB",
       hasOutstandingBalance: segmentFinancials(r).hasOutstandingBalance,
+      hasMissingAirbnbDetails: normalizedPlatform(r.platform) === "airbnb" &&
+        (!r.name.trim() || isGenericIcalName(r.name) || r.totalPrice == null),
     });
   }
   for (const ev of events) {
@@ -465,7 +468,8 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
     if (reservationDateKeys.has(dateKey) && isGenericIcalName(ev.summary || "")) continue;
     const start = reservationLocalDate(ev.startDate);
     const end = reservationLocalDate(ev.endDate);
-    stays.push({ start, end, name: friendlyIcalName(ev.summary, ev.platform), platform: ev.platform, uid: ev.uid });
+    stays.push({ start, end, name: friendlyIcalName(ev.summary, ev.platform), platform: ev.platform, uid: ev.uid,
+      hasMissingAirbnbDetails: normalizedPlatform(ev.platform) === "airbnb" });
   }
 
   // Cross-platform echo collapse. A host who runs the normal multi-
@@ -593,6 +597,7 @@ interface DashboardProps {
     linkedEventRole?: "claim" | "extension";
     extensionOfId?: number | null;
     note?: string | null;
+    bookingOriginalPropertyId?: number | null;
   }) => Promise<{ ok: boolean; error?: string }>;
   onUpdateReservation?: (id: number, data: {
     name?: string; checkIn?: string; checkOut?: string; platform?: string;
@@ -603,6 +608,7 @@ interface DashboardProps {
     parkingNightlyPrice?: number | null; parkingTotalPrice?: number | null;
     parkingCurrency?: "BOB" | "USD";
     note?: string | null;
+    bookingOriginalPropertyId?: number | null;
     settledManually?: boolean;
   }) => Promise<{ ok: boolean; error?: string }>;
   onCancelReservation?: (id: number, reason?: string, refunds?: Array<{ amount: number; currency: "BOB" | "USD"; paymentMethod: string; paidBy: "deysi" | "milton" }>) => Promise<{ ok: boolean; error?: string }>;
@@ -639,6 +645,7 @@ export function Dashboard({
     selectedProperty?.id || (properties.length > 0 ? properties[0].id : "")
   );
   const [formPlatform, setFormPlatform] = useState("direct");
+  const [formBookingOriginalPropertyId, setFormBookingOriginalPropertyId] = useState<number | "">("");
   const [formCheckIn, setFormCheckIn] = useState("");
   const [formCheckOut, setFormCheckOut] = useState("");
   const [formNightlyPrice, setFormNightlyPrice] = useState("");
@@ -1150,6 +1157,10 @@ export function Dashboard({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || !formCheckIn || !formCheckOut || !formPropertyId || savingReservation) return;
+    if (formPlatform === "booking" && !formEditingId && !formBookingOriginalPropertyId) {
+      setReservationSaveError("Selecciona el departamento para el que Booking recibió originalmente la reserva.");
+      return;
+    }
     setSavingReservation(true);
     setReservationSaveError("");
     const reservationData = {
@@ -1167,6 +1178,7 @@ export function Dashboard({
       parkingTotalPrice: formHasParking ? moneyValue(formParkingTotalPrice) : null,
       parkingCurrency: formParkingCurrency,
       note: formNote.trim() || null,
+      bookingOriginalPropertyId: formPlatform === "booking" && formBookingOriginalPropertyId ? Number(formBookingOriginalPropertyId) : null,
     };
     const result = formEditingId && onUpdateReservation
       ? await onUpdateReservation(formEditingId, reservationData).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }))
@@ -1186,6 +1198,7 @@ export function Dashboard({
     setFormNightlyPrice("");
     setFormTotalPrice("");
     setFormPriceCurrency("BOB");
+    setFormBookingOriginalPropertyId("");
     setFormGuarantee("");
     setFormGuaranteeCurrency("BOB");
     setFormHasParking(false);
@@ -1271,6 +1284,7 @@ export function Dashboard({
     setFormParkingCurrency(reservation.parkingCurrency || reservation.priceCurrency || "BOB");
     setFormNote(reservation.note || "");
     setFormPlatform(reservation.platform || "direct");
+    setFormBookingOriginalPropertyId(reservation.bookingOriginalPropertyId || "");
     setPriceSource("nightly");
     setParkingPriceSource("nightly");
     setFormExtensionOfId(null);
@@ -1415,6 +1429,7 @@ export function Dashboard({
     setPriceSource("nightly");
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
+    setFormBookingOriginalPropertyId("");
     setFormExtensionOfId(null);
     setFormEditingId(null);
     setReservationSaveError("");
@@ -2284,7 +2299,7 @@ export function Dashboard({
               </label>
               <label>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Canal</span>
-                <select value={formPlatform} onChange={(e) => { const platform = e.target.value; setFormPlatform(platform); if (platform === "airbnb") setFormPriceCurrency("USD"); }} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+                <select value={formPlatform} onChange={(e) => { const platform = e.target.value; setFormPlatform(platform); if (platform === "airbnb") setFormPriceCurrency("USD"); if (platform !== "booking") setFormBookingOriginalPropertyId(""); }} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
                   {formPlatformOptions.map((platform) => (
                     <option key={platform} value={platform}>
                       {locale === "es" && platform === "direct" ? "Directo" : platformDisplayName(platform)}
@@ -2292,6 +2307,16 @@ export function Dashboard({
                   ))}
                 </select>
               </label>
+              {formPlatform === "booking" && (
+                <label className="sm:col-span-2">
+                  <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Departamento que recibió la reserva</span>
+                  <select required={!formEditingId} value={formBookingOriginalPropertyId} onChange={(e) => setFormBookingOriginalPropertyId(e.target.value ? Number(e.target.value) : "")} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+                    <option value="">{formEditingId ? "Sin especificar (reserva anterior)" : "Seleccionar departamento"}</option>
+                    {properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
+                  </select>
+                  <span className="mt-1 block text-[11px] text-[var(--ink-4)]">La estadía física seguirá asignada al departamento indicado arriba; este dato define quién paga la comisión de Booking.</span>
+                </label>
+              )}
               <div>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Estadía</span>
                 {formExtensionOfId ? (

@@ -12,6 +12,7 @@ export interface MasterCalendarStay {
   extensionOfId?: number | null;
   currency?: "BOB" | "USD";
   hasOutstandingBalance?: boolean;
+  hasMissingAirbnbDetails?: boolean;
   uid?: string;
 }
 
@@ -101,6 +102,13 @@ function buildingName(propertyName: string): string {
   return "Otros";
 }
 
+function mobilePropertyName(propertyName: string): string {
+  const unit = propertyName.match(/([0-9]+[A-Za-z]?)$/)?.[1] || propertyName;
+  if (unit === "406" && propertyName.startsWith("Sky Elite")) return "Sky 406";
+  if (unit === "406" && propertyName.startsWith("Luxe Suites")) return "Luxe 406";
+  return unit;
+}
+
 function formatRange(start: Date, end: Date): string {
   const formatter = new Intl.DateTimeFormat("es-BO", { day: "2-digit", month: "short" });
   return `${formatter.format(start)} → ${formatter.format(end)}`;
@@ -142,7 +150,7 @@ export function MasterCalendar({
     : `${monthFormatter.format(windowStart)} – ${monthFormatter.format(lastVisibleDay)}`;
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col [--property-column-width:148px] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm sm:[--property-column-width:184px] lg:[--property-column-width:210px]">
+    <section className="flex min-h-0 flex-1 flex-col [--property-column-width:116px] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm sm:[--property-column-width:184px] lg:[--property-column-width:210px]">
       <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] px-2.5 py-2 sm:px-4 sm:py-2.5">
         <div>
           <div className="flex items-center gap-2">
@@ -199,8 +207,13 @@ export function MasterCalendar({
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`relative flex h-14 shrink-0 flex-col items-center justify-center border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""} ${isToday ? "before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
-                    style={{ width: DAY_WIDTH }}
+                    className={`relative flex h-14 shrink-0 flex-col items-center justify-center border-r border-[var(--line)] ${isToday ? "before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
+                    style={{
+                      width: DAY_WIDTH,
+                      backgroundImage: weekend
+                        ? "repeating-linear-gradient(135deg, transparent 0, transparent 6px, rgba(100,116,139,0.09) 6px, rgba(100,116,139,0.09) 7px)"
+                        : undefined,
+                    }}
                   >
                     <span className={`text-[9px] font-medium uppercase ${isToday ? "text-[var(--brand-orange)]" : "text-[var(--ink-4)]"}`}>
                       {new Intl.DateTimeFormat("es-BO", { weekday: "short" }).format(day).slice(0, 2)}
@@ -230,11 +243,13 @@ export function MasterCalendar({
             return (
               <div key={property.id}>
                 {building !== previousBuilding && (
-                  <div className="sticky left-0 z-10 flex h-6 items-center border-b border-[var(--line)] bg-[var(--brand-navy)] px-2.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/70 sm:h-7 sm:px-3 sm:text-[10px]">
-                    {building}
+                  <div className="h-6 border-b border-[var(--line)] bg-[var(--brand-navy)] sm:h-7">
+                    <div className="sticky left-0 z-20 flex h-full w-[var(--property-column-width)] items-center border-r border-white/10 bg-[var(--brand-navy)] px-2.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/80 sm:px-3 sm:text-[10px]">
+                      {building}
+                    </div>
                   </div>
                 )}
-                <div className="flex h-[48px] border-b border-[var(--line)] last:border-b-0">
+                <div className="flex h-[48px] border-b border-[var(--line-2)] shadow-[inset_0_-1px_0_rgba(100,116,139,0.16)] last:border-b-0">
                   <div className="sticky left-0 z-10 flex w-[var(--property-column-width)] shrink-0 items-center justify-between gap-1.5 border-r border-[var(--line)] bg-[var(--bg-2)] px-2 sm:px-2.5">
                     <button
                       type="button"
@@ -242,7 +257,8 @@ export function MasterCalendar({
                       className="min-w-0 text-left"
                       title={property.name}
                     >
-                      <span className="block truncate text-xs font-semibold text-[var(--ink)]">{property.name}</span>
+                      <span className="block truncate text-xs font-semibold text-[var(--ink)] sm:hidden">{mobilePropertyName(property.name)}</span>
+                      <span className="hidden truncate text-xs font-semibold text-[var(--ink)] sm:block">{property.name}</span>
                       {property.syncError && <span className="mt-0.5 hidden text-[10px] text-amber-400 sm:block">Error de sincronización</span>}
                     </button>
                     <button
@@ -261,11 +277,24 @@ export function MasterCalendar({
                       {days.map((day) => {
                         const weekend = day.getDay() === 0 || day.getDay() === 6;
                         const isToday = day.getTime() === today.getTime();
+                        // A stay occupies nights in [check-in, check-out).
+                        // Therefore the check-out date remains visually free,
+                        // even though the bar reaches into its morning.
+                        const isOccupiedNight = visibleStays.some((stay) =>
+                          !stay.platform.endsWith("-block") &&
+                          day >= startOfLocalDay(stay.start) &&
+                          day < startOfLocalDay(stay.end),
+                        );
                         return (
                           <div
                             key={day.toISOString()}
-                            className={`relative h-full shrink-0 border-r border-[var(--line)] ${weekend ? "bg-[var(--brand-navy-soft)]" : ""} ${isToday ? "bg-[var(--brand-orange-faint)] before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
-                            style={{ width: DAY_WIDTH }}
+                            className={`relative h-full shrink-0 border-r border-[var(--line)] ${isOccupiedNight ? "bg-slate-500/[0.14] shadow-[inset_0_1px_0_rgba(148,163,184,0.12),inset_0_-1px_0_rgba(148,163,184,0.12)]" : ""} ${isToday ? "before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
+                            style={{
+                              width: DAY_WIDTH,
+                              backgroundImage: weekend && !isOccupiedNight
+                                ? "repeating-linear-gradient(135deg, transparent 0, transparent 6px, rgba(100,116,139,0.09) 6px, rgba(100,116,139,0.09) 7px)"
+                                : undefined,
+                            }}
                           />
                         );
                       })}
@@ -288,7 +317,7 @@ export function MasterCalendar({
                           onClick={() => stay.reservationId
                             ? onOpenReservation(property.id, stay.reservationId)
                             : onOpenImportedStay(property.id, stay)}
-                          className={`absolute top-2 h-8 overflow-hidden text-left text-[11px] font-semibold transition-[filter,box-shadow] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1 ${
+                          className={`absolute top-1 h-10 overflow-hidden text-left text-xs font-semibold transition-[filter,box-shadow] focus:outline-none focus:ring-2 focus:ring-[var(--brand-orange)] focus:ring-offset-1 ${
                             isAvailabilityBlock
                               ? "z-[1] rounded-lg border border-dashed border-slate-500/55 bg-slate-500/[0.06] px-2 text-slate-500 shadow-none hover:bg-slate-500/[0.10]"
                               : "z-[2] shadow-sm hover:z-[3] hover:brightness-110 hover:ring-1 hover:ring-inset hover:ring-white/45"
@@ -296,29 +325,29 @@ export function MasterCalendar({
                             stay.extensionOfId
                               ? "rounded-l-sm rounded-r-lg border-l-2 border-dashed border-white/75 pl-1.5 pr-2"
                               : isAvailabilityBlock ? "" : "rounded-lg px-2"
-                          } ${stay.hasOutstandingBalance && !isAvailabilityBlock ? "ring-1 ring-inset ring-amber-300/80" : ""}`}
+                          } ${(stay.hasOutstandingBalance || stay.hasMissingAirbnbDetails) && !isAvailabilityBlock ? "ring-1 ring-inset ring-amber-300/80" : ""}`}
                           style={{ left, width, backgroundColor: isAvailabilityBlock ? undefined : color.background, color: isAvailabilityBlock ? undefined : color.foreground }}
                           title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
-                          {stay.hasOutstandingBalance && !isAvailabilityBlock && (
+                          {(stay.hasOutstandingBalance || stay.hasMissingAirbnbDetails) && !isAvailabilityBlock && (
                             <span
                               className="absolute right-0 top-0 z-10 flex h-4 w-4 items-center justify-center rounded-bl-md bg-amber-300 text-[9px] font-black leading-none text-amber-950 shadow-sm"
-                              title="Saldo pendiente"
-                              aria-label="Saldo pendiente"
+                              title={stay.hasMissingAirbnbDetails ? "Faltan nombre del huésped o monto de Airbnb" : "Saldo pendiente"}
+                              aria-label={stay.hasMissingAirbnbDetails ? "Datos de Airbnb incompletos" : "Saldo pendiente"}
                             >
                               !
                             </span>
                           )}
-                          <span className={`flex items-center gap-1 truncate ${stay.hasOutstandingBalance ? "pr-3" : ""}`}>
+                          <span className={`flex items-center gap-1 truncate text-[12px] leading-5 ${stay.hasOutstandingBalance || stay.hasMissingAirbnbDetails ? "pr-3" : ""}`}>
                             {stay.extensionOfId && (
                               <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-white/25 text-[10px] leading-none" aria-hidden>↳</span>
                             )}
                             <span className="truncate">{stay.name}</span>
                           </span>
-                          <span className="flex items-center justify-between gap-1 text-[9px] font-medium opacity-90">
-                            <span className="truncate">{stay.extensionOfId ? `Extensión · ${platformLabel(stay.platform)}` : platformLabel(stay.platform)}</span>
+                          <span className="flex items-center justify-between gap-1 text-[10px] font-semibold leading-4 opacity-95">
+                            <span className="truncate">{stay.extensionOfId ? "Extensión" : ""}</span>
                             {stay.totalPrice != null && (
-                              <span className="shrink-0 text-[10px] font-bold tracking-tight">{stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}</span>
+                              <span className="shrink-0 text-[11px] font-bold tracking-tight">{stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}</span>
                             )}
                           </span>
                         </button>

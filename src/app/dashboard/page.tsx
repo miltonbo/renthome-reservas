@@ -175,6 +175,7 @@ function AppContent({
     linkedEventRole?: "claim" | "extension";
     extensionOfId?: number | null;
     note?: string | null;
+    bookingOriginalPropertyId?: number | null;
   }) => {
     const res = await fetch("/api/reservations", {
       method: "POST",
@@ -229,6 +230,7 @@ function AppContent({
       parkingTotalPrice?: number | null;
       parkingCurrency?: "BOB" | "USD";
       note?: string | null;
+      bookingOriginalPropertyId?: number | null;
       settledManually?: boolean;
     }
   ) => {
@@ -260,7 +262,7 @@ function AppContent({
     return { ok: true as const };
   };
 
-  const handleUpdateProperty = async (id: number, data: { name?: string; minNights?: number; checkInTime?: string; checkOutTime?: string; bookingWindow?: number }) => {
+  const handleUpdateProperty = async (id: number, data: { name?: string; minNights?: number; checkInTime?: string; checkOutTime?: string; bookingWindow?: number; isPaused?: boolean }) => {
     await fetch(`/api/properties/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -347,6 +349,7 @@ function AppContent({
 
   const selectedProperty = properties.find(p => p.id === selectedPropertyId);
   const selectedReservation = selectedProperty?.reservations.find(r => r.id === selectedReservationId);
+  const operationalProperties = properties.filter((property) => !property.isPaused);
 
   const renderContent = () => {
     // Global views (no property selected)
@@ -387,7 +390,7 @@ function AppContent({
       // picked, the panel shows that property's pipeline; with no
       // property selected, the panel shows a meaningful aggregate
       // across every property in `properties`.
-      return <ReportsPanel property={selectedProperty ?? null} properties={properties} />;
+      return <ReportsPanel property={selectedProperty?.isPaused ? null : selectedProperty ?? null} properties={operationalProperties} />;
     }
 
     // Cleaning is dual-mode like Reports: cross-property when no
@@ -396,7 +399,7 @@ function AppContent({
     // check only handles the global case so the Cleaning tab never
     // bounces the user into a forced-property selection.
     if (activeView === "cleaning" && !selectedProperty) {
-      return <GlobalCleaningView properties={properties} />;
+      return <GlobalCleaningView properties={operationalProperties} />;
     }
 
     // Property views
@@ -432,6 +435,7 @@ function AppContent({
               checkInTime={selectedProperty.checkInTime || "14:00"}
               checkOutTime={selectedProperty.checkOutTime || "11:00"}
               bookingWindow={selectedProperty.bookingWindow || 365}
+              isPaused={Boolean(selectedProperty.isPaused)}
               ownerUserId={selectedProperty.userId}
               onUpdateProperty={handleUpdateProperty}
               onDeleteProperty={handleDeleteProperty}
@@ -485,7 +489,7 @@ function AppContent({
     // Dashboard (no property selected)
     return (
       <Dashboard
-        properties={properties}
+        properties={operationalProperties}
         loadingProperties={loadingProperties}
         selectedProperty={null}
         onSelectProperty={handleSelectProperty}

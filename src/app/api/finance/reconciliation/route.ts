@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { listAccessiblePropertyIds } from "@/lib/ownership";
-import { financialAllocations } from "@/lib/finance";
+import { bookingCommission, bookingCommissionLiability, financialAllocations } from "@/lib/finance";
 
 type Person = "deysi" | "milton";
 type Currency = "BOB" | "USD";
@@ -24,20 +24,28 @@ export async function GET(request: NextRequest) {
     where: { propertyId: { in: propertyIds }, occurredAt: { gte: start, lt: end } },
     include: {
       allocations: true,
-      property: { select: { name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true } },
-      reservation: { select: { name: true, platform: true } },
+      property: { select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true } },
+      reservation: { select: { name: true, platform: true, bookingOriginalProperty: { select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true } } } },
     },
     orderBy: { occurredAt: "asc" },
   });
-  const commissions = await prisma.bookingCommission.findMany({
-    where: {
-      reservation: {
-        propertyId: { in: propertyIds },
-        checkIn: { lt: end }, checkOut: { gte: start }, status: "confirmed",
-      },
-    },
-    include: { reservation: { include: { property: { select: { name: true } } } } },
-  });
+  const commissions = movements
+    .filter((movement) => movement.reservation.platform === "booking" && movement.type === "lodging" && movement.amountMinor > 0)
+    .map((movement) => {
+      const incomePolicy = movement.reservation.bookingOriginalProperty || movement.property;
+      return {
+        reservationId: movement.reservationId,
+        incomeOperator: incomePolicy.financialOperator as Person,
+        liablePerson: bookingCommissionLiability(movement.property),
+        currency: movement.currency as Currency,
+        amountMinor: bookingCommission(movement.amountMinor),
+        reservation: {
+          name: movement.reservation.name,
+          property: movement.property,
+          bookingOriginalProperty: movement.reservation.bookingOriginalProperty,
+        },
+      };
+    });
   const touchedReservationIds = [...new Set(movements.map((movement) => movement.reservationId))];
   const touchedReservations = touchedReservationIds.length ? await prisma.reservation.findMany({
     where: { id: { in: touchedReservationIds } },
@@ -63,12 +71,15 @@ export async function GET(request: NextRequest) {
   const blank = () => ({ BOB: 0, USD: 0 });
   const held: Record<Person, Record<Currency, number>> = { deysi: blank(), milton: blank() };
   const entitled: Record<Person, Record<Currency, number>> = { deysi: blank(), milton: blank() };
-  const fixedFeeReservations = new Set<number>();
+  const fixedFeePolicies = new Map<number, { financialOperator: string; financialModel: string; managementFeeBps: number; managementFixedFeeMinor: number; managementFixedFeeCurrency: string; managementBeneficiary: string }>();
   for (const movement of movements) {
     const currency = movement.currency as Currency;
     if (!currencies.includes(currency)) continue;
-    const policyAllocations = financialAllocations(movement.amountMinor, movement.property);
-    if (movement.amountMinor > 0 && movement.property.financialModel === "owner_fee") fixedFeeReservations.add(movement.reservationId);
+    const allocationPolicy = movement.reservation.platform === "booking" && movement.reservation.bookingOriginalProperty
+      ? movement.reservation.bookingOriginalProperty
+      : movement.property;
+    const policyAllocations = financialAllocations(movement.amountMinor, allocationPolicy);
+    if (movement.amountMinor > 0 && allocationPolicy.financialModel === "owner_fee") fixedFeePolicies.set(movement.reservationId, allocationPolicy);
     if (movement.paymentMethod === "airbnb") {
       if (movement.property.financialModel === "owner_fee") {
         const receiver: Person = movement.property.managementBeneficiary === "milton" ? "milton" : "deysi";
@@ -85,12 +96,35 @@ export async function GET(request: NextRequest) {
     for (const allocation of policyAllocations) entitled[allocation.person][currency] += allocation.amountMinor;
   }
 
-  for (const reservationId of fixedFeeReservations) {
-    const movement = movements.find((item) => item.reservationId === reservationId);
-    if (!movement) continue;
-    const beneficiary: Person = movement.property.managementBeneficiary === "milton" ? "milton" : "deysi";
-    const currency: Currency = movement.property.managementFixedFeeCurrency === "USD" ? "USD" : "BOB";
-    entitled[beneficiary][currency] += movement.property.managementFixedFeeMinor || 0;
+  for (const [, policy] of fixedFeePolicies) {
+    const beneficiary: Person = policy.managementBeneficiary === "milton" ? "milton" : "deysi";
+    const currency: Currency = policy.managementFixedFeeCurrency === "USD" ? "USD" : "BOB";
+    entitled[beneficiary][currency] += policy.managementFixedFeeMinor || 0;
+  }
+
+  // When Booking sold one listing but the guest was physically assigned to
+  // another operator's apartment, the operator who received the reservation
+  // reimburses the full Booking commission to the operator of the physical
+  // listing, who will receive Booking's invoice. Existing rows without an
+  // origin retain the old behavior because both properties are the same.
+  const commissionReimbursements: Array<{ reservationId: number; reservationName: string; physicalProperty: string; originalProperty: string; from: Person; to: Person; currency: Currency; amountMinor: number }> = [];
+  for (const commission of commissions) {
+    const currency = commission.currency as Currency;
+    const incomeOperator = commission.incomeOperator;
+    const liable = commission.liablePerson as Person;
+    if (!currencies.includes(currency) || !people.includes(incomeOperator) || !people.includes(liable) || incomeOperator === liable) continue;
+    entitled[liable][currency] += commission.amountMinor;
+    entitled[incomeOperator][currency] -= commission.amountMinor;
+    commissionReimbursements.push({
+      reservationId: commission.reservationId,
+      reservationName: commission.reservation.name,
+      physicalProperty: commission.reservation.property.name,
+      originalProperty: commission.reservation.bookingOriginalProperty?.name || commission.reservation.property.name,
+      from: incomeOperator,
+      to: liable,
+      currency,
+      amountMinor: commission.amountMinor,
+    });
   }
 
   const transfers: Array<{ from: Person | "owner"; to: Person | "owner"; currency: Currency; amountMinor: number }> = [];
@@ -104,5 +138,5 @@ export async function GET(request: NextRequest) {
     if (deysiBalance < 0) transfers.push({ from: "owner", to: "deysi", currency, amountMinor: -deysiBalance });
     if (miltonBalance < 0) transfers.push({ from: "owner", to: "milton", currency, amountMinor: -miltonBalance });
   }
-  return NextResponse.json({ month, held, entitled, transfers, commissions, movements, excess });
+  return NextResponse.json({ month, held, entitled, transfers, commissions, commissionReimbursements, movements, excess });
 }

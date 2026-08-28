@@ -240,12 +240,13 @@ interface SyncSettingsProps {
   checkInTime: string;
   checkOutTime: string;
   bookingWindow: number;
+  isPaused: boolean;
   ownerUserId: number;
-  onUpdateProperty: (id: number, data: { name?: string; minNights?: number; checkInTime?: string; checkOutTime?: string; bookingWindow?: number }) => void;
+  onUpdateProperty: (id: number, data: { name?: string; minNights?: number; checkInTime?: string; checkOutTime?: string; bookingWindow?: number; isPaused?: boolean }) => void;
   onDeleteProperty: (id: number) => void | Promise<void>;
 }
 
-export function SyncSettings({ propertyId, propertyName, properties, minNights, checkInTime, checkOutTime, bookingWindow, ownerUserId, onUpdateProperty, onDeleteProperty }: SyncSettingsProps) {
+export function SyncSettings({ propertyId, propertyName, properties, minNights, checkInTime, checkOutTime, bookingWindow, isPaused, ownerUserId, onUpdateProperty, onDeleteProperty }: SyncSettingsProps) {
   const { t, locale } = useI18n();
   const c = COPY[locale];
   const [links, setLinks] = useState<CalendarLink[]>([]);
@@ -959,6 +960,16 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
 
       {/* ── Stay rules ── booking constraints, in a card grid. */}
       <section className="space-y-3">
+      <div className={`flex items-center justify-between gap-4 rounded-lg border p-4 ${isPaused ? "border-amber-400/40 bg-amber-400/10" : "border-[var(--line)] bg-[var(--bg-2)]"}`}>
+        <div>
+          <h2 className="text-sm font-semibold text-[var(--ink)]">Pausar alojamiento</h2>
+          <p className="mt-1 text-xs text-[var(--ink-3)]">Al pausarlo se conserva toda su información, pero deja de aparecer en el calendario maestro, check-ins, check-outs e informes operativos.</p>
+        </div>
+        <button type="button" role="switch" aria-checked={isPaused} onClick={() => onUpdateProperty(propertyId, { isPaused: !isPaused })}
+          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${isPaused ? "bg-amber-500" : "bg-[var(--line-2)]"}`}>
+          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${isPaused ? "translate-x-6" : "translate-x-1"}`} />
+        </button>
+      </div>
       <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-4)]">
         {c.secStayRules}
       </h2>

@@ -60,6 +60,18 @@ function nightCountLabel(count: number, locale: Locale): string {
   return `${count} ${count === 1 ? labels[locale][0] : labels[locale][1]}`;
 }
 
+const DATE_LOCALES: Record<Locale, string> = {
+  en: "en-GB", es: "es-BO", ru: "ru-RU", de: "de-DE", fr: "fr-FR",
+};
+
+const CALENDAR_COPY: Record<Locale, { in: string; out: string; manual: string; calendar: string; done: string; select: string; selectDates: string; occupied: string }> = {
+  en: { in: "In", out: "Out", manual: "Manual", calendar: "Calendar", done: "Done", select: "Select", selectDates: "Select dates", occupied: "Occupied" },
+  es: { in: "Entrada", out: "Salida", manual: "Manual", calendar: "Calendario", done: "Listo", select: "Seleccionar", selectDates: "Seleccionar fechas", occupied: "Ocupado" },
+  ru: { in: "Заезд", out: "Выезд", manual: "Вручную", calendar: "Календарь", done: "Готово", select: "Выбрать", selectDates: "Выбрать даты", occupied: "Занято" },
+  de: { in: "Anreise", out: "Abreise", manual: "Manuell", calendar: "Kalender", done: "Fertig", select: "Auswählen", selectDates: "Daten auswählen", occupied: "Belegt" },
+  fr: { in: "Arrivée", out: "Départ", manual: "Manuel", calendar: "Calendrier", done: "Terminé", select: "Choisir", selectDates: "Choisir les dates", occupied: "Occupé" },
+};
+
 function CalendarGrid({
   checkIn,
   checkOut,
@@ -76,6 +88,7 @@ function CalendarGrid({
   bookedDates?: ReadonlySet<string>;
 }) {
   const { locale } = useI18n();
+  const copy = CALENDAR_COPY[locale];
   const [selecting, setSelecting] = useState<"in" | "out">(
     !checkIn ? "in" : !checkOut ? "out" : "in"
   );
@@ -136,29 +149,29 @@ function CalendarGrid({
 
   const formatSelected = (d: string) => {
     if (!d) return "—";
-    return new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    return new Date(`${d}T12:00:00`).toLocaleDateString(DATE_LOCALES[locale], { day: "2-digit", month: "short" });
   };
 
   if (showClassic) {
     return (
       <div className="space-y-2 p-4">
         <div className="flex items-center gap-2">
-          <span className="w-10 text-xs text-[var(--ink-3)]">In</span>
+          <span className="w-14 text-xs text-[var(--ink-3)]">{copy.in}</span>
           <input type="date" value={checkIn} onChange={(e) => onChangeCheckIn(e.target.value)}
             className="h-8 flex-1 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--ink)]" />
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-10 text-xs text-[var(--ink-3)]">Out</span>
+          <span className="w-14 text-xs text-[var(--ink-3)]">{copy.out}</span>
           <input type="date" value={checkOut} onChange={(e) => onChangeCheckOut(e.target.value)}
             className="h-8 flex-1 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--ink)]" />
         </div>
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setShowClassic(false)} className="text-xs text-[var(--ink)] hover:underline">
-            Calendar
+            {copy.calendar}
           </button>
           {onDone && checkIn && checkOut && (
             <button type="button" onClick={onDone} className="rounded-md bg-[var(--m-accent)] px-3 py-1 text-xs font-medium text-white hover:bg-[var(--m-accent-2)]">
-              Done
+              {copy.done}
             </button>
           )}
         </div>
@@ -166,7 +179,10 @@ function CalendarGrid({
     );
   }
 
-  const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  const WEEKDAYS = Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(DATE_LOCALES[locale], { weekday: "short" })
+      .format(new Date(2024, 0, 1 + index)).replace(".", "").slice(0, 2),
+  );
 
   return (
     <div className="p-3">
@@ -182,7 +198,7 @@ function CalendarGrid({
                 : "text-[var(--ink-3)] hover:text-[var(--ink-2)]"
             }`}
           >
-            In: {formatSelected(checkIn)}
+            {copy.in}: {formatSelected(checkIn)}
           </button>
           <span className="text-[var(--ink-4)]">→</span>
           <button
@@ -194,7 +210,7 @@ function CalendarGrid({
                 : "text-[var(--ink-3)] hover:text-[var(--ink-2)]"
             }`}
           >
-            Out: {formatSelected(checkOut)}
+            {copy.out}: {formatSelected(checkOut)}
           </button>
           {checkIn && checkOut && (
             <span className="text-xs text-emerald-500">{nightCountLabel(dayCount(), locale)}</span>
@@ -202,11 +218,11 @@ function CalendarGrid({
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setShowClassic(true)} className="text-xs text-[var(--ink)] hover:underline">
-            Manual
+            {copy.manual}
           </button>
           {onDone && checkIn && checkOut && (
             <button type="button" onClick={onDone} className="rounded-md bg-[var(--m-accent)] px-3 py-1 text-xs font-medium text-white hover:bg-[var(--m-accent-2)]">
-              Done
+              {copy.done}
             </button>
           )}
         </div>
@@ -227,7 +243,7 @@ function CalendarGrid({
           for (let i = 0; i < firstDayOffset; i++) cells.push(null);
           for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
 
-          const monthLabel = monthStart.toLocaleDateString("en", { month: "long", year: "numeric" });
+          const monthLabel = monthStart.toLocaleDateString(DATE_LOCALES[locale], { month: "long", year: "numeric" });
 
           return (
             <div key={monthLabel} className="min-w-[210px] flex-1">
@@ -265,7 +281,7 @@ function CalendarGrid({
                       disabled={isPast || !canSelect}
                       onClick={() => handleDayClick(dateStr)}
                       onMouseEnter={() => canSelect && setHoverDate(dateStr)}
-                      aria-label={`${dateStr}${isBooked ? " · Ocupado" : ""}`}
+                      aria-label={`${dateStr}${isBooked ? ` · ${copy.occupied}` : ""}`}
                       title={isBooked ? (canSelect ? "Ocupado desde este día; disponible como salida" : "Ocupado por una reserva") : undefined}
                       className={`relative flex h-8 items-center justify-center rounded-md text-xs transition-all ${
                         isPast
@@ -396,12 +412,13 @@ export function DateSlider({
   bookedDates,
 }: DateSliderProps) {
   const { locale } = useI18n();
+  const copy = CALENDAR_COPY[locale];
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const formatDate = (d: string) => {
-    if (!d) return "Select";
-    return new Date(`${d}T12:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    if (!d) return copy.select;
+    return new Date(`${d}T12:00:00`).toLocaleDateString(DATE_LOCALES[locale], { day: "2-digit", month: "short" });
   };
 
   const dayCount = useCallback(() => {
@@ -434,7 +451,7 @@ export function DateSlider({
                 ? `${formatDate(checkIn)} — ${formatDate(checkOut)}`
                 : checkIn
                 ? `${formatDate(checkIn)} — ...`
-                : "Select dates"}
+                : copy.selectDates}
             </span>
           </div>
           {checkIn && checkOut && (

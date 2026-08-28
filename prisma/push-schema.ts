@@ -223,6 +223,7 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     // unbookable computation and the cleaning schedule hides the
     // property; conflict detection still runs.
     `ALTER TABLE "Property" ADD COLUMN "cleaningEnabled" INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE "Property" ADD COLUMN "isPaused" INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE "Property" ADD COLUMN "financialOperator" TEXT NOT NULL DEFAULT 'milton'`,
     `ALTER TABLE "Property" ADD COLUMN "financialModel" TEXT NOT NULL DEFAULT 'operator_split'`,
     `ALTER TABLE "Property" ADD COLUMN "managementFeeBps" INTEGER NOT NULL DEFAULT 0`,
@@ -230,6 +231,8 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Property" ADD COLUMN "managementFixedFeeCurrency" TEXT NOT NULL DEFAULT 'BOB'`,
     `ALTER TABLE "Property" ADD COLUMN "managementBeneficiary" TEXT NOT NULL DEFAULT 'deysi'`,
     `ALTER TABLE "Property" ADD COLUMN "bookingCommissionPayer" TEXT NOT NULL DEFAULT 'operator'`,
+    `ALTER TABLE "Reservation" ADD COLUMN "bookingOriginalPropertyId" INTEGER REFERENCES "Property"("id") ON DELETE SET NULL`,
+    `CREATE INDEX IF NOT EXISTS "Reservation_bookingOriginalPropertyId_idx" ON "Reservation"("bookingOriginalPropertyId")`,
     // RT-25.12 — per-guest free-text notes. Empty default so existing
     // rows surface as no-note rather than NULL in the UI.
     `ALTER TABLE "Guest" ADD COLUMN "notes" TEXT NOT NULL DEFAULT ''`,

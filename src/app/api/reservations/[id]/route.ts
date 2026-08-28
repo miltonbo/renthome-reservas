@@ -7,7 +7,7 @@ import { normalizePhone } from "@/lib/sanitize";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
 import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
-import { amountToMinor, bookingCommission, bookingCommissionLiability, financialAllocations, isCurrency } from "@/lib/finance";
+import { amountToMinor, financialAllocations, isCurrency } from "@/lib/finance";
 
 async function loadManageableReservation(
   reservationId: number,
@@ -53,6 +53,12 @@ export async function PATCH(
 
     const body = await request.json();
     const data: Record<string, unknown> = {};
+    if (body.bookingOriginalPropertyId !== undefined) {
+      if (body.bookingOriginalPropertyId !== null && (!Number.isInteger(body.bookingOriginalPropertyId) || body.bookingOriginalPropertyId <= 0 || !(await canManageProperty(body.bookingOriginalPropertyId, session.userId, session.role)))) {
+        return NextResponse.json({ error: "Invalid Booking original property" }, { status: 400 });
+      }
+      data.bookingOriginalPropertyId = body.bookingOriginalPropertyId;
+    }
 
     if (body.name !== undefined) data.name = body.name;
     if (body.checkIn !== undefined) {
@@ -385,26 +391,6 @@ export async function PATCH(
       data,
     });
 
-    if (reservation.platform === "booking" && reservation.totalPrice != null && "bookingCommission" in prisma) {
-      const property = await prisma.property.findUnique({
-        where: { id: reservation.propertyId }, select: { financialOperator: true, bookingCommissionPayer: true },
-      });
-      const liablePerson = bookingCommissionLiability(property || {});
-      const basisMinor = amountToMinor(reservation.totalPrice);
-      await prisma.bookingCommission.upsert({
-        where: { reservationId: reservation.id },
-        create: {
-          reservationId: reservation.id, liablePerson, basisMinor,
-          amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
-        },
-        update: {
-          liablePerson, basisMinor,
-          amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
-        },
-      });
-    } else if ("bookingCommission" in prisma) {
-      await prisma.bookingCommission.deleteMany({ where: { reservationId: reservation.id } });
-    }
     if (reservation.platform === "airbnb" && reservation.totalPrice != null && "moneyMovement" in prisma) {
       const property = await prisma.property.findUnique({
         where: { id: reservation.propertyId }, select: { financialOperator: true, financialModel: true, managementFeeBps: true, managementBeneficiary: true },

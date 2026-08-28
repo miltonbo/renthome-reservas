@@ -99,37 +99,39 @@ model SiteSetting {
 }
 
 model Property {
-  id                 Int                     @id @default(autoincrement())
-  userId             Int
-  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name               String
-  minNights          Int                     @default(1)
-  checkInTime        String                  @default("14:00")
-  checkOutTime       String                  @default("11:00")
-  bookingWindow      Int                     @default(365) // days forward from today to accept bookings; beyond this, events are ignored
-  cleaningEnabled    Boolean                 @default(true) // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation; conflict detection still runs
-  financialOperator  String                  @default("milton") // "milton" | "deysi"
-  financialModel     String                  @default("operator_split") // operator_split | owner_fee
-  managementFeeBps   Int                     @default(0) // percentage retained by management; 1000 = 10%
-  managementFixedFeeMinor Int                 @default(0) // fixed fee in minor units, charged once per reservation
-  managementFixedFeeCurrency String           @default("BOB")
-  managementBeneficiary String                @default("deysi")
-  bookingCommissionPayer String               @default("operator") // operator | owner | deysi | milton
-  feedToken          String?                 @unique // optional opt-in token gating the public iCal feed; null = public
-  feedSlug           String?                 @unique // durable URL identifier for the iCal feed; minted at creation, never changes
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime?
-  reservations       Reservation[]
-  calendarLinks      CalendarLink[]
-  calendarEvents     CalendarEvent[]
-  dateOverrides      DateOverride[]
-  cleanerAssignments CleanerAssignment[]
-  cleaningRecords    CleaningRecord[]
-  messageTemplates   MessageTemplate[]
-  managers           PropertyManager[]
-  managerInvites     PropertyManagerInvite[]
-  guestFormTemplates GuestFormTemplate[]
-  moneyMovements     MoneyMovement[]
+  id                         Int                     @id @default(autoincrement())
+  userId                     Int
+  user                       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                       String
+  minNights                  Int                     @default(1)
+  checkInTime                String                  @default("14:00")
+  checkOutTime               String                  @default("11:00")
+  bookingWindow              Int                     @default(365) // days forward from today to accept bookings; beyond this, events are ignored
+  cleaningEnabled            Boolean                 @default(true) // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation; conflict detection still runs
+  isPaused                   Boolean                 @default(false) // retained in inventory but excluded from daily operational views
+  financialOperator          String                  @default("milton") // "milton" | "deysi"
+  financialModel             String                  @default("operator_split") // operator_split | owner_fee
+  managementFeeBps           Int                     @default(0) // percentage retained by management; 1000 = 10%
+  managementFixedFeeMinor    Int                     @default(0) // fixed fee in minor units, charged once per reservation
+  managementFixedFeeCurrency String                  @default("BOB")
+  managementBeneficiary      String                  @default("deysi")
+  bookingCommissionPayer     String                  @default("operator") // operator | owner | deysi | milton
+  feedToken                  String?                 @unique // optional opt-in token gating the public iCal feed; null = public
+  feedSlug                   String?                 @unique // durable URL identifier for the iCal feed; minted at creation, never changes
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime?
+  reservations               Reservation[]
+  bookingOriginReservations  Reservation[]           @relation("BookingOriginalProperty")
+  calendarLinks              CalendarLink[]
+  calendarEvents             CalendarEvent[]
+  dateOverrides              DateOverride[]
+  cleanerAssignments         CleanerAssignment[]
+  cleaningRecords            CleaningRecord[]
+  messageTemplates           MessageTemplate[]
+  managers                   PropertyManager[]
+  managerInvites             PropertyManagerInvite[]
+  guestFormTemplates         GuestFormTemplate[]
+  moneyMovements             MoneyMovement[]
 
   @@index([userId])
 }
@@ -279,65 +281,68 @@ model SyncLog {
 }
 
 model Reservation {
-  id                   Int                   @id @default(autoincrement())
-  name                 String
-  checkIn              DateTime
-  checkOut             DateTime
+  id                        Int                   @id @default(autoincrement())
+  name                      String
+  checkIn                   DateTime
+  checkOut                  DateTime
   // Actual booking/payment channel. A host-entered extension of an
   // Airbnb/Booking stay is "direct"; the source platform is kept
   // separately in linkedEventPlatform so feeds and UI do not mistake the
   // added nights for inventory owned by the source channel.
-  platform             String                @default("airbnb")
-  linkedEventUid       String? // UID is unique only inside one platform feed
-  linkedEventPlatform  String? // exact source platform paired with linkedEventUid
-  linkedEventRole      String? // "claim" (overlaps source) | "extension" (abuts source)
+  platform                  String                @default("airbnb")
+  linkedEventUid            String? // UID is unique only inside one platform feed
+  linkedEventPlatform       String? // exact source platform paired with linkedEventUid
+  linkedEventRole           String? // "claim" (overlaps source) | "extension" (abuts source)
   // Per-reservation messenger group chat. The host creates a one-off
   // group for THIS booking (different from User.tgGroupInviteUrl, which
   // is a host-wide invite link sent to every guest) and saves the URL
   // here so they can jump back into it in one click from the reservation
   // view. Validated to start with the platform's public URL prefix at
   // both the UI and the PATCH endpoint.
-  tgGroupUrl           String? // must start with https://t.me/ when set
-  waGroupUrl           String? // must start with https://chat.whatsapp.com/ when set
+  tgGroupUrl                String? // must start with https://t.me/ when set
+  waGroupUrl                String? // must start with https://chat.whatsapp.com/ when set
   // Host-editable override for the group-chat name. When null the
   // reservation view shows an auto-generated name ("Airbnb 12-19 May
   // 2026 | Amilla | House 7"); when set, the host's custom text is
   // used by the "Copy group name" button instead.
-  groupName            String?
+  groupName                 String?
   // Per-reservation contact phone. Optional; lets the host save a phone
   // number for a booking that has no passport guests (or for a 1-of-1
   // booking) and use it to deeplink straight into a personal WhatsApp /
   // Telegram chat. Stored in the same loose E.164 shape Guest.phone uses.
-  phone                String?
-  nightlyPrice         Float?
-  totalPrice           Float?
-  priceCurrency        String                @default("BOB") // "BOB" | "USD"
-  guaranteeAmount      Float?
-  guaranteeCurrency    String                @default("BOB")
-  hasParking           Boolean               @default(false)
-  parkingNightlyPrice  Float?
-  parkingTotalPrice    Float?
-  parkingCurrency      String                @default("BOB")
-  note                 String?
-  status               String                @default("confirmed") // "confirmed" | "cancelled"
-  cancellationReason   String?
-  cancelledAt          DateTime?
-  settledManuallyAt    DateTime? // explicit per-segment settlement for mixed-currency payments
-  extensionOfId        Int?
-  extensionOf          Reservation?          @relation("ReservationExtensions", fields: [extensionOfId], references: [id], onDelete: Cascade)
-  extensions           Reservation[]         @relation("ReservationExtensions")
-  propertyId           Int
-  property             Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  guests               Guest[]
-  guestFormSubmissions GuestFormSubmission[]
-  moneyMovements       MoneyMovement[]
-  bookingCommission    BookingCommission?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  phone                     String?
+  nightlyPrice              Float?
+  totalPrice                Float?
+  priceCurrency             String                @default("BOB") // "BOB" | "USD"
+  guaranteeAmount           Float?
+  guaranteeCurrency         String                @default("BOB")
+  hasParking                Boolean               @default(false)
+  parkingNightlyPrice       Float?
+  parkingTotalPrice         Float?
+  parkingCurrency           String                @default("BOB")
+  note                      String?
+  status                    String                @default("confirmed") // "confirmed" | "cancelled"
+  cancellationReason        String?
+  cancelledAt               DateTime?
+  settledManuallyAt         DateTime? // explicit per-segment settlement for mixed-currency payments
+  extensionOfId             Int?
+  extensionOf               Reservation?          @relation("ReservationExtensions", fields: [extensionOfId], references: [id], onDelete: Cascade)
+  extensions                Reservation[]         @relation("ReservationExtensions")
+  propertyId                Int
+  property                  Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bookingOriginalPropertyId Int?
+  bookingOriginalProperty   Property?             @relation("BookingOriginalProperty", fields: [bookingOriginalPropertyId], references: [id], onDelete: SetNull)
+  guests                    Guest[]
+  guestFormSubmissions      GuestFormSubmission[]
+  moneyMovements            MoneyMovement[]
+  bookingCommission         BookingCommission?
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
 
   @@index([propertyId, linkedEventPlatform, linkedEventUid])
   @@index([extensionOfId])
   @@index([status])
+  @@index([bookingOriginalPropertyId])
 }
 
 // Money that was actually received. There are deliberately no pending/paid

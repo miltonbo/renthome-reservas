@@ -68,6 +68,8 @@ export interface Reservation {
   cancelledAt?: string | null;
   settledManuallyAt?: string | null;
   extensionOfId?: number | null;
+  bookingOriginalPropertyId?: number | null;
+  bookingOriginalProperty?: { id: number; name: string } | null;
   propertyId: number;
   createdAt: string;
   guests?: Guest[];
@@ -106,6 +108,7 @@ export interface Property {
   checkOutTime: string; // "HH:MM" — guest departure time, e.g. "11:00"
   bookingWindow: number; // days forward from today to consider bookings; beyond this, events are ignored
   cleaningEnabled: boolean; // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation
+  isPaused?: boolean;
   financialOperator?: "deysi" | "milton";
   financialModel?: "operator_split" | "owner_fee";
   managementFeeBps?: number;

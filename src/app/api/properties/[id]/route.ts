@@ -29,6 +29,7 @@ export async function PATCH(
     if (body.checkOutTime !== undefined) data.checkOutTime = body.checkOutTime;
     if (body.bookingWindow !== undefined) data.bookingWindow = body.bookingWindow;
     if (body.cleaningEnabled !== undefined) data.cleaningEnabled = !!body.cleaningEnabled;
+    if (body.isPaused !== undefined) data.isPaused = !!body.isPaused;
 
     const property = await prisma.property.update({
       where: { id: numId },

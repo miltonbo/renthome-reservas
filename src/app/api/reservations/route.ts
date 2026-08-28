@@ -7,7 +7,7 @@ import { normalizePlatformSlug } from "@/lib/platforms";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
 import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
-import { amountToMinor, bookingCommission, bookingCommissionLiability, isCurrency } from "@/lib/finance";
+import { isCurrency } from "@/lib/finance";
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       parkingCurrency,
       note,
       extensionOfId,
+      bookingOriginalPropertyId,
     } = await request.json();
     if (
       typeof name !== "string" ||
@@ -88,7 +89,9 @@ export async function POST(request: NextRequest) {
       (note !== undefined && note !== null &&
         (typeof note !== "string" || note.trim().length > 2000)) ||
       (extensionOfId !== undefined && extensionOfId !== null &&
-        (!Number.isInteger(extensionOfId) || extensionOfId <= 0))
+        (!Number.isInteger(extensionOfId) || extensionOfId <= 0)) ||
+      (bookingOriginalPropertyId !== undefined && bookingOriginalPropertyId !== null &&
+        (!Number.isInteger(bookingOriginalPropertyId) || bookingOriginalPropertyId <= 0))
     ) {
       return NextResponse.json({ error: "Invalid reservation data" }, { status: 400 });
     }
@@ -107,6 +110,13 @@ export async function POST(request: NextRequest) {
     }
     if (checkOutDate <= checkInDate) {
       return NextResponse.json({ error: "checkOut must be after checkIn" }, { status: 400 });
+    }
+    const requestedPlatform = normalizePlatformSlug(platform || "airbnb");
+    if (requestedPlatform === "booking" && bookingOriginalPropertyId == null) {
+      return NextResponse.json({ error: "Booking original property is required" }, { status: 400 });
+    }
+    if (bookingOriginalPropertyId != null && !(await canManageProperty(bookingOriginalPropertyId, session.userId, session.role))) {
+      return NextResponse.json({ error: "Invalid Booking original property" }, { status: 400 });
     }
 
     let extensionRootId: number | null = null;
@@ -357,20 +367,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (reservation.platform === "booking" && reservation.totalPrice != null && "bookingCommission" in prisma) {
-      const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { financialOperator: true, bookingCommissionPayer: true } });
-      const liablePerson = bookingCommissionLiability(property || {});
-      const basisMinor = amountToMinor(reservation.totalPrice);
-      await prisma.bookingCommission.create({
-        data: {
-          reservationId: reservation.id,
-          liablePerson,
-          basisMinor,
-          amountMinor: bookingCommission(basisMinor),
-          currency: reservation.priceCurrency,
-        },
-      });
-    }
     if (reservationPlatform === "airbnb" && (nightlyPrice != null || totalPrice != null) && priceCurrency !== "USD") {
       return NextResponse.json({ error: "Airbnb amounts must use USD" }, { status: 400 });
     }

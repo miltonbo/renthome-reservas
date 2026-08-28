@@ -5,8 +5,6 @@ import { canManageProperty } from "@/lib/ownership";
 import {
   financialAllocations,
   amountToMinor,
-  bookingCommission,
-  bookingCommissionLiability,
   isCurrency,
   isFinancialPerson,
   isMethodCurrencyValid,
@@ -18,7 +16,10 @@ const MOVEMENT_TYPES = ["lodging", "parking", "guarantee", "additional", "adjust
 async function loadReservation(id: number) {
   return prisma.reservation.findUnique({
     where: { id },
-    include: { property: { select: { id: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementBeneficiary: true, bookingCommissionPayer: true } } },
+    include: {
+      property: { select: { id: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementBeneficiary: true, bookingCommissionPayer: true } },
+      bookingOriginalProperty: { select: { id: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true } },
+    },
   });
 }
 
@@ -68,7 +69,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const amountMinor = amountToMinor(amount);
-  const allocations = financialAllocations(amountMinor, reservation.property);
+  const allocationPolicy = reservation.platform === "booking" && reservation.bookingOriginalProperty
+    ? reservation.bookingOriginalProperty
+    : reservation.property;
+  const allocations = financialAllocations(amountMinor, allocationPolicy);
 
   const result = await prisma.$transaction(async (tx) => {
     // Airbnb has one definitive receipt per imported booking. Editing the
@@ -113,23 +117,5 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return movement;
   });
 
-  // Booking commission is an external obligation of the property operator.
-  // It is based on the registered lodging price and remains separate from
-  // transfers between Deysi and Milton.
-  if (reservation.platform === "booking" && reservation.totalPrice != null) {
-    const basisMinor = amountToMinor(reservation.totalPrice);
-    const liablePerson = bookingCommissionLiability(reservation.property);
-    await prisma.bookingCommission.upsert({
-      where: { reservationId: id },
-      create: {
-        reservationId: id, liablePerson, basisMinor,
-        amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
-      },
-      update: {
-        liablePerson, basisMinor,
-        amountMinor: bookingCommission(basisMinor), currency: reservation.priceCurrency,
-      },
-    });
-  }
   return NextResponse.json(result, { status: 201 });
 }
