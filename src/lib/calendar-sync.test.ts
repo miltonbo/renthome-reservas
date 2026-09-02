@@ -86,6 +86,24 @@ beforeEach(() => {
 });
 
 describe("calendar sync — durable linked reservation metadata", () => {
+  it.each(["2099-08-25", "2099-08-21"])("updates an unchanged claim when source checkout becomes %s, protecting local overrides and extensions", async (end) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(
+      ical([{ uid: oldEvent.uid, start: oldEvent.startDate, end }]), { status: 200 },
+    )));
+    mocks.calendarEventFindMany.mockResolvedValueOnce([oldEvent]);
+    await syncAllCalendars({ propertyIds: [propertyId] });
+    expect(mocks.reservationUpdateMany).toHaveBeenCalledWith({
+      where: {
+        propertyId, status: "confirmed", platform: "airbnb", linkedEventUid: oldEvent.uid,
+        OR: [{ linkedEventPlatform: "airbnb" }, { linkedEventPlatform: null }],
+        linkedEventRole: "claim", extensionOfId: null,
+        extensions: { none: { status: "confirmed" } },
+        checkIn: new Date(`${oldEvent.startDate}T00:00:00.000Z`),
+        checkOut: new Date(`${oldEvent.endDate}T00:00:00.000Z`),
+      },
+      data: { checkIn: new Date(`${oldEvent.startDate}T00:00:00.000Z`), checkOut: new Date(`${end}T00:00:00.000Z`) },
+    });
+  });
   it("updates dates when the feed reuses an existing UID", async () => {
     vi.stubGlobal(
       "fetch",

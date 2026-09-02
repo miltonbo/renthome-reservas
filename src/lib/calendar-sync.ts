@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { parseICal, type ICalEvent } from "@/lib/ical";
+import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
 
 /**
  * Fetch and parse an iCal feed from a URL.
@@ -185,6 +186,32 @@ export async function syncAllCalendars(opts?: {
         // Airbnb keeps the same UID when a host shortens or extends a stay,
         // so skipping known UIDs leaves stale dates in the master calendar.
         for (const event of futureEvents) {
+          const previous = existing.find((stored) => stored.uid === event.uid);
+          // A claimed source has a local metadata row (guest, payments, notes).
+          // Advance that row only if it still follows the previous source dates:
+          // explicit local date overrides and Direct extensions remain untouched.
+          // Do this before the source upsert so a failed write can retry next sync.
+          if (previous && !isAvailabilityBlockSummary(event.summary) &&
+              (previous.startDate !== event.startDate || previous.endDate !== event.endDate)) {
+            await prisma.reservation.updateMany({
+              where: {
+                propertyId,
+                status: "confirmed",
+                platform: link.platform,
+                linkedEventUid: event.uid,
+                OR: [{ linkedEventPlatform: link.platform }, { linkedEventPlatform: null }],
+                linkedEventRole: "claim",
+                extensionOfId: null,
+                extensions: { none: { status: "confirmed" } },
+                checkIn: new Date(`${previous.startDate}T00:00:00.000Z`),
+                checkOut: new Date(`${previous.endDate}T00:00:00.000Z`),
+              },
+              data: {
+                checkIn: new Date(`${event.startDate}T00:00:00.000Z`),
+                checkOut: new Date(`${event.endDate}T00:00:00.000Z`),
+              },
+            });
+          }
           await prisma.calendarEvent.upsert({
             where: {
               propertyId_platform_uid: {
