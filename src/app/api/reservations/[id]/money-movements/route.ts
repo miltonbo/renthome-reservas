@@ -11,7 +11,7 @@ import {
   isPaymentMethod,
 } from "@/lib/finance";
 
-const MOVEMENT_TYPES = ["lodging", "parking", "guarantee", "additional", "adjustment"] as const;
+const MOVEMENT_TYPES = ["lodging", "additional"] as const;
 
 async function loadReservation(id: number) {
   return prisma.reservation.findUnique({

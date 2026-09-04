@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 type CurrencyTotals = { BOB: number; USD: number };
 type ReportData = {
@@ -15,7 +15,7 @@ type ReportData = {
   ownerPayable: CurrencyTotals;
   ownerSettlements: Array<{ propertyId: number; property: string; gross: CurrencyTotals; management: CurrencyTotals; payable: CurrencyTotals; bookingCommission: CurrencyTotals; reservationsWithFixedFee: number }>;
   transfers: Array<{ from: "deysi" | "milton" | "owner"; to: "deysi" | "milton" | "owner"; currency: "BOB" | "USD"; amountMinor: number }>;
-  reservations: Array<{ id: number; property: string; guest: string; channel: string; checkIn: string; checkOut: string; nights: number; lodgingAmount: number; lodgingCurrency: string; receivedBOB: number; receivedUSD: number; commissionBOB: number; commissionUSD: number }>;
+  reservations: Array<{ id: number; property: string; guest: string; channel: string; checkIn: string; checkOut: string; nights: number; lodgingAmount: number; lodgingCurrency: string; receivedBOB: number; receivedUSD: number; commissionBOB: number; commissionUSD: number; reconciliationStatus: "included" | "outstanding" }>;
   performance: Array<{ propertyId: number; property: string; occupiedNights: number; freeNights: number; occupancy: number; averageNightlyBOB: number; averageNightlyUSD: number }>;
   monthlyIncome: Array<{ month: string; BOB: number; USD: number }>;
 };
@@ -86,10 +86,10 @@ export function FinancialReportsPanel({ propertyId, properties }: { propertyId?:
     </div>
 
     {loading ? <div className="mt-4 h-52 animate-pulse rounded-xl bg-[var(--bg-3)]" /> : !data ? <p className="mt-4 text-sm text-red-400">No se pudo cargar el informe.</p> : <div className="mt-4">
-      <div className="grid gap-3 lg:grid-cols-2">
-        <IncomeChart title="Ingresos recibidos en Bs" data={data.monthlyIncome} currency="BOB" />
-        <IncomeChart title="Ingresos recibidos en USD" data={data.monthlyIncome} currency="USD" />
-      </div>
+      {kind === "management" && <div className="grid gap-3 lg:grid-cols-2">
+        <ReceivedByPie title="Montos recibidos en Bs" totals={data.held} currency="BOB" />
+        <ReceivedByPie title="Montos recibidos en USD" totals={data.held} currency="USD" />
+      </div>}
       {kind === "management" && <><ManagementReport data={data} channels={channelRows} /><BookingReassignmentAdjustments items={data.commissionReimbursements} /></>}
       {kind === "detail" && <DetailedReport data={data} />}
       {kind === "performance" && <PerformanceReport data={data} />}
@@ -97,8 +97,17 @@ export function FinancialReportsPanel({ propertyId, properties }: { propertyId?:
   </section>;
 }
 
-function IncomeChart({ title, data, currency }: { title: string; data: ReportData["monthlyIncome"]; currency: "BOB" | "USD" }) {
-  return <div className="min-w-0 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3"><div className="text-xs font-semibold text-[var(--ink)]">{title}</div><div className="mt-2 h-36 min-w-0"><ResponsiveContainer width="100%" height="100%" minWidth={0}><BarChart data={data}><CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.12}/><XAxis dataKey="month" tick={{fontSize:10}}/><YAxis tick={{fontSize:10}}/><Tooltip formatter={(value) => amount(Number(value), currency)} contentStyle={{background:"var(--bg)",border:"1px solid var(--line)"}}/><Bar dataKey={currency} fill={currency === "BOB" ? "#f28c28" : "#1677c8"} radius={[5,5,0,0]}/></BarChart></ResponsiveContainer></div></div>;
+function ReceivedByPie({ title, totals, currency }: { title: string; totals: ReportData["held"]; currency: "BOB" | "USD" }) {
+  const data = [
+    { name: "Deysi", value: totals.deysi[currency], color: "#16b8a6" },
+    { name: "Milton", value: totals.milton[currency], color: "#f28c28" },
+  ];
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  return <div className="min-w-0 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3">
+    <div className="text-xs font-semibold text-[var(--ink)]">{title}</div>
+    <div className="mt-2 h-44 min-w-0">{total > 0 ? <ResponsiveContainer width="100%" height="100%" minWidth={0}><PieChart><Pie data={data} dataKey="value" nameKey="name" innerRadius={38} outerRadius={68} paddingAngle={2}>{data.map((item) => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip formatter={(value) => money(Number(value), currency)} contentStyle={{background:"var(--bg)",border:"1px solid var(--line)"}} /></PieChart></ResponsiveContainer> : <div className="flex h-full items-center justify-center text-xs text-[var(--ink-4)]">Sin ingresos recibidos</div>}</div>
+    <div className="grid grid-cols-2 gap-2 border-t border-[var(--line)] pt-2 text-xs">{data.map((item) => <div key={item.name}><span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} /> <span className="text-[var(--ink-3)]">{item.name}</span><strong className="ml-1 text-[var(--ink)]">{money(item.value, currency)}</strong>{total > 0 && <span className="ml-1 text-[10px] text-[var(--ink-4)]">({((item.value / total) * 100).toFixed(1)}%)</span>}</div>)}</div>
+  </div>;
 }
 
 function BookingReassignmentAdjustments({ items }: { items: ReportData["commissionReimbursements"] }) {
@@ -118,7 +127,16 @@ function ManagementReport({ data, channels }: { data: ReportData; channels: Arra
 }
 
 function DetailedReport({ data }: { data: ReportData }) {
-  return <div className="mt-4 overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--bg)]"><table className="min-w-[1050px] w-full text-xs"><thead className="bg-[var(--bg-3)] text-[var(--ink-4)]"><tr><th className="px-3 py-2 text-left">Departamento</th><th className="px-3 py-2 text-left">Huésped</th><th className="px-3 py-2 text-left">Canal</th><th className="px-3 py-2 text-left">Estadía</th><th className="px-3 py-2 text-right">Noches</th><th className="px-3 py-2 text-right">Reserva</th><th className="px-3 py-2 text-right">Recibido Bs</th><th className="px-3 py-2 text-right">Recibido USD</th><th className="px-3 py-2 text-right">Comisión</th></tr></thead><tbody>{data.reservations.map(item => <tr key={item.id} className="border-t border-[var(--line)]"><td className="px-3 py-2 font-medium">{item.property}</td><td className="px-3 py-2">{item.guest}</td><td className="px-3 py-2">{channelNames[item.channel] || item.channel}</td><td className="px-3 py-2">{item.checkIn} → {item.checkOut}</td><td className="px-3 py-2 text-right">{item.nights}</td><td className="px-3 py-2 text-right">{amount(item.lodgingAmount,item.lodgingCurrency as "BOB"|"USD")}</td><td className="px-3 py-2 text-right">{money(item.receivedBOB,"BOB")}</td><td className="px-3 py-2 text-right">{money(item.receivedUSD,"USD")}</td><td className="px-3 py-2 text-right">{item.commissionBOB || item.commissionUSD ? <>{money(item.commissionBOB,"BOB")}<br/>{money(item.commissionUSD,"USD")}</> : "—"}</td></tr>)}</tbody></table></div>;
+  const totals = data.reservations.reduce((sum, item) => {
+    sum.nights += item.nights;
+    sum.reservation[item.lodgingCurrency === "USD" ? "USD" : "BOB"] += item.lodgingAmount;
+    sum.received.BOB += item.receivedBOB;
+    sum.received.USD += item.receivedUSD;
+    sum.commission.BOB += item.commissionBOB;
+    sum.commission.USD += item.commissionUSD;
+    return sum;
+  }, { nights: 0, reservation: { BOB: 0, USD: 0 }, received: { BOB: 0, USD: 0 }, commission: { BOB: 0, USD: 0 } });
+  return <div className="mt-4 overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--bg)]"><table className="min-w-[1160px] w-full text-xs"><thead className="bg-[var(--bg-3)] text-[var(--ink-4)]"><tr><th className="px-3 py-2 text-left">Departamento</th><th className="px-3 py-2 text-left">Huésped</th><th className="px-3 py-2 text-left">Canal</th><th className="px-3 py-2 text-left">Estadía</th><th className="px-3 py-2 text-left">Conciliación</th><th className="px-3 py-2 text-right">Noches</th><th className="px-3 py-2 text-right">Reserva</th><th className="px-3 py-2 text-right">Recibido Bs</th><th className="px-3 py-2 text-right">Recibido USD</th><th className="px-3 py-2 text-right">Comisión</th></tr></thead><tbody>{data.reservations.map(item => <tr key={item.id} className={`border-t border-[var(--line)] ${item.reconciliationStatus === "included" ? "" : "bg-amber-500/[0.05] text-[var(--ink-3)]"}`}><td className="px-3 py-2 font-medium">{item.property}</td><td className="px-3 py-2">{item.guest}</td><td className="px-3 py-2">{channelNames[item.channel] || item.channel}</td><td className="px-3 py-2">{item.checkIn} → {item.checkOut}</td><td className="px-3 py-2"><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${item.reconciliationStatus === "included" ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>{item.reconciliationStatus === "included" ? "Conciliable" : "Pendiente de pago"}</span></td><td className="px-3 py-2 text-right">{item.nights}</td><td className="px-3 py-2 text-right">{amount(item.lodgingAmount,item.lodgingCurrency as "BOB"|"USD")}</td><td className="px-3 py-2 text-right">{money(item.receivedBOB,"BOB")}</td><td className="px-3 py-2 text-right">{money(item.receivedUSD,"USD")}</td><td className="px-3 py-2 text-right">{item.commissionBOB || item.commissionUSD ? <>{money(item.commissionBOB,"BOB")}<br/>{money(item.commissionUSD,"USD")}</> : "—"}</td></tr>)}</tbody><tfoot className="border-t-2 border-[var(--brand-teal)] bg-[var(--bg-3)] font-bold text-[var(--ink)]"><tr><td className="px-3 py-3" colSpan={5}>Total</td><td className="px-3 py-3 text-right">{totals.nights}</td><td className="px-3 py-3 text-right">{amount(totals.reservation.BOB,"BOB")}<br/>{amount(totals.reservation.USD,"USD")}</td><td className="px-3 py-3 text-right">{money(totals.received.BOB,"BOB")}</td><td className="px-3 py-3 text-right">{money(totals.received.USD,"USD")}</td><td className="px-3 py-3 text-right">{money(totals.commission.BOB,"BOB")}<br/>{money(totals.commission.USD,"USD")}</td></tr></tfoot></table></div>;
 }
 
 function PerformanceReport({ data }: { data: ReportData }) {

@@ -103,12 +103,16 @@ export async function PATCH(
       }
       data[field] = value;
     }
-    for (const field of ["priceCurrency", "guaranteeCurrency", "parkingCurrency"] as const) {
+    for (const field of ["priceCurrency", "parkingCurrency"] as const) {
       if (body[field] === undefined) continue;
       if (!isCurrency(body[field])) {
         return NextResponse.json({ error: `Invalid ${field}` }, { status: 400 });
       }
       data[field] = body[field];
+    }
+    if (body.guaranteeCurrency !== undefined) {
+      if (body.guaranteeCurrency !== "BOB") return NextResponse.json({ error: "Guarantees must use BOB" }, { status: 400 });
+      data.guaranteeCurrency = "BOB";
     }
     if (body.hasParking !== undefined) {
       if (typeof body.hasParking !== "boolean") {

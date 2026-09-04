@@ -11,6 +11,7 @@ type Reconciliation = {
   transfers: Array<{ from: "deysi" | "milton"; to: "deysi" | "milton"; currency: "BOB" | "USD"; amountMinor: number }>;
   commissions: Array<{ liablePerson: "deysi" | "milton"; currency: "BOB" | "USD"; amountMinor: number }>;
   excess: CurrencyTotals;
+  observations?: Array<{ reservationId: number; reservationName: string; reason: "active" | "outstanding" }>;
 };
 
 const label = (minor: number, currency: "BOB" | "USD") =>
@@ -64,8 +65,9 @@ export function ReconciliationPanel() {
       <div className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3 text-xs">
         <div className="font-semibold text-[var(--ink)]">Excedentes recibidos</div>
         <p className="mt-1 text-[var(--ink-2)]"><strong>{label(data.excess?.BOB || 0, "BOB")}</strong> · <strong>{label(data.excess?.USD || 0, "USD")}</strong></p>
-        <p className="mt-1 text-[10px] text-[var(--ink-4)]">Sobrepagos de reservas con movimientos durante el mes. Ya están incluidos en los montos recibidos; no se suman nuevamente.</p>
+        <p className="mt-1 text-[10px] text-[var(--ink-4)]">Sobrepagos conciliables después de descontar la garantía. Ya están incluidos en los montos recibidos; no se suman nuevamente.</p>
       </div>
+      {(data.observations?.length || 0) > 0 && <div className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-xs"><div className="font-semibold text-[var(--ink)]">Reservas fuera de la conciliación final</div><p className="mt-1 text-[var(--ink-3)]">{data.observations!.length} tramo{data.observations!.length === 1 ? "" : "s"} de Booking/Directo {data.observations!.length === 1 ? "está" : "están"} activo o pendiente de pago. Sus ingresos no afectan las transferencias.</p></div>}
     </> : <p className="mt-4 text-xs text-red-400">No se pudo cargar la conciliación.</p>}
   </section>;
 }

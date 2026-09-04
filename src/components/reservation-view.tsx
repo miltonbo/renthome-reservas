@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Reservation } from "@/lib/types";
 import { reservationNights, toReservationDateInput } from "@/lib/reservation-dates";
+import { segmentChargeStatus } from "@/lib/finance";
 
 interface ReservationViewProps {
   reservation: Reservation;
@@ -26,17 +27,7 @@ const MOVEMENT_LABELS: Record<string, string> = { lodging: "Hospedaje", parking:
 const METHOD_LABELS: Record<string, string> = { qr: "QR", cash: "Efectivo", transfer: "Transferencia", takenos: "Takenos", binance: "Binance", sepa: "SEPA", airbnb: "Airbnb" };
 
 function segmentTotals(segment: Reservation) {
-  const expected = { BOB: 0, USD: 0 }, paid = { BOB: 0, USD: 0 };
-  if (segment.totalPrice != null) expected[segment.priceCurrency || "BOB"] += segment.totalPrice;
-  if (segment.parkingTotalPrice != null) expected[segment.parkingCurrency || "BOB"] += segment.parkingTotalPrice;
-  if (segment.guaranteeAmount != null) expected[segment.guaranteeCurrency || "BOB"] += segment.guaranteeAmount;
-  for (const movement of segment.moneyMovements || []) if (["lodging", "parking", "guarantee", "refund"].includes(movement.type)) paid[movement.currency] += movement.amountMinor / 100;
-  const balance = { BOB: paid.BOB - expected.BOB, USD: paid.USD - expected.USD };
-  if (segment.settledManuallyAt) {
-    if (balance.BOB < 0) balance.BOB = 0;
-    if (balance.USD < 0) balance.USD = 0;
-  }
-  return { expected, paid, balance, manuallySettled: Boolean(segment.settledManuallyAt) };
+  return segmentChargeStatus(segment);
 }
 
 function dateLabel(value: string): string {
@@ -70,6 +61,7 @@ export function ReservationView({ reservation, propertyName, relatedReservations
           <Link href="/dashboard" className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--ink-3)] hover:text-[var(--brand-orange)]">← Volver al calendario maestro</Link>
           <h1 className="text-2xl font-bold text-[var(--ink)]">{root.name}</h1>
           <p className="mt-1 text-sm text-[var(--ink-3)]">{propertyName}</p>
+          {root.platform === "booking" && <p className="mt-1 text-xs text-[var(--ink-3)]">Departamento que recibió la reserva: <strong className="text-[var(--ink)]">{root.bookingOriginalProperty?.name || propertyName || "—"}</strong></p>}
         </div>
         <span className="rounded-full bg-emerald-500/12 px-3 py-1 text-xs font-semibold text-emerald-500">Reserva confirmada</span>
       </div>

@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, Reservation, CalendarLink, DateOverride } from "@/lib/types";
 import { isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
+import { segmentChargeStatus } from "@/lib/finance";
 
 interface CopyShape {
   dateLocale: string;
@@ -275,24 +276,7 @@ const MOVEMENT_TYPE_LABELS: Record<string, string> = {
 };
 
 function segmentFinancials(reservation: Reservation) {
-  const expected = { BOB: 0, USD: 0 };
-  const paid = { BOB: 0, USD: 0 };
-  if (reservation.totalPrice != null) expected[reservation.priceCurrency || "BOB"] += reservation.totalPrice;
-  if (reservation.parkingTotalPrice != null) expected[reservation.parkingCurrency || "BOB"] += reservation.parkingTotalPrice;
-  if (reservation.guaranteeAmount != null) expected[reservation.guaranteeCurrency || "BOB"] += reservation.guaranteeAmount;
-  for (const movement of reservation.moneyMovements || []) {
-    if (["lodging", "parking", "guarantee", "refund"].includes(movement.type)) {
-      paid[movement.currency] += movement.amountMinor / 100;
-    }
-  }
-  const balance = { BOB: paid.BOB - expected.BOB, USD: paid.USD - expected.USD };
-  const manuallySettled = Boolean(reservation.settledManuallyAt);
-  if (manuallySettled) {
-    if (balance.BOB < 0) balance.BOB = 0;
-    if (balance.USD < 0) balance.USD = 0;
-  }
-  const hasKnownCharge = reservation.totalPrice != null || reservation.parkingTotalPrice != null || reservation.guaranteeAmount != null;
-  return { expected, paid, balance, manuallySettled, hasOutstandingBalance: hasKnownCharge && (balance.BOB < -0.005 || balance.USD < -0.005) };
+  return segmentChargeStatus(reservation);
 }
 
 /** Reservation dates are calendar dates, not instants. Prisma/API values may
@@ -663,7 +647,7 @@ export function Dashboard({
   const [inspectedReservationId, setInspectedReservationId] = useState<number | null>(null);
   const [inspectedImportedStay, setInspectedImportedStay] = useState<{ propertyId: number; stay: MasterCalendarStay } | null>(null);
   const [movementAmount, setMovementAmount] = useState("");
-  const [movementType, setMovementType] = useState<"lodging" | "parking" | "guarantee" | "additional">("lodging");
+  const [movementType, setMovementType] = useState<"lodging" | "additional">("lodging");
   const [movementMethod, setMovementMethod] = useState("qr");
   const [movementCurrency, setMovementCurrency] = useState<"BOB" | "USD">("BOB");
   const [movementReceiver, setMovementReceiver] = useState<"deysi" | "milton">("deysi");
@@ -1172,7 +1156,7 @@ export function Dashboard({
       totalPrice: moneyValue(formTotalPrice),
       priceCurrency: formPriceCurrency,
       guaranteeAmount: moneyValue(formGuarantee),
-      guaranteeCurrency: formGuaranteeCurrency,
+      guaranteeCurrency: "BOB" as const,
       hasParking: formHasParking,
       parkingNightlyPrice: formHasParking ? moneyValue(formParkingNightlyPrice) : null,
       parkingTotalPrice: formHasParking ? moneyValue(formParkingTotalPrice) : null,
@@ -1277,7 +1261,7 @@ export function Dashboard({
     setFormTotalPrice(reservation.totalPrice == null ? "" : formatMoneyInput(reservation.totalPrice));
     setFormPriceCurrency(reservation.priceCurrency || "BOB");
     setFormGuarantee(reservation.guaranteeAmount == null ? "" : formatMoneyInput(reservation.guaranteeAmount));
-    setFormGuaranteeCurrency(reservation.guaranteeCurrency || "BOB");
+    setFormGuaranteeCurrency("BOB");
     setFormHasParking(Boolean(reservation.hasParking));
     setFormParkingNightlyPrice(reservation.parkingNightlyPrice == null ? "" : formatMoneyInput(reservation.parkingNightlyPrice));
     setFormParkingTotalPrice(reservation.parkingTotalPrice == null ? "" : formatMoneyInput(reservation.parkingTotalPrice));
@@ -2168,6 +2152,7 @@ export function Dashboard({
             </div>
             <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
               <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="font-medium">{platformDisplayName(inspectedContext.selected.platform)}</dd></div>
+              {inspectedContext.selected.platform === "booking" && <div><dt className="text-xs text-[var(--ink-4)]">Departamento que recibió la reserva</dt><dd className="font-medium">{properties.find((property) => property.id === inspectedContext.selected.bookingOriginalPropertyId)?.name || inspectedContext.selected.bookingOriginalProperty?.name || inspectedContext.property.name}</dd></div>}
               <div><dt className="text-xs text-[var(--ink-4)]">Estado</dt><dd className="font-medium">Reserva confirmada</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkIn)}T12:00:00`).toLocaleDateString("es-BO")} · 14:00</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Salida</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkOut)}T12:00:00`).toLocaleDateString("es-BO")} · 11:00</dd></div>
@@ -2188,7 +2173,7 @@ export function Dashboard({
             <div className="mt-4 rounded-xl border border-[var(--line)] p-3">
               <div className="text-xs font-semibold text-[var(--ink-2)]">Registrar dinero recibido</div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <select aria-label="Concepto del pago" disabled={movementMethod === "airbnb"} value={movementType} onChange={(e) => setMovementType(e.target.value as typeof movementType)} className="col-span-2 h-9 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-2 text-xs disabled:opacity-70"><option value="lodging">Hospedaje</option><option value="parking">Parqueo</option><option value="guarantee">Garantía</option><option value="additional">Ingreso adicional</option></select>
+                <select aria-label="Concepto del pago" disabled={movementMethod === "airbnb"} value={movementType} onChange={(e) => setMovementType(e.target.value as typeof movementType)} className="col-span-2 h-9 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-2 text-xs disabled:opacity-70"><option value="lodging">Hospedaje</option><option value="additional">Ingreso adicional</option></select>
                 <select aria-label="Método de pago" value={movementMethod} onChange={(e) => selectMovementMethod(e.target.value)} className="h-9 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-2 text-xs"><option value="qr">QR</option><option value="cash">Efectivo</option>{inspectedContext.selected.platform === "airbnb" && <option value="airbnb">Airbnb</option>}<option value="takenos">Takenos</option><option value="binance">Binance</option><option value="transfer">Transferencia</option><option value="sepa">SEPA</option></select>
                 <div className="flex"><select aria-label="Moneda del ingreso" disabled={movementMethod !== "cash"} value={movementCurrency} onChange={(e) => setMovementCurrency(e.target.value as "BOB" | "USD")} className="h-9 rounded-l-lg border border-r-0 border-[var(--line-2)] bg-[var(--bg-2)] px-2 text-xs disabled:opacity-70"><option value="BOB">Bs</option><option value="USD">USD</option></select><input aria-label="Monto recibido" type="number" min="0.01" step="0.01" value={movementAmount} onChange={(e) => setMovementAmount(e.target.value)} className="h-9 min-w-0 flex-1 rounded-r-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-2 text-xs" placeholder="Monto" /></div>
                 {movementMethod === "airbnb" ? <div className="flex h-9 items-center rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-2 text-xs text-[var(--ink-3)]">Distribución automática</div> : <select aria-label="Persona que recibió" value={movementReceiver} onChange={(e) => setMovementReceiver(e.target.value as "deysi" | "milton")} className="h-9 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-2 text-xs"><option value="deysi">Deysi</option><option value="milton">Milton</option></select>}
@@ -2362,7 +2347,7 @@ export function Dashboard({
                 </div>
               </label>
               <label>
-                <span className="mb-1.5 flex items-center justify-between text-xs font-medium text-[var(--ink-3)]">Garantía {!formExtensionOfId && <select aria-label="Moneda de la garantía" value={formGuaranteeCurrency} onChange={(e) => setFormGuaranteeCurrency(e.target.value as "BOB" | "USD")} className="rounded border border-[var(--line-2)] bg-[var(--bg)] px-1.5 py-0.5 text-[10px]"><option value="BOB">Bs</option><option value="USD">USD</option></select>}</span>
+                <span className="mb-1.5 flex items-center justify-between text-xs font-medium text-[var(--ink-3)]">Garantía {!formExtensionOfId && <span className="rounded bg-[var(--bg-3)] px-1.5 py-0.5 text-[10px]">Bs</span>}</span>
                 {formExtensionOfId ? (
                   <div className="flex h-10 items-center rounded-lg border border-[var(--line-2)] bg-[var(--bg-3)] px-3 text-xs text-[var(--ink-3)]">Se mantiene; no se cobra nuevamente</div>
                 ) : <div className="relative">

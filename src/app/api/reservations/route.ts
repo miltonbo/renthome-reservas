@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       (priceCurrency !== undefined && !isCurrency(priceCurrency)) ||
       (guaranteeAmount !== undefined && guaranteeAmount !== null &&
         (typeof guaranteeAmount !== "number" || !Number.isFinite(guaranteeAmount) || guaranteeAmount < 0)) ||
-      (guaranteeCurrency !== undefined && !isCurrency(guaranteeCurrency)) ||
+      (guaranteeCurrency !== undefined && guaranteeCurrency !== "BOB") ||
       (hasParking !== undefined && typeof hasParking !== "boolean") ||
       (parkingNightlyPrice !== undefined && parkingNightlyPrice !== null &&
         (typeof parkingNightlyPrice !== "number" || !Number.isFinite(parkingNightlyPrice) || parkingNightlyPrice < 0)) ||
@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
         ...(totalPrice !== undefined ? { totalPrice } : {}),
         ...(priceCurrency !== undefined ? { priceCurrency } : {}),
         ...(guaranteeAmount !== undefined ? { guaranteeAmount } : {}),
-        ...(guaranteeCurrency !== undefined ? { guaranteeCurrency } : {}),
+        ...(guaranteeCurrency !== undefined ? { guaranteeCurrency: "BOB" } : {}),
         ...(hasParking !== undefined ? { hasParking } : {}),
         ...(parkingNightlyPrice !== undefined ? { parkingNightlyPrice } : {}),
         ...(parkingTotalPrice !== undefined ? { parkingTotalPrice } : {}),
