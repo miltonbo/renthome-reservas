@@ -25,6 +25,16 @@ export function generateEmptyFeed(calendarName: string = "DeptosBO placeholder")
   return generateICal([], calendarName);
 }
 
+function currentOperationalDate(): Date {
+  const dateKey = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/La_Paz",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  return new Date(`${dateKey}T00:00:00.000Z`);
+}
+
 /**
  * Generate an iCal feed for a property+platform.
  * Single source of truth — used by all feed routes.
@@ -40,7 +50,10 @@ export async function generateFeed(propertyId: number, forPlatform: string): Pro
   }
 
   const allReservations = await prisma.reservation.findMany({
-    where: { propertyId, status: "confirmed", checkOut: { gte: new Date() } },
+    // Reservation dates are date-only values stored at UTC midnight. Comparing
+    // them with the current instant makes today's stay disappear from the feed
+    // after 20:00 in Bolivia, when UTC has already advanced to tomorrow.
+    where: { propertyId, status: "confirmed", checkOut: { gte: currentOperationalDate() } },
     orderBy: { checkIn: "asc" },
   });
 

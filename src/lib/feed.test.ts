@@ -60,6 +60,21 @@ beforeEach(() => {
 });
 
 describe("generateFeed — Direct linked extensions", () => {
+  it("keeps the current Bolivia checkout in the outbound query after UTC midnight", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-04T01:30:00.000Z")); // Sep 3, 21:30 in Bolivia
+    try {
+      await generateFeed(12, "airbnb");
+      expect(mocks.reservationFindMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({
+          checkOut: { gte: new Date("2026-09-03T00:00:00.000Z") },
+        }),
+      }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("blocks the Direct nights back to the source platform", async () => {
     const result = await generateFeed(12, "airbnb");
     expect(result).not.toHaveProperty("error");
