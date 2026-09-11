@@ -23,7 +23,9 @@ export type AuditResource =
   | "blogTag" // RT-20.3 tick 3: super-admin tag CRUD + merge
   | "platform" // RT-17.1: super-admin edits to CalendarPlatform registry
   | "seoOverride" // RT-18.3: super-admin per-page SEO overrides
-  | "guestFormTemplate"; // RT-25.2: pre-arrival guest form template CRUD
+  | "guestFormTemplate" // RT-25.2: pre-arrival guest form template CRUD
+  | "conversation"
+  | "conversationCase";
 
 // Self-delete (POST /api/auth/delete-account) is intentionally NOT audited
 // — the same request wipes the user's AuditLog rows for GDPR right-to-be-

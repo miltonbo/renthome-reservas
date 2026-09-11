@@ -1299,6 +1299,94 @@ CREATE INDEX IF NOT EXISTS "EmailCode_email_purpose_idx" ON "EmailCode"("email",
     }
   }
 
+  // Conversation memory for the assisted WhatsApp workflow. Only text and
+  // structured metadata are stored; media is processed transiently elsewhere.
+  const messagingSchema = `
+CREATE TABLE IF NOT EXISTS "MessagingContact" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "userId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL DEFAULT 'whatsapp',
+  "externalId" TEXT NOT NULL,
+  "displayName" TEXT NOT NULL DEFAULT '',
+  "language" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME,
+  CONSTRAINT "MessagingContact_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "MessagingContact_userId_channel_externalId_key" ON "MessagingContact"("userId", "channel", "externalId");
+CREATE INDEX IF NOT EXISTS "MessagingContact_userId_displayName_idx" ON "MessagingContact"("userId", "displayName");
+
+CREATE TABLE IF NOT EXISTS "Conversation" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "userId" INTEGER NOT NULL,
+  "contactId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL DEFAULT 'whatsapp',
+  "status" TEXT NOT NULL DEFAULT 'active',
+  "assignedToUserId" INTEGER,
+  "assignmentReason" TEXT,
+  "lastMessageAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME,
+  CONSTRAINT "Conversation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "Conversation_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "MessagingContact" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "Conversation_assignedToUserId_fkey" FOREIGN KEY ("assignedToUserId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "Conversation_userId_channel_contactId_key" ON "Conversation"("userId", "channel", "contactId");
+CREATE INDEX IF NOT EXISTS "Conversation_userId_status_lastMessageAt_idx" ON "Conversation"("userId", "status", "lastMessageAt");
+CREATE INDEX IF NOT EXISTS "Conversation_assignedToUserId_status_idx" ON "Conversation"("assignedToUserId", "status");
+
+CREATE TABLE IF NOT EXISTS "ConversationCase" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "conversationId" INTEGER NOT NULL,
+  "reservationId" INTEGER,
+  "propertyId" INTEGER,
+  "type" TEXT NOT NULL DEFAULT 'unknown',
+  "status" TEXT NOT NULL DEFAULT 'new',
+  "priority" TEXT NOT NULL DEFAULT 'normal',
+  "summary" TEXT NOT NULL DEFAULT '',
+  "assignedToUserId" INTEGER,
+  "resolution" TEXT,
+  "closedAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME,
+  CONSTRAINT "ConversationCase_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "ConversationCase_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "ConversationCase_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "ConversationCase_assignedToUserId_fkey" FOREIGN KEY ("assignedToUserId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "ConversationCase_conversationId_status_idx" ON "ConversationCase"("conversationId", "status");
+CREATE INDEX IF NOT EXISTS "ConversationCase_reservationId_idx" ON "ConversationCase"("reservationId");
+CREATE INDEX IF NOT EXISTS "ConversationCase_propertyId_idx" ON "ConversationCase"("propertyId");
+CREATE INDEX IF NOT EXISTS "ConversationCase_assignedToUserId_status_idx" ON "ConversationCase"("assignedToUserId", "status");
+
+CREATE TABLE IF NOT EXISTS "ConversationMessage" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "conversationId" INTEGER NOT NULL,
+  "caseId" INTEGER,
+  "providerMessageId" TEXT,
+  "direction" TEXT NOT NULL,
+  "authorType" TEXT NOT NULL,
+  "messageType" TEXT NOT NULL DEFAULT 'text',
+  "textContent" TEXT NOT NULL DEFAULT '',
+  "language" TEXT,
+  "interpretationConfidence" REAL,
+  "processingStatus" TEXT NOT NULL DEFAULT 'completed',
+  "requiresHumanReview" INTEGER NOT NULL DEFAULT 0,
+  "replyToProviderMessageId" TEXT,
+  "occurredAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ConversationMessage_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "Conversation" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "ConversationMessage_caseId_fkey" FOREIGN KEY ("caseId") REFERENCES "ConversationCase" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "ConversationMessage_conversationId_providerMessageId_key" ON "ConversationMessage"("conversationId", "providerMessageId");
+CREATE INDEX IF NOT EXISTS "ConversationMessage_conversationId_occurredAt_idx" ON "ConversationMessage"("conversationId", "occurredAt");
+CREATE INDEX IF NOT EXISTS "ConversationMessage_caseId_occurredAt_idx" ON "ConversationMessage"("caseId", "occurredAt");
+`;
+
+  for (const stmt of messagingSchema.split(";").map((s) => s.trim()).filter(Boolean)) {
+    await prisma.$executeRawUnsafe(stmt);
+  }
+
   console.log(`\nSchema pushed to ${config.label} successfully!`);
 }
 

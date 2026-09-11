@@ -14,7 +14,8 @@
     "db:seed-blog": "tsx prisma/seed-blog-posts.ts",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:messaging-smoke": "tsx scripts/smoke-messaging.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

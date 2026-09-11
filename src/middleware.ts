@@ -277,6 +277,19 @@ export async function middleware(request: NextRequest) {
   // Check session cookie
   const token = request.cookies.get("rent-tool-session")?.value;
   if (!token) {
+    // n8n authenticates messaging calls with a dedicated Bearer key. The
+    // route performs the constant-time key check and user lookup; middleware
+    // only lets the request reach that verifier instead of requiring a cookie.
+    if (
+      pathname.startsWith("/api/messaging/") &&
+      request.headers.get("authorization")?.startsWith("Bearer ")
+    ) {
+      const r = withSecurityHeaders(
+        NextResponse.next({ request: { headers: i18nHeaders } }),
+      );
+      logRequest(request, r, startedAt);
+      return r;
+    }
     const r = pathname.startsWith("/api/")
       ? withSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }))
       : buildLoginRedirect();

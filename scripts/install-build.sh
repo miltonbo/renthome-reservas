@@ -142,6 +142,12 @@ rm -rf ".next.old.$PID" "src/generated/prisma.old.$PID" "$TMPDIR" "$ARTIFACT" &
 
 # 4. Apply schema if it OR push-schema.ts changed.
 if [ "$SCHEMA_BEFORE" != "$SCHEMA_AFTER" ] || [ "$PUSH_SCRIPT_BEFORE" != "$PUSH_SCRIPT_AFTER" ]; then
+  # A schema change is the only deploy step that mutates the operational DB.
+  # Take and verify an online SQLite snapshot immediately beforehand so the
+  # exact pre-migration state is always available for rollback. The backup
+  # script fails closed if either the snapshot or its integrity check fails.
+  log "schema change detected — creating verified pre-migration backup"
+  bash scripts/backup-db.sh
   log "schema or push-schema.ts changed — pushing"
   set -a
   . .env.production

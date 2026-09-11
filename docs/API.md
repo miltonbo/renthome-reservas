@@ -25,6 +25,26 @@ Errors follow `{ "error": string }`. Standard codes:
 
 ---
 
+## Assisted messaging foundation
+
+The initial WhatsApp-assistant API is documented in
+[`WHATSAPP-ASSISTANT-PHASE-1.md`](./WHATSAPP-ASSISTANT-PHASE-1.md). It stores
+text and structured metadata only; binary media is explicitly rejected.
+
+- `POST /api/messaging/messages` — idempotently ingest a textual message.
+- `GET /api/messaging/availability` — evaluate read-only date availability
+  with calendar freshness and human-review safeguards.
+- `GET /api/messaging/conversations/[id]/context` — retrieve progressively
+  older context, up to 100 messages per page.
+- `PATCH /api/messaging/conversations/[id]` — assign to a human, reactivate,
+  or close a conversation.
+- `POST /api/messaging/cases` — idempotently create an operational case and
+  link its triggering messages.
+- `PATCH /api/messaging/cases/[id]` — update, assign, resolve, close, or reopen
+  a case and attach further messages.
+
+---
+
 ## Auth
 
 ### `POST /api/auth/login` — public
