@@ -43,8 +43,11 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 10
 fi
 
-# 2. Fetch + fast-forward to origin/master.
-git fetch --prune origin master
+# 2. Fetch + fast-forward to origin/master. Use an explicit refspec because
+#    production may have been cloned with single-branch tracking for a feature
+#    branch; in that case `git fetch origin master` only updates FETCH_HEAD and
+#    leaves the stale origin/master reference untouched.
+git fetch --prune origin +refs/heads/master:refs/remotes/origin/master
 git reset --hard origin/master
 NEW_SHA="$(git rev-parse --short HEAD)"
 echo "$LOG_PREFIX deploy: now at $NEW_SHA"
@@ -71,6 +74,8 @@ NODE_OPTIONS="--max-old-space-size=1400" npm run build
 #    DATABASE_URL from env, so source .env.production first — the systemd
 #    service has its own EnvironmentFile, but `npx tsx` here doesn't.
 if [ -f prisma/push-schema.ts ]; then
+  echo "$LOG_PREFIX deploy: creating verified pre-migration backup"
+  bash scripts/backup-db.sh
   set -a
   . .env.production
   set +a
