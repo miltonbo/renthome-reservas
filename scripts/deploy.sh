@@ -52,6 +52,10 @@ git reset --hard origin/master
 NEW_SHA="$(git rev-parse --short HEAD)"
 echo "$LOG_PREFIX deploy: now at $NEW_SHA"
 
+# Surface the deployed revision through /api/health just like the CI artifact
+# installer does. The systemd unit reads this optional, untracked env file.
+printf 'GIT_COMMIT_SHA=%s\n' "$(git rev-parse HEAD)" > .env.release
+
 # 3. Install only production deps. --omit=dev keeps the install lean
 #    on a 1 GB droplet, but devDependencies are needed for the build —
 #    so we install fully here, build, then optionally prune.
