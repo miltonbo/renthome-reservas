@@ -242,10 +242,6 @@ export function evaluatePropertyAvailability(
       0,
       ...property.calendarLinks.map((link) => link.bufferBefore),
     );
-    const maxAfter = Math.max(
-      0,
-      ...property.calendarLinks.map((link) => link.bufferAfter),
-    );
     const bufferSources = [
       ...property.reservations.map((reservation) => ({
         start: storedDateKey(reservation.checkIn),
@@ -268,11 +264,13 @@ export function evaluatePropertyAvailability(
         const date = addDateDays(source.start, -offset);
         if (!isStayOrCheckoutBoundary(date)) bufferDates.add(date);
       }
-      for (let offset = 1; offset <= maxAfter; offset += 1) {
-        const date = addDateDays(source.end, offset);
-        if (!isStayOrCheckoutBoundary(date)) bufferDates.add(date);
-      }
     }
+    // The master calendar treats post-checkout cleaning markers as an
+    // operational plan, not as hard inventory. A new reservation can absorb
+    // that cleaning window (for example, by starting on the prior checkout
+    // day), so bufferAfter must not make an otherwise empty stay unavailable.
+    // Pre-arrival buffers remain hard because they protect the next guest's
+    // check-in and match planStay's buffer-required turnover rule.
     for (const date of openDates) bufferDates.delete(date);
     if (requestDates.some((date) => bufferDates.has(date))) {
       reasons.add("cleaning_buffer");

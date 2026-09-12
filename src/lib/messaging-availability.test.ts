@@ -133,11 +133,11 @@ describe("evaluatePropertyAvailability", () => {
   it("applies buffers but honors an explicit open override", () => {
     const bufferedProperty = property({
       reservations: [
-        { checkIn: "2026-09-09", checkOut: "2026-09-11" },
+        { checkIn: "2026-09-14", checkOut: "2026-09-16" },
       ],
       calendarLinks: [
         {
-          bufferBefore: 0,
+          bufferBefore: 1,
           bufferAfter: 1,
           lastFetchedAt: new Date("2026-09-11T14:30:00.000Z"),
           lastError: null,
@@ -151,12 +151,40 @@ describe("evaluatePropertyAvailability", () => {
       evaluatePropertyAvailability(
         property({
           ...bufferedProperty,
-          dateOverrides: [{ date: "2026-09-12", type: "open" }],
+          dateOverrides: [{ date: "2026-09-13", type: "open" }],
         }),
         query,
         now,
       ).reasons,
     ).not.toContain("cleaning_buffer");
+  });
+
+  it("does not treat post-checkout cleaning as hard inventory", () => {
+    const fourNightQuery: AvailabilityQuery = {
+      ...query,
+      checkOut: "2026-09-16",
+      nights: 4,
+    };
+    const result = evaluatePropertyAvailability(
+      property({
+        reservations: [
+          { checkIn: "2026-09-10", checkOut: "2026-09-12" },
+        ],
+        calendarLinks: [
+          {
+            bufferBefore: 1,
+            bufferAfter: 1,
+            lastFetchedAt: new Date("2026-09-11T14:30:00.000Z"),
+            lastError: null,
+          },
+        ],
+      }),
+      fourNightQuery,
+      now,
+    );
+
+    expect(result.dateStatus).toBe("available");
+    expect(result.reasons).not.toContain("cleaning_buffer");
   });
 
   it("does not carry a stale buffer across consecutive stays", () => {
