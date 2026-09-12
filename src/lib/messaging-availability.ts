@@ -255,12 +255,22 @@ export function evaluatePropertyAvailability(
         .filter((event) => !isAvailabilityBlockSummary(event.summary))
         .map((event) => ({ start: event.startDate, end: event.endDate })),
     ];
+    // Match the master calendar's `allBooked` guard. Reservation/event end
+    // dates are checkout boundaries: their night is available, but the date
+    // still suppresses a stale buffer emitted by an earlier adjacent stay.
+    // Without this guard, a chain such as 10→11 followed by 11→12 leaves
+    // 12 incorrectly blocked by the first stay's buffer even though the most
+    // recent guest checks out on 12 and the master calendar offers that night.
+    const isStayOrCheckoutBoundary = (date: string) =>
+      bufferSources.some((source) => date >= source.start && date <= source.end);
     for (const source of bufferSources) {
       for (let offset = 1; offset <= maxBefore; offset += 1) {
-        bufferDates.add(addDateDays(source.start, -offset));
+        const date = addDateDays(source.start, -offset);
+        if (!isStayOrCheckoutBoundary(date)) bufferDates.add(date);
       }
       for (let offset = 1; offset <= maxAfter; offset += 1) {
-        bufferDates.add(addDateDays(source.end, offset));
+        const date = addDateDays(source.end, offset);
+        if (!isStayOrCheckoutBoundary(date)) bufferDates.add(date);
       }
     }
     for (const date of openDates) bufferDates.delete(date);

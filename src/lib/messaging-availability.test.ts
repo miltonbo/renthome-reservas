@@ -159,6 +159,71 @@ describe("evaluatePropertyAvailability", () => {
     ).not.toContain("cleaning_buffer");
   });
 
+  it("does not carry a stale buffer across consecutive stays", () => {
+    const oneNightQuery: AvailabilityQuery = {
+      ...query,
+      checkOut: "2026-09-13",
+      nights: 1,
+    };
+    const result = evaluatePropertyAvailability(
+      property({
+        reservations: [
+          { checkIn: "2026-09-10", checkOut: "2026-09-11" },
+          { checkIn: "2026-09-11", checkOut: "2026-09-12" },
+        ],
+        calendarLinks: [
+          {
+            bufferBefore: 1,
+            bufferAfter: 1,
+            lastFetchedAt: new Date("2026-09-11T14:30:00.000Z"),
+            lastError: null,
+          },
+        ],
+      }),
+      oneNightQuery,
+      now,
+    );
+
+    expect(result.dateStatus).toBe("available");
+    expect(result.reasons).not.toContain("cleaning_buffer");
+  });
+
+  it("allows the checkout night before a following availability-only block", () => {
+    const oneNightQuery: AvailabilityQuery = {
+      ...query,
+      checkOut: "2026-09-13",
+      nights: 1,
+    };
+    const result = evaluatePropertyAvailability(
+      property({
+        reservations: [
+          { checkIn: "2026-09-10", checkOut: "2026-09-11" },
+          { checkIn: "2026-09-11", checkOut: "2026-09-12" },
+        ],
+        calendarEvents: [
+          {
+            startDate: "2026-09-13",
+            endDate: "2026-09-17",
+            summary: "Airbnb (Not available)",
+          },
+        ],
+        calendarLinks: [
+          {
+            bufferBefore: 1,
+            bufferAfter: 1,
+            lastFetchedAt: new Date("2026-09-11T14:30:00.000Z"),
+            lastError: null,
+          },
+        ],
+      }),
+      oneNightQuery,
+      now,
+    );
+
+    expect(result.dateStatus).toBe("available");
+    expect(result.reasons).not.toContain("cleaning_buffer");
+  });
+
   it("marks free dates as tentative when calendars are stale or capacity is requested", () => {
     const stale = evaluatePropertyAvailability(
       property({
