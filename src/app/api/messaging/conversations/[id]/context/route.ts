@@ -52,6 +52,19 @@ export async function GET(
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
 
+    const resetMarker = conversation.contact.externalId.startsWith("test-telegram-")
+      ? await prisma.conversationMessage.findFirst({
+          where: {
+            conversationId,
+            direction: "inbound",
+            authorType: "customer",
+            textContent: "/reiniciar",
+          },
+          orderBy: { id: "desc" },
+          select: { id: true, occurredAt: true },
+        })
+      : null;
+
     if (beforeMessageId) {
       const cursor = await prisma.conversationMessage.findFirst({
         where: { id: beforeMessageId, conversationId },
@@ -62,10 +75,14 @@ export async function GET(
       }
     }
 
+    const idFilter = {
+      ...(resetMarker ? { gte: resetMarker.id } : {}),
+      ...(beforeMessageId ? { lt: beforeMessageId } : {}),
+    };
     const page = await prisma.conversationMessage.findMany({
       where: {
         conversationId,
-        ...(beforeMessageId ? { id: { lt: beforeMessageId } } : {}),
+        ...(Object.keys(idFilter).length ? { id: idFilter } : {}),
       },
       orderBy: { id: "desc" },
       take: limit + 1,
@@ -76,7 +93,14 @@ export async function GET(
 
     return NextResponse.json(
       {
-        conversation,
+        conversation: resetMarker
+          ? {
+              ...conversation,
+              cases: conversation.cases.filter(
+                (conversationCase) => conversationCase.createdAt >= resetMarker.occurredAt,
+              ),
+            }
+          : conversation,
         messages,
         pagination: {
           hasMore,

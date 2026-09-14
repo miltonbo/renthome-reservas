@@ -106,4 +106,41 @@ describe("POST /api/messaging/messages", () => {
     expect(response.status).toBe(400);
     expect(mocks.transaction).not.toHaveBeenCalled();
   });
+
+  it("reactivates only the Telegram test conversation on /reiniciar", async () => {
+    mocks.conversationUpdate.mockResolvedValue({
+      id: 20,
+      status: "active",
+      assignedToUserId: null,
+    });
+
+    const response = await POST(
+      request({
+        externalContactId: "test-telegram-v3:1516141574",
+        textContent: "/reiniciar",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(mocks.conversationUpdate).toHaveBeenCalledWith({
+      where: { id: 20 },
+      data: {
+        lastMessageAt: new Date("2026-09-11T12:00:00.000Z"),
+        status: "active",
+        assignedToUserId: null,
+        assignmentReason: null,
+      },
+    });
+    expect(body.conversation.status).toBe("active");
+  });
+
+  it("does not reactivate a normal WhatsApp contact on /reiniciar", async () => {
+    await POST(request({ textContent: "/reiniciar" }));
+
+    expect(mocks.conversationUpdate).toHaveBeenCalledWith({
+      where: { id: 20 },
+      data: { lastMessageAt: new Date("2026-09-11T12:00:00.000Z") },
+    });
+  });
 });

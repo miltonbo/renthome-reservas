@@ -84,6 +84,12 @@ messages. Query parameters:
 The pagination object contains `hasMore`, `historyExhausted`, and
 `nextBeforeMessageId`.
 
+For the temporary Telegram test contacts (`externalContactId` beginning with
+`test-telegram-`), an inbound `/reiniciar` message reactivates the conversation
+and becomes a context boundary. Earlier messages and cases remain stored for
+audit, but they are not returned to the assistant after that boundary. This
+test-only command does not apply to normal WhatsApp contacts.
+
 ### `PATCH /api/messaging/conversations/:id`
 
 Supported actions:

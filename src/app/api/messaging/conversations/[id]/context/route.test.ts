@@ -33,9 +33,10 @@ beforeEach(() => {
   mocks.conversationFindFirst.mockResolvedValue({
     id: 20,
     userId: 7,
-    contact: { id: 10 },
+    contact: { id: 10, externalId: "59170000000" },
     cases: [],
   });
+  mocks.messageFindFirst.mockResolvedValue(null);
 });
 
 describe("GET /api/messaging/conversations/[id]/context", () => {
@@ -72,5 +73,40 @@ describe("GET /api/messaging/conversations/[id]/context", () => {
 
     expect(body.pagination.historyExhausted).toBe(true);
     expect(body.pagination.nextBeforeMessageId).toBeNull();
+  });
+
+  it("limits Telegram test context to the latest /reiniciar marker", async () => {
+    mocks.conversationFindFirst.mockResolvedValue({
+      id: 20,
+      userId: 7,
+      contact: { id: 10, externalId: "test-telegram-v3:1516141574" },
+      cases: [
+        { id: 1, createdAt: new Date("2026-09-10T12:00:00.000Z") },
+        { id: 2, createdAt: new Date("2026-09-11T12:00:01.000Z") },
+      ],
+    });
+    mocks.messageFindFirst.mockResolvedValue({
+      id: 40,
+      occurredAt: new Date("2026-09-11T12:00:00.000Z"),
+    });
+    mocks.messageFindMany.mockResolvedValue([
+      { id: 41, textContent: "hola" },
+      { id: 40, textContent: "/reiniciar" },
+    ]);
+
+    const response = await GET(
+      new NextRequest("http://localhost/api/messaging/conversations/20/context?limit=20"),
+      { params: Promise.resolve({ id: "20" }) },
+    );
+    const body = await response.json();
+
+    expect(mocks.messageFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { conversationId: 20, id: { gte: 40 } },
+      }),
+    );
+    expect(body.messages.map((message: { id: number }) => message.id)).toEqual([40, 41]);
+    expect(body.conversation.cases.map((item: { id: number }) => item.id)).toEqual([2]);
+    expect(body.pagination.historyExhausted).toBe(true);
   });
 });

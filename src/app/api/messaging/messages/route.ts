@@ -10,6 +10,18 @@ export const dynamic = "force-dynamic";
 
 class RelatedCaseNotFoundError extends Error {}
 
+function isTestRestartCommand(input: {
+  externalContactId: string;
+  direction: string;
+  textContent: string;
+}) {
+  return (
+    input.externalContactId.startsWith("test-telegram-") &&
+    input.direction === "inbound" &&
+    input.textContent.toLowerCase() === "/reiniciar"
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const access = await getMessagingAccess(request);
@@ -95,14 +107,31 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (!conversation.lastMessageAt || input.occurredAt > conversation.lastMessageAt) {
-        await tx.conversation.update({
+      const restartRequested = isTestRestartCommand(input);
+      let currentConversation = conversation;
+      if (
+        restartRequested ||
+        !conversation.lastMessageAt ||
+        input.occurredAt > conversation.lastMessageAt
+      ) {
+        currentConversation = await tx.conversation.update({
           where: { id: conversation.id },
-          data: { lastMessageAt: input.occurredAt },
+          data: {
+            ...(!conversation.lastMessageAt || input.occurredAt > conversation.lastMessageAt
+              ? { lastMessageAt: input.occurredAt }
+              : {}),
+            ...(restartRequested
+              ? {
+                  status: "active",
+                  assignedToUserId: null,
+                  assignmentReason: null,
+                }
+              : {}),
+          },
         });
       }
 
-      return { contact, conversation, message, duplicate: false };
+      return { contact, conversation: currentConversation, message, duplicate: false };
     });
 
     return NextResponse.json(result, { status: result.duplicate ? 200 : 201 });
