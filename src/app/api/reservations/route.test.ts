@@ -143,6 +143,31 @@ describe("POST /api/reservations — linked calendar source", () => {
     });
   });
 
+  it("stores the original Booking property separately from the physical property", async () => {
+    const bookingOriginalPropertyId = 21;
+
+    const response = await POST(
+      postRequest({
+        platform: "booking",
+        bookingOriginalPropertyId,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.canManageProperty).toHaveBeenCalledWith(
+      bookingOriginalPropertyId,
+      3,
+      "user",
+    );
+    expect(mocks.reservationCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        platform: "booking",
+        propertyId,
+        bookingOriginalPropertyId,
+      }),
+    });
+  });
+
   it("creates a separately priced extension at the family's current checkout", async () => {
     mocks.reservationFindFirst
       .mockResolvedValueOnce({ id: 44, extensionOfId: null, checkOut: new Date("2026-08-23T00:00:00.000Z") })

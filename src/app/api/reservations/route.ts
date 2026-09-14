@@ -363,6 +363,7 @@ export async function POST(request: NextRequest) {
         ...(parkingCurrency !== undefined ? { parkingCurrency } : {}),
         ...(note !== undefined ? { note: typeof note === "string" && note.trim() ? note.trim() : null } : {}),
         ...(extensionRootId ? { extensionOfId: extensionRootId } : {}),
+        ...(requestedPlatform === "booking" ? { bookingOriginalPropertyId } : {}),
         propertyId,
       },
     });
