@@ -5,7 +5,7 @@ export const FINANCIAL_PEOPLE = ["deysi", "milton"] as const;
 export type FinancialPerson = (typeof FINANCIAL_PEOPLE)[number];
 
 export const PAYMENT_METHODS = [
-  "qr", "transfer", "airbnb", "binance", "takenos", "sepa", "cash",
+  "qr", "cash", "takenos", "qpos", "binance", "transfer", "sepa", "airbnb",
 ] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
@@ -15,6 +15,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   airbnb: "Airbnb",
   binance: "Binance",
   takenos: "Takenos",
+  qpos: "QPos",
   sepa: "SEPA",
   cash: "Efectivo",
 };
@@ -32,7 +33,7 @@ export function isPaymentMethod(value: unknown): value is PaymentMethod {
 }
 
 export function allowedCurrencies(method: PaymentMethod): readonly MoneyCurrency[] {
-  if (method === "qr" || method === "transfer") return ["BOB"];
+  if (method === "qr" || method === "qpos" || method === "transfer") return ["BOB"];
   if (method === "cash") return CURRENCIES;
   return ["USD"];
 }

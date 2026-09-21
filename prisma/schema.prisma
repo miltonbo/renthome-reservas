@@ -455,7 +455,7 @@ model MoneyMovement {
   type          String // lodging | parking | guarantee | additional | adjustment | refund
   amountMinor   Int // cents/centavos; refunds are stored as negative amounts
   currency      String // "BOB" | "USD"
-  paymentMethod String // qr | transfer | airbnb | binance | takenos | sepa | cash
+  paymentMethod String // qr | cash | takenos | qpos | binance | transfer | sepa | airbnb
   receivedBy    String? // "deysi" | "milton"; null for split Airbnb receipts
   occurredAt    DateTime          @default(now())
   note          String?

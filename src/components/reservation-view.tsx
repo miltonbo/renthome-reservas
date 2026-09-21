@@ -24,7 +24,7 @@ function money(value?: number | null, currency: "BOB" | "USD" = "BOB"): string {
 }
 
 const MOVEMENT_LABELS: Record<string, string> = { lodging: "Hospedaje", parking: "Parqueo", guarantee: "Garantía", additional: "Ingreso adicional", adjustment: "Ajuste", refund: "Reembolso" };
-const METHOD_LABELS: Record<string, string> = { qr: "QR", cash: "Efectivo", transfer: "Transferencia", takenos: "Takenos", binance: "Binance", sepa: "SEPA", airbnb: "Airbnb" };
+const METHOD_LABELS: Record<string, string> = { qr: "QR", cash: "Efectivo", takenos: "Takenos", qpos: "QPos", binance: "Binance", transfer: "Transferencia", sepa: "SEPA", airbnb: "Airbnb" };
 
 function segmentTotals(segment: Reservation) {
   return segmentChargeStatus(segment);

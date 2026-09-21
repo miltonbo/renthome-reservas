@@ -91,7 +91,7 @@ export interface MoneyMovement {
   type: "lodging" | "parking" | "guarantee" | "additional" | "adjustment" | "refund";
   amountMinor: number;
   currency: "BOB" | "USD";
-  paymentMethod: "qr" | "transfer" | "airbnb" | "binance" | "takenos" | "sepa" | "cash";
+  paymentMethod: "qr" | "cash" | "takenos" | "qpos" | "binance" | "transfer" | "sepa" | "airbnb";
   receivedBy: "deysi" | "milton" | null;
   occurredAt: string;
   note?: string | null;

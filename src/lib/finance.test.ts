@@ -18,9 +18,11 @@ describe("DeptosBO finance rules", () => {
     expect(allowedCurrencies("airbnb")).toEqual(["USD"]);
     expect(allowedCurrencies("binance")).toEqual(["USD"]);
     expect(allowedCurrencies("takenos")).toEqual(["USD"]);
+    expect(allowedCurrencies("qpos")).toEqual(["BOB"]);
     expect(allowedCurrencies("sepa")).toEqual(["USD"]);
     expect(allowedCurrencies("cash")).toEqual(["BOB", "USD"]);
     expect(isMethodCurrencyValid("qr", "USD")).toBe(false);
+    expect(isMethodCurrencyValid("qpos", "USD")).toBe(false);
   });
 
   it("stores exact cent amounts", () => {
