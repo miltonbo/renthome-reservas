@@ -3,6 +3,7 @@ import type { Property, Reservation } from "@/lib/types";
 import {
   buildMasterCalendarStays,
   buildUnifiedStays,
+  isEditedReservationSourceEvent,
   type CalendarEvent,
   type UnifiedStay,
 } from "./dashboard";
@@ -182,5 +183,29 @@ describe("buildUnifiedStays linked source roles", () => {
       platform: "direct",
       reservationId: 52,
     }));
+  });
+});
+
+describe("editing a claimed synced reservation", () => {
+  it("ignores only its exact Airbnb source event", () => {
+    const claim = reservation({
+      linkedEventUid: "shared-uid",
+      linkedEventPlatform: "airbnb",
+      linkedEventRole: "claim",
+    });
+
+    expect(isEditedReservationSourceEvent(claim, event())).toBe(true);
+    expect(isEditedReservationSourceEvent(claim, event({ uid: "another-airbnb-booking" }))).toBe(false);
+    expect(isEditedReservationSourceEvent(claim, event({ platform: "booking" }))).toBe(false);
+  });
+
+  it("recognizes a legacy same-channel source by the original date overlap", () => {
+    const legacyClaim = reservation({ linkedEventUid: null });
+
+    expect(isEditedReservationSourceEvent(legacyClaim, event())).toBe(true);
+    expect(isEditedReservationSourceEvent(
+      legacyClaim,
+      event({ startDate: "2026-08-24", endDate: "2026-08-26" }),
+    )).toBe(false);
   });
 });

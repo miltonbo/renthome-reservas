@@ -289,6 +289,31 @@ function reservationDateKey(value: string | Date): string {
   return toLocalDateStr(new Date(value));
 }
 
+/** The local reservation and its imported iCal row describe the same stay.
+ * Ignore that one source row while editing so the host can correct an early
+ * checkout without the form reporting the reservation as its own conflict. */
+export function isEditedReservationSourceEvent(
+  reservation: Reservation | undefined,
+  event: CalendarEvent,
+): boolean {
+  if (!reservation) return false;
+  const sourcePlatform = normalizedPlatform(
+    reservation.linkedEventPlatform || reservation.platform,
+  );
+  if (normalizedPlatform(event.platform) !== sourcePlatform) return false;
+
+  const linkedUid = reservation.linkedEventUid?.trim();
+  if (linkedUid) return Boolean(event.uid && event.uid === linkedUid);
+
+  // Backward compatibility for reservations claimed before links stored UIDs.
+  // Only infer identity from the original (not edited) range and same channel.
+  const currentStart = reservationDateKey(reservation.checkIn);
+  const currentEnd = reservationDateKey(reservation.checkOut);
+  const eventStart = reservationDateKey(event.startDate);
+  const eventEnd = reservationDateKey(event.endDate);
+  return eventStart < currentEnd && eventEnd > currentStart;
+}
+
 function reservationLocalDate(value: string | Date): Date {
   const [year, month, day] = reservationDateKey(value).split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -1014,6 +1039,7 @@ export function Dashboard({
     if (formCheckIn >= formCheckOut) return [];
     const pid = Number(formPropertyId);
     const property = properties.find((p) => p.id === pid);
+    const editedReservation = property?.reservations.find((res) => res.id === formEditingId);
     type Conflict = { key: string; name: string; platform: string; from: string; to: string };
     const out: Conflict[] = [];
     if (property) {
@@ -1035,6 +1061,7 @@ export function Dashboard({
     const events = allSyncedEvents[pid] || [];
     for (const ev of events) {
       if (isAvailabilityBlock(ev)) continue;
+      if (isEditedReservationSourceEvent(editedReservation, ev)) continue;
       const startDate = reservationDateKey(ev.startDate);
       const endDate = reservationDateKey(ev.endDate);
       if (startDate < formCheckOut && endDate > formCheckIn) {
@@ -1065,6 +1092,7 @@ export function Dashboard({
     if (!formPropertyId) return set;
     const pid = Number(formPropertyId);
     const property = properties.find((p) => p.id === pid);
+    const editedReservation = property?.reservations.find((res) => res.id === formEditingId);
     const addRange = (from: string, to: string) => {
       const fromDate = reservationDateKey(from);
       const toDate = reservationDateKey(to);
@@ -1087,6 +1115,7 @@ export function Dashboard({
     const events = allSyncedEvents[pid] || [];
     for (const ev of events) {
       if (isAvailabilityBlock(ev)) continue;
+      if (isEditedReservationSourceEvent(editedReservation, ev)) continue;
       addRange(ev.startDate, ev.endDate);
     }
     return set;
