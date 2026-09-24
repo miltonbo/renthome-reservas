@@ -3,6 +3,7 @@ import type { Property, Reservation } from "@/lib/types";
 import {
   buildMasterCalendarStays,
   buildUnifiedStays,
+  isClaimedReservationSourceEvent,
   isEditedReservationSourceEvent,
   type CalendarEvent,
   type UnifiedStay,
@@ -183,6 +184,24 @@ describe("buildUnifiedStays linked source roles", () => {
       platform: "direct",
       reservationId: 52,
     }));
+  });
+});
+
+describe("claimed source availability", () => {
+  it("uses the corrected local claim instead of the stale imported range", () => {
+    const shortenedClaim = reservation({
+      checkOut: "2026-08-21T00:00:00",
+      linkedEventUid: "shared-uid",
+      linkedEventPlatform: "airbnb",
+      linkedEventRole: "claim",
+    });
+
+    expect(isClaimedReservationSourceEvent([shortenedClaim], event({
+      endDate: "2026-08-23",
+    }))).toBe(true);
+    expect(isClaimedReservationSourceEvent([shortenedClaim], event({
+      uid: "another-booking",
+    }))).toBe(false);
   });
 });
 

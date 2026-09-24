@@ -168,6 +168,37 @@ describe("PATCH /api/reservations/:id — date edits", () => {
     });
   });
 
+  it("excludes stale imported ranges already represented by corrected local claims", async () => {
+    mocks.reservationFindMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{
+        linkedEventUid: "previous-airbnb-stay",
+        linkedEventPlatform: "airbnb",
+        platform: "airbnb",
+      }]);
+    mocks.calendarEventFindFirst
+      .mockResolvedValueOnce(linkedSource)
+      .mockResolvedValueOnce(null);
+
+    const response = await PATCH(
+      patchRequest({ checkIn: "2026-08-18" }),
+      patchParams(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.calendarEventFindFirst).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { NOT: { platform: "airbnb", uid: "previous-airbnb-stay" } },
+            { NOT: { platform: "airbnb", uid: sourceEventUid } },
+          ]),
+        }),
+      }),
+    );
+  });
+
   it("still rejects a same-UID event from another platform", async () => {
     mocks.calendarEventFindFirst
       .mockResolvedValueOnce(linkedSource)

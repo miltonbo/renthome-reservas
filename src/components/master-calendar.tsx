@@ -67,7 +67,7 @@ function platformLabel(platform: string): string {
 const INVENTORY_ORDER = [
   "Sky Elite 305", "Sky Elite 329", "Sky Elite 331", "Sky Elite 406",
   "Sky Elite 523", "Sky Elite 527", "Sky Elite 528", "Sky Elite 540",
-  "Sky Eclipse 1309", "Sky Eclipse 1402", "Sky Eclipse 1602", "Sky Eclipse 1709",
+  "Sky Eclipse 1309", "Sky Eclipse 1402", "Sky Eclipse 1409", "Sky Eclipse 1602", "Sky Eclipse 1709",
   "Luxe Suites 104", "Luxe Suites 113", "Luxe Suites 117", "Luxe Suites 204",
   "Luxe Suites 205", "Luxe Suites 316", "Luxe Suites 406",
   "Sky Moon 706", "Sky Luxia 112", "Stanza 8B", "Uptown Nuu 12D",

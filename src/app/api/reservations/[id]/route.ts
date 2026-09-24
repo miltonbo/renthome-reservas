@@ -336,6 +336,27 @@ export async function PATCH(
           }
         }
 
+        const claimedSources = await prisma.reservation.findMany({
+          where: {
+            propertyId: current.propertyId,
+            status: "confirmed",
+            linkedEventRole: "claim",
+            linkedEventUid: { not: null },
+          },
+          select: { linkedEventUid: true, linkedEventPlatform: true, platform: true },
+        });
+        const claimedSourceExclusions = claimedSources.flatMap((claim) =>
+          claim.linkedEventUid
+            ? [{
+                NOT: {
+                  platform: claim.linkedEventPlatform || claim.platform,
+                  uid: claim.linkedEventUid,
+                },
+              }]
+            : [],
+        );
+        const sourceExclusions = sourceIdentity ? [{ NOT: sourceIdentity }] : [];
+        const overlapExclusions = [...claimedSourceExclusions, ...sourceExclusions];
         const syncedOverlapWhere = {
             propertyId: current.propertyId,
             startDate: { lt: newEndStr },
@@ -347,7 +368,11 @@ export async function PATCH(
             // that the source feed truncated. Do not let that source
             // event conflict with its own local reservation; every
             // other synced event must still block the edit.
-            ...(sourceIdentity ? { NOT: sourceIdentity } : {}),
+            ...(claimedSourceExclusions.length > 0
+              ? { AND: overlapExclusions }
+              : sourceIdentity
+                ? { NOT: sourceIdentity }
+                : {}),
         };
         let syncedOverlap = await prisma.calendarEvent.findFirst({
           where: syncedOverlapWhere,
@@ -368,7 +393,10 @@ export async function PATCH(
           syncedOverlap = await prisma.calendarEvent.findFirst({
             where: {
               ...syncedOverlapWhere,
-              AND: ignoredAvailabilityBlocks.map((block) => ({ NOT: block })),
+              AND: [
+                ...(claimedSourceExclusions.length > 0 ? overlapExclusions : []),
+                ...ignoredAvailabilityBlocks.map((block) => ({ NOT: block })),
+              ],
             },
             select: { summary: true, platform: true, startDate: true, endDate: true },
           });

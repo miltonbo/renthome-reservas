@@ -314,6 +314,27 @@ export function isEditedReservationSourceEvent(
   return eventStart < currentEnd && eventEnd > currentStart;
 }
 
+/** Once an imported stay has been claimed, its local Reservation row is the
+ * authoritative calendar range. This matters after an early checkout: the OTA
+ * feed may still expose the old, longer range, but the locally released nights
+ * must be reusable by the next guest. */
+export function isClaimedReservationSourceEvent(
+  reservations: Reservation[],
+  event: CalendarEvent,
+): boolean {
+  if (!event.uid) return false;
+  const eventKey = linkedSourceKey(event.platform, event.uid);
+  return reservations.some((reservation) => {
+    if (reservation.linkedEventRole !== "claim") return false;
+    const uid = reservation.linkedEventUid?.trim();
+    if (!uid) return false;
+    return linkedSourceKey(
+      reservation.linkedEventPlatform || reservation.platform,
+      uid,
+    ) === eventKey;
+  });
+}
+
 function reservationLocalDate(value: string | Date): Date {
   const [year, month, day] = reservationDateKey(value).split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -1061,6 +1082,7 @@ export function Dashboard({
     const events = allSyncedEvents[pid] || [];
     for (const ev of events) {
       if (isAvailabilityBlock(ev)) continue;
+      if (property && isClaimedReservationSourceEvent(property.reservations, ev)) continue;
       if (isEditedReservationSourceEvent(editedReservation, ev)) continue;
       const startDate = reservationDateKey(ev.startDate);
       const endDate = reservationDateKey(ev.endDate);
@@ -1115,6 +1137,7 @@ export function Dashboard({
     const events = allSyncedEvents[pid] || [];
     for (const ev of events) {
       if (isAvailabilityBlock(ev)) continue;
+      if (property && isClaimedReservationSourceEvent(property.reservations, ev)) continue;
       if (isEditedReservationSourceEvent(editedReservation, ev)) continue;
       addRange(ev.startDate, ev.endDate);
     }
