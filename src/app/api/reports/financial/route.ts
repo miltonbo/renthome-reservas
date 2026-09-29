@@ -17,6 +17,26 @@ const asCurrency = (value: string): Currency => value === "USD" ? "USD" : "BOB";
 const dateKey = (value: Date) => value.toISOString().slice(0, 10);
 const nights = (start: Date, end: Date) => Math.max(0, Math.round((end.getTime() - start.getTime()) / 86_400_000));
 
+/** Financial movements follow the report period of their reservation segment,
+ * not the day on which the payment was entered. Otherwise a long Airbnb stay
+ * paid at check-in can appear as a zero-income reservation in its checkout
+ * month while its money is stranded in the previous month. */
+export function financialMovementPeriodWhere(
+  propertyIds: number[],
+  from: Date,
+  toExclusive: Date,
+) {
+  return {
+    propertyId: { in: propertyIds },
+    reservation: {
+      is: {
+        status: "confirmed",
+        checkOut: { gte: from, lt: toExclusive },
+      },
+    },
+  };
+}
+
 function parsePeriod(request: NextRequest) {
   const now = new Date();
   const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -53,7 +73,7 @@ export async function GET(request: NextRequest) {
       orderBy: [{ checkIn: "asc" }, { propertyId: "asc" }],
     }),
     prisma.moneyMovement.findMany({
-      where: { propertyId: { in: propertyIds }, occurredAt: { gte: period.from, lt: period.toExclusive } },
+      where: financialMovementPeriodWhere(propertyIds, period.from, period.toExclusive),
       include: { allocations: true, property: { select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true } }, reservation: { select: { id: true, name: true, platform: true, checkOut: true, totalPrice: true, priceCurrency: true, guaranteeAmount: true, settledManuallyAt: true, moneyMovements: { select: { id: true, type: true, amountMinor: true, currency: true, occurredAt: true } }, bookingOriginalProperty: { select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true } } } } },
       orderBy: { occurredAt: "asc" },
     }),

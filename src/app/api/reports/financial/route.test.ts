@@ -2,6 +2,23 @@ import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
 
 describe("financial report workbook", () => {
+  it("assigns payments to the checkout month of a cross-month stay", async () => {
+    process.env.DATABASE_URL ||= "file:./data/test.db";
+    const { financialMovementPeriodWhere } = await import("./route");
+    const from = new Date("2026-10-01T00:00:00.000Z");
+    const toExclusive = new Date("2026-11-01T00:00:00.000Z");
+
+    expect(financialMovementPeriodWhere([23], from, toExclusive)).toEqual({
+      propertyId: { in: [23] },
+      reservation: {
+        is: {
+          status: "confirmed",
+          checkOut: { gte: from, lt: toExclusive },
+        },
+      },
+    });
+  });
+
   it("creates a valid four-sheet Excel workbook with auditable detail", async () => {
     process.env.DATABASE_URL ||= "file:./data/test.db";
     const { buildFinancialWorkbook } = await import("./route");
