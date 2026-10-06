@@ -11,6 +11,8 @@ import type { Locale } from "@/lib/i18n/translations";
 import type { Property, Reservation, CalendarLink, DateOverride } from "@/lib/types";
 import { isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
 import { segmentChargeStatus } from "@/lib/finance";
+import { downloadReservationReceipt } from "@/lib/reservation-receipt";
+import { PaymentReceiptButton } from "@/components/payment-receipt-button";
 
 interface CopyShape {
   dateLocale: string;
@@ -271,7 +273,7 @@ function toLocalDateStr(d: Date): string {
 }
 
 const MOVEMENT_TYPE_LABELS: Record<string, string> = {
-  lodging: "Hospedaje", parking: "Parqueo", guarantee: "Garantía",
+  lodging: "Hospedaje", guarantee: "Garantía",
   additional: "Ingreso adicional", adjustment: "Ajuste", refund: "Reembolso",
 };
 
@@ -691,6 +693,7 @@ export function Dashboard({
   const [savingReservation, setSavingReservation] = useState(false);
   const [reservationSaveError, setReservationSaveError] = useState("");
   const [inspectedReservationId, setInspectedReservationId] = useState<number | null>(null);
+  const [downloadingReceiptId, setDownloadingReceiptId] = useState<number | null>(null);
   const [inspectedImportedStay, setInspectedImportedStay] = useState<{ propertyId: number; stay: MasterCalendarStay } | null>(null);
   const [movementAmount, setMovementAmount] = useState("");
   const [movementType, setMovementType] = useState<"lodging" | "additional">("lodging");
@@ -1186,9 +1189,8 @@ export function Dashboard({
     const totals = { BOB: 0, USD: 0 };
     totals[formPriceCurrency] += moneyValue(formTotalPrice) || 0;
     if (!formExtensionOfId) totals[formGuaranteeCurrency] += moneyValue(formGuarantee) || 0;
-    if (formHasParking) totals[formParkingCurrency] += moneyValue(formParkingTotalPrice) || 0;
     return totals;
-  }, [formPriceCurrency, formTotalPrice, formGuaranteeCurrency, formGuarantee, formExtensionOfId, formHasParking, formParkingCurrency, formParkingTotalPrice]);
+  }, [formPriceCurrency, formTotalPrice, formGuaranteeCurrency, formGuarantee, formExtensionOfId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1269,10 +1271,7 @@ export function Dashboard({
       const lodgingTotal = family.reduce((totals, item) => {
         totals[item.priceCurrency || "BOB"] += item.totalPrice || 0; return totals;
       }, { BOB: 0, USD: 0 });
-      const parkingTotal = family.reduce((totals, item) => {
-        totals[item.parkingCurrency || "BOB"] += item.parkingTotalPrice || 0; return totals;
-      }, { BOB: 0, USD: 0 });
-      return { property, selected, root, rootId, family, initialCheckIn, finalCheckOut, lodgingTotal, parkingTotal, selectedFinancials: segmentFinancials(selected) };
+      return { property, selected, root, rootId, family, initialCheckIn, finalCheckOut, lodgingTotal, selectedFinancials: segmentFinancials(selected) };
     }
     return null;
   }, [inspectedReservationId, properties]);
@@ -1300,6 +1299,30 @@ export function Dashboard({
     setReservationSaveError("");
     setInspectedReservationId(null);
     setShowForm(true);
+  };
+
+  const downloadInspectedReceipt = async () => {
+    if (!inspectedContext) return;
+    const { selected, property } = inspectedContext;
+    setDownloadingReceiptId(selected.id);
+    try {
+      await downloadReservationReceipt({
+        guestName: selected.name,
+        propertyName: property.name,
+        channel: platformDisplayName(selected.platform),
+        checkIn: reservationDateKey(selected.checkIn),
+        checkOut: reservationDateKey(selected.checkOut),
+        checkInTime: property.checkInTime,
+        checkOutTime: property.checkOutTime,
+        nightlyPrice: selected.nightlyPrice,
+        totalPrice: selected.totalPrice,
+        currency: selected.priceCurrency || "BOB",
+      });
+    } catch (error) {
+      setMovementError(error instanceof Error ? error.message : "No se pudo generar el comprobante.");
+    } finally {
+      setDownloadingReceiptId(null);
+    }
   };
 
   const openEditForm = () => {
@@ -2209,7 +2232,6 @@ export function Dashboard({
               <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkIn)}T12:00:00`).toLocaleDateString("es-BO")} · 14:00</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Salida</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkOut)}T12:00:00`).toLocaleDateString("es-BO")} · 11:00</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Hospedaje</dt><dd className="font-medium">{inspectedContext.selected.totalPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.totalPrice}` : "Sin monto"}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="font-medium">{inspectedContext.selected.hasParking && inspectedContext.selected.parkingTotalPrice != null ? `${inspectedContext.selected.parkingCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.parkingTotalPrice}` : "No"}</dd></div>
               <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Garantía</dt><dd className="font-medium">{inspectedContext.selected.extensionOfId ? "Se mantiene la garantía de la reserva inicial; no se cobra en esta extensión" : `${inspectedContext.selected.guaranteeCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.guaranteeAmount ?? 0}`}</dd></div>
               {inspectedContext.selected.note && <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-2.5 font-medium">{inspectedContext.selected.note}</dd></div>}
             </dl>
@@ -2218,9 +2240,9 @@ export function Dashboard({
               <div className="mt-2 grid grid-cols-3 gap-2 text-xs"><div><span className="block text-[var(--ink-4)]">A cobrar</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.expected[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.expected[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Pagado</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.paid[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.paid[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Adeudado</span>{(["BOB", "USD"] as const).map(c => Math.abs(inspectedContext.selectedFinancials.balance[c]) > 0.005 && <span key={c} className={`block font-bold ${inspectedContext.selectedFinancials.balance[c] > 0 ? "text-emerald-500" : "text-amber-400"}`}>{inspectedContext.selectedFinancials.balance[c] > 0 ? "+" : "-"} {c === "BOB" ? "Bs" : "USD"} {Math.abs(inspectedContext.selectedFinancials.balance[c]).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span>)}{Math.abs(inspectedContext.selectedFinancials.balance.BOB) <= 0.005 && Math.abs(inspectedContext.selectedFinancials.balance.USD) <= 0.005 && <span className="font-semibold text-emerald-500">0</span>}</div></div>
               {inspectedContext.selected.platform !== "airbnb" && <button type="button" disabled={savingSettlement} onClick={toggleManualSettlement} className="mt-3 w-full rounded-lg border border-emerald-500/40 px-3 py-2 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50">{savingSettlement ? "Guardando…" : inspectedContext.selectedFinancials.manuallySettled ? "Quitar marca de saldado" : "Marcar este tramo como saldado"}</button>}
             </div>
-            {(inspectedContext.selected.moneyMovements?.length || 0) > 0 && <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3">
+            {(inspectedContext.selected.moneyMovements?.some((movement) => movement.type !== "parking") || false) && <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3">
               <div className="mb-2 text-xs font-semibold text-[var(--ink-2)]">Dinero recibido</div>
-              <div className="space-y-2">{inspectedContext.selected.moneyMovements!.map((movement) => <div key={movement.id} className="flex items-start justify-between gap-3 text-xs"><div><span className={`font-medium ${movement.amountMinor < 0 ? "text-red-400" : "text-[var(--ink)]"}`}>{movement.currency === "USD" ? "USD" : "Bs"} {(movement.amountMinor / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span><span className="ml-2 rounded bg-[var(--bg-3)] px-1.5 py-0.5 font-medium text-[var(--ink-2)]">{MOVEMENT_TYPE_LABELS[movement.type] || movement.type}</span><span className="ml-2 text-[var(--ink-4)]">{movement.paymentMethod === "cash" ? "Efectivo" : movement.paymentMethod === "transfer" ? "Transferencia" : movement.paymentMethod === "qpos" ? "QPos" : movement.paymentMethod.toUpperCase()}</span>{movement.note && <p className="mt-0.5 text-[var(--ink-3)]">{movement.note}</p>}</div><div className="flex shrink-0 items-center gap-2"><span className="capitalize text-[var(--ink-4)]">{movement.receivedBy || "Distribución Airbnb"}</span><button type="button" disabled={deletingMovementId != null} onClick={() => deleteMoneyMovement(movement.id)} className="flex h-5 w-5 items-center justify-center rounded-full text-[var(--ink-4)] hover:bg-red-500/15 hover:text-red-400 disabled:opacity-40" aria-label={`Eliminar ingreso de ${movement.currency === "USD" ? "USD" : "Bs"} ${Math.abs(movement.amountMinor / 100)}`} title="Eliminar este registro">×</button></div></div>)}</div>
+              <div className="space-y-2">{inspectedContext.selected.moneyMovements!.filter((movement) => movement.type !== "parking").map((movement) => <div key={movement.id} className="flex items-start justify-between gap-3 text-xs"><div><span className={`font-medium ${movement.amountMinor < 0 ? "text-red-400" : "text-[var(--ink)]"}`}>{movement.currency === "USD" ? "USD" : "Bs"} {(movement.amountMinor / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span><span className="ml-2 rounded bg-[var(--bg-3)] px-1.5 py-0.5 font-medium text-[var(--ink-2)]">{MOVEMENT_TYPE_LABELS[movement.type] || movement.type}</span><span className="ml-2 text-[var(--ink-4)]">{movement.paymentMethod === "cash" ? "Efectivo" : movement.paymentMethod === "transfer" ? "Transferencia" : movement.paymentMethod === "qpos" ? "QPos" : movement.paymentMethod.toUpperCase()}</span>{movement.note && <p className="mt-0.5 text-[var(--ink-3)]">{movement.note}</p>}</div><div className="flex shrink-0 items-center gap-2"><span className="capitalize text-[var(--ink-4)]">{movement.receivedBy || "Distribución Airbnb"}</span><button type="button" disabled={deletingMovementId != null} onClick={() => deleteMoneyMovement(movement.id)} className="flex h-5 w-5 items-center justify-center rounded-full text-[var(--ink-4)] hover:bg-red-500/15 hover:text-red-400 disabled:opacity-40" aria-label={`Eliminar ingreso de ${movement.currency === "USD" ? "USD" : "Bs"} ${Math.abs(movement.amountMinor / 100)}`} title="Eliminar este registro">×</button></div></div>)}</div>
             </div>}
             <div className="mt-4 rounded-xl border border-[var(--line)] p-3">
               <div className="text-xs font-semibold text-[var(--ink-2)]">Registrar dinero recibido</div>
@@ -2235,6 +2257,16 @@ export function Dashboard({
               <button type="button" disabled={savingMovement || !movementAmount || (movementType === "additional" && !movementNote.trim())} onClick={() => saveAdditionalIncome(inspectedContext.selected.id)} className="mt-2 w-full rounded-lg bg-[var(--brand-orange)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-45">{savingMovement ? "Registrando…" : "Registrar ingreso"}</button>
             </div>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button type="button" disabled={downloadingReceiptId === inspectedContext.selected.id} onClick={downloadInspectedReceipt} className="rounded-lg border border-[var(--brand-orange)] px-3 py-2 text-sm font-semibold text-[var(--brand-orange)] hover:bg-[var(--brand-orange-soft)] disabled:opacity-50">{downloadingReceiptId === inspectedContext.selected.id ? "Generando…" : "Descargar comprobante"}</button>
+              <PaymentReceiptButton
+                guestName={inspectedContext.selected.name}
+                propertyName={inspectedContext.property.name}
+                checkIn={reservationDateKey(inspectedContext.selected.checkIn)}
+                checkOut={reservationDateKey(inspectedContext.selected.checkOut)}
+                amount={inspectedContext.selected.totalPrice}
+                currency={inspectedContext.selected.priceCurrency || "BOB"}
+                buttonClassName="rounded-lg border border-[var(--brand-orange)] px-3 py-2 text-sm font-semibold text-[var(--brand-orange)] hover:bg-[var(--brand-orange-soft)]"
+              />
               <button type="button" onClick={() => handleRowClick(inspectedContext.property.id, inspectedContext.selected.id)} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm">Ver detalle</button>
               <button type="button" onClick={openEditForm} className="rounded-lg border border-[var(--line-2)] px-3 py-2 text-sm font-medium">Modificar</button>
               <button type="button" onClick={() => { setCancellationReason(""); setCancellationError(""); setShowCancelForm(true); }} className="rounded-lg border border-red-500/40 px-3 py-2 text-sm font-medium text-red-400">Cancelar reserva</button>
@@ -2416,49 +2448,6 @@ export function Dashboard({
                   />
                 </div>}
               </label>
-              <div className="sm:col-span-2 mt-1 flex items-center gap-3" aria-hidden="true">
-                <span className="h-px flex-1 bg-[var(--line-2)]" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-4)]">Parqueo</span>
-                <span className="h-px flex-1 bg-[var(--line-2)]" />
-              </div>
-              <label className="sm:col-span-2">
-                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">¿Incluye parqueo?</span>
-                <select value={formHasParking ? "yes" : "no"} onChange={(e) => {
-                  const enabled = e.target.value === "yes";
-                  setFormHasParking(enabled);
-                  if (!enabled) {
-                    setFormParkingNightlyPrice("");
-                    setFormParkingTotalPrice("");
-                  }
-                }} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
-                  <option value="no">No</option>
-                  <option value="yes">Sí</option>
-                </select>
-              </label>
-              {formHasParking && (
-                <>
-                  <label>
-                    <span className="mb-1.5 flex items-center justify-between text-xs font-medium text-[var(--ink-3)]">Parqueo por noche <select aria-label="Moneda del parqueo" value={formParkingCurrency} onChange={(e) => setFormParkingCurrency(e.target.value as "BOB" | "USD")} className="rounded border border-[var(--line-2)] bg-[var(--bg)] px-1.5 py-0.5 text-[10px]"><option value="BOB">Bs</option><option value="USD">USD</option></select></span>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">{formParkingCurrency === "USD" ? "$" : "Bs"}</span>
-                      <input type="number" min="0" step="0.01" inputMode="decimal" value={formParkingNightlyPrice}
-                        onChange={(e) => { setParkingPriceSource("nightly"); setFormParkingNightlyPrice(e.target.value); }}
-                        className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]" placeholder="30" />
-                    </div>
-                  </label>
-                  <label>
-                    <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">
-                      Parqueo total {formNightCount > 0 && <span className="font-normal text-[var(--ink-4)]">· {formNightCount} {formNightCount === 1 ? "noche" : "noches"}</span>}
-                    </span>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">{formParkingCurrency === "USD" ? "$" : "Bs"}</span>
-                      <input type="number" min="0" step="0.01" inputMode="decimal" value={formParkingTotalPrice}
-                        onChange={(e) => { setParkingPriceSource("total"); setFormParkingTotalPrice(e.target.value); }}
-                        className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand-orange)]" placeholder="0" />
-                    </div>
-                  </label>
-                </>
-              )}
               <label className="sm:col-span-2">
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Nota (opcional)</span>
                 <textarea
@@ -2473,7 +2462,7 @@ export function Dashboard({
               <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-[var(--brand-orange)]/25 bg-[var(--brand-orange-soft)] px-4 py-3">
                 <div>
                   <span className="block text-xs font-semibold text-[var(--ink)]">Monto total a cobrar</span>
-                  <span className="mt-0.5 block text-[10px] text-[var(--ink-4)]">Estadía + garantía + parqueo</span>
+                  <span className="mt-0.5 block text-[10px] text-[var(--ink-4)]">Estadía + garantía</span>
                 </div>
                 <span className="text-right text-sm font-bold tabular-nums text-[var(--brand-orange)]">{formTotals.BOB > 0 && <span className="block">Bs {formatMoneyInput(formTotals.BOB)}</span>}{formTotals.USD > 0 && <span className="block">USD {formatMoneyInput(formTotals.USD)}</span>}{formTotals.BOB === 0 && formTotals.USD === 0 && <span>Bs 0</span>}</span>
               </div>

@@ -1028,6 +1028,10 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     today: stayMovements.filter((movement) => movement.date === todayStr),
     tomorrow: stayMovements.filter((movement) => movement.date === tomorrowStr),
   }), [stayMovements, todayStr, tomorrowStr]);
+  const nearCleaningDays = useMemo(() => ({
+    today: visibleDays.filter((day) => day.date === todayStr),
+    tomorrow: visibleDays.filter((day) => day.date === tomorrowStr),
+  }), [visibleDays, todayStr, tomorrowStr]);
   const displayedDays = useMemo(
     () => showAllFuture
       ? visibleDays
@@ -1253,12 +1257,12 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
       direct: "bg-[#159a73]/15 text-[#2bc79b] hover:bg-[#159a73]/25",
       vrbo: "bg-[#5b4bc4]/20 text-[#9a8cff] hover:bg-[#5b4bc4]/30",
     } as Record<string, string>)[(platform || "").toLowerCase()] || "bg-[var(--m-accent)]/10 text-[var(--m-accent)] hover:bg-[var(--m-accent)]/20";
-    if (!reservationId) return <span className={`rounded-md px-1.5 py-0.5 font-semibold ${channelClass}`}>{label}</span>;
+    if (!reservationId) return <span className={`inline-flex h-5 items-center rounded-md px-1.5 text-xs font-semibold leading-none ${channelClass}`}>{label}</span>;
     return (
       <button
         type="button"
         onClick={() => setInspectedReservationId(reservationId)}
-        className={`rounded-md px-1.5 py-0.5 font-semibold underline decoration-dotted underline-offset-2 transition-colors ${channelClass}`}
+        className={`inline-flex h-5 items-center rounded-md px-1.5 text-xs font-semibold leading-none underline decoration-dotted underline-offset-2 transition-colors ${channelClass}`}
         aria-label={c.viewReservation(label)}
       >
         {label}
@@ -1291,32 +1295,96 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     return <span className="flex flex-wrap items-center gap-1"><span>{c.leaves}</span>{renderGuest(day.prevGuest, day.prevReservationId, day.prevPlatform)}</span>;
   };
 
-  const renderStayMovementGroup = (date: string, label: string, movements: StayMovement[]) => (
-    <section aria-labelledby={`movements-${date}`} className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm">
+  const renderOperationsGroup = (
+    date: string,
+    label: string,
+    movements: StayMovement[],
+    cleanings: CleaningDay[],
+    copyKey: "today" | "tomorrow",
+  ) => {
+    const rowsByProperty = new Map<number, {
+      propertyName: string;
+      checkin?: StayMovement;
+      checkout?: StayMovement;
+      cleaning?: CleaningDay;
+    }>();
+    for (const movement of movements) {
+      const row = rowsByProperty.get(movement.propertyId) ?? { propertyName: movement.propertyName };
+      row[movement.kind] = movement;
+      rowsByProperty.set(movement.propertyId, row);
+    }
+    for (const cleaning of cleanings) {
+      const row = rowsByProperty.get(cleaning.propertyId) ?? { propertyName: cleaning.property };
+      row.cleaning = cleaning;
+      rowsByProperty.set(cleaning.propertyId, row);
+    }
+    const rows = Array.from(rowsByProperty.values()).sort((a, b) => a.propertyName.localeCompare(b.propertyName));
+    const checkinCount = rows.filter((row) => row.checkin).length;
+    const cleaningCount = rows.filter((row) => row.cleaning).length;
+
+    return (
+    <section aria-labelledby={`operations-${date}`} className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm">
       <div className="flex items-center justify-between border-b-2 border-[var(--m-accent)]/35 bg-[var(--bg-3)] px-4 py-3">
-        <h3 id={`movements-${date}`} className="text-base font-bold text-[var(--ink)]">{label}</h3>
-        <span className="rounded-full bg-[var(--m-accent)]/12 px-2.5 py-1 text-xs font-bold text-[var(--m-accent)]">{movements.length}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 id={`operations-${date}`} className="text-base font-bold text-[var(--ink)]">{label}</h3>
+          <span className="rounded-full bg-cyan-500/10 px-2.5 py-1 text-[11px] font-bold text-cyan-400">{checkinCount} {checkinCount === 1 ? "ingreso" : "ingresos"}</span>
+          <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-400">{cleaningCount} {cleaningCount === 1 ? "limpieza" : "limpiezas"}</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleCopyDate(date, copyKey)}
+          disabled={cleanings.length === 0}
+          className="flex items-center gap-1.5 rounded-md border border-[var(--line-2)] bg-[var(--line-2)] px-2.5 py-1.5 text-xs text-[var(--ink-2)] transition-colors hover:bg-[var(--bg-3)] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
+          </svg>
+          {copiedKey === copyKey ? t("common.copied") : copyKey === "today" ? c.copyToday : c.copyTomorrow}
+        </button>
       </div>
-      {movements.length === 0 ? (
-        <div className="px-4 py-5 text-sm text-[var(--ink-4)]">Sin ingresos ni salidas.</div>
+      {rows.length === 0 ? (
+        <div className="px-4 py-5 text-sm text-[var(--ink-4)]">Sin movimientos ni limpiezas.</div>
       ) : (
         <div className="divide-y divide-[var(--line)]/50">
-          {movements.map((movement) => (
-            <div key={`${movement.kind}-${movement.reservationId}`} className="grid gap-2 px-4 py-3 hover:bg-[var(--bg-3)]/70 sm:grid-cols-[minmax(150px,0.8fr)_minmax(280px,2fr)_auto] sm:items-center">
-              <div className="truncate text-sm font-semibold text-[var(--ink)]">{movement.propertyName}</div>
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--ink-2)]">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${movement.kind === "checkin" ? "bg-cyan-500/12 text-cyan-400" : "bg-slate-500/15 text-slate-300"}`}>
-                  {movement.kind === "checkin" ? "Ingreso" : "Salida"}
-                </span>
-                {renderGuest(movement.guestName, movement.reservationId, movement.platform)}
+          {rows.map((row) => {
+            const isTurnover = Boolean(row.checkout && row.checkin);
+            const isCleanerConflict = Boolean(row.cleaning?.cleanerKey && conflictByDateAndKey.get(date)?.has(row.cleaning.cleanerKey));
+            return (
+            <div
+              key={row.propertyName}
+              className={`grid gap-3 px-4 py-3 sm:grid-cols-[minmax(145px,0.7fr)_minmax(320px,2fr)_auto] sm:items-center ${isTurnover ? "border-l-4 border-l-amber-400 bg-amber-400/[0.06]" : "hover:bg-[var(--bg-3)]/70"}`}
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-[var(--ink)]">{row.propertyName}</div>
+                {row.cleaning?.cleanerName && <div className="mt-0.5 text-[11px] text-[var(--ink-4)]">🧹 {row.cleaning.cleanerName}</div>}
               </div>
-              <span className="text-xs font-semibold tabular-nums text-[var(--ink-3)] sm:text-right">{movement.time}</span>
+              <div className="min-w-0 space-y-1.5 text-xs text-[var(--ink-2)]">
+                {isTurnover ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex h-5 items-center rounded-full bg-amber-400/15 px-2 text-[10px] font-bold uppercase leading-none tracking-wide text-amber-500">Cambio de huésped</span>
+                    {renderGuest(row.checkout!.guestName, row.checkout!.reservationId, row.checkout!.platform)}
+                    <span aria-hidden="true" className="inline-flex h-5 items-center text-[var(--ink-4)]">→</span>
+                    {renderGuest(row.checkin!.guestName, row.checkin!.reservationId, row.checkin!.platform)}
+                  </div>
+                ) : (
+                  <>
+                    {row.checkout && <div className="flex flex-wrap items-center gap-1.5"><span className="inline-flex h-5 items-center rounded-full bg-slate-500/15 px-2 text-[10px] font-bold uppercase leading-none tracking-wide text-slate-300">Salida</span>{renderGuest(row.checkout.guestName, row.checkout.reservationId, row.checkout.platform)}</div>}
+                    {row.checkin && <div className="flex flex-wrap items-center gap-1.5"><span className="inline-flex h-5 items-center rounded-full bg-cyan-500/12 px-2 text-[10px] font-bold uppercase leading-none tracking-wide text-cyan-400">Ingreso</span>{renderGuest(row.checkin.guestName, row.checkin.reservationId, row.checkin.platform)}</div>}
+                  </>
+                )}
+                {row.cleaning?.isManual && <div className="text-[var(--ink-3)]">{row.cleaning.manualNote?.trim() || t("cleaning.manualCleaning")}</div>}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                {row.cleaning && <span className="inline-flex h-5 items-center rounded-full bg-emerald-500/10 px-2 text-[10px] font-bold leading-none text-emerald-400">Limpieza</span>}
+                {isCleanerConflict && <span className="inline-flex h-5 items-center rounded-full bg-amber-500/10 px-2 text-[10px] font-semibold leading-none text-amber-500">⚠ {t("cleaning.cleanerConflictShort")}</span>}
+              </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
     </section>
-  );
+    );
+  };
 
   const platformLabel = (platform: string) => ({
     direct: "Directo",
@@ -1330,12 +1398,12 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
       {operationsMode && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-base font-bold text-[var(--ink)]">Ingresos y salidas</h2>
-            <p className="mt-1 text-xs text-[var(--ink-3)]">Movimientos físicos confirmados. Las extensiones no se cuentan como nuevos ingresos.</p>
+            <h2 className="text-base font-bold text-[var(--ink)]">Operación diaria</h2>
+            <p className="mt-1 text-xs text-[var(--ink-3)]">Ingresos, salidas y limpiezas consolidados por departamento. Las extensiones no se cuentan como nuevos ingresos.</p>
           </div>
           <div className="grid gap-4 xl:grid-cols-2">
-            {renderStayMovementGroup(todayStr, "Movimientos hoy", nearMovements.today)}
-            {renderStayMovementGroup(tomorrowStr, "Movimientos mañana", nearMovements.tomorrow)}
+            {renderOperationsGroup(todayStr, "Hoy", nearMovements.today, nearCleaningDays.today, "today")}
+            {renderOperationsGroup(tomorrowStr, "Mañana", nearMovements.tomorrow, nearCleaningDays.tomorrow, "tomorrow")}
           </div>
         </div>
       )}
@@ -1384,7 +1452,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
       )}
 
       {/* Schedule table */}
-      <div>
+      {!operationsMode && <div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] px-4 py-3">
           <div>
             <h2 className="text-sm font-bold text-[var(--ink)]">Limpiezas</h2>
@@ -1550,7 +1618,7 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {inspectedReservation && (
         <div
@@ -1583,7 +1651,6 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
               <div><dt className="text-xs text-[var(--ink-4)]">Horario de salida</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.property.checkOutTime || "11:00"}</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Estado de cobro</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.settledManuallyAt ? "Saldado manualmente" : "Ver detalle financiero"}</dd></div>
               <div><dt className="text-xs text-[var(--ink-4)]">Total hospedaje</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.totalPrice != null ? `${inspectedReservation.reservation.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedReservation.reservation.totalPrice}` : "Sin monto"}</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Parqueo</dt><dd className="mt-1 font-semibold text-[var(--ink)]">{inspectedReservation.reservation.hasParking ? `Sí${inspectedReservation.reservation.parkingTotalPrice ? ` · ${inspectedReservation.reservation.parkingCurrency === "USD" ? "USD" : "Bs"} ${inspectedReservation.reservation.parkingTotalPrice}` : ""}` : "No"}</dd></div>
               {inspectedReservation.reservation.note && (
                 <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3 font-medium text-[var(--ink)]">{inspectedReservation.reservation.note}</dd></div>
               )}

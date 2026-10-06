@@ -78,7 +78,6 @@ const SUGGESTED: { label: string; type: FieldType; options?: string[] }[] = [
   { label: "Contact phone number", type: "phone" },
   { label: "Contact email", type: "email" },
   { label: "How will you travel here?", type: "select", options: ["Car", "Train", "Plane", "Other"] },
-  { label: "Do you need a parking space?", type: "yes-no" },
   { label: "Any special requests or questions?", type: "long-text" },
 ];
 

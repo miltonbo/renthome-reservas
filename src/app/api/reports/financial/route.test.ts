@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
 
 describe("financial report workbook", () => {
+  it("routes owner-contract collections through Deysi instead of the owner", async () => {
+    process.env.DATABASE_URL ||= "file:./data/test.db";
+    const { personToPersonTransfers } = await import("./route");
+    expect(personToPersonTransfers(
+      { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 165000, USD: 7620 } },
+      { deysi: { BOB: 165000, USD: 7620 }, milton: { BOB: 0, USD: 0 } },
+    )).toEqual([
+      { from: "milton", to: "deysi", currency: "BOB", amountMinor: 165000 },
+      { from: "milton", to: "deysi", currency: "USD", amountMinor: 7620 },
+    ]);
+  });
+
   it("assigns payments to the checkout month of a cross-month stay", async () => {
     process.env.DATABASE_URL ||= "file:./data/test.db";
     const { financialMovementPeriodWhere } = await import("./route");
@@ -9,9 +21,9 @@ describe("financial report workbook", () => {
     const toExclusive = new Date("2026-11-01T00:00:00.000Z");
 
     expect(financialMovementPeriodWhere([23], from, toExclusive)).toEqual({
-      propertyId: { in: [23] },
       reservation: {
         is: {
+          propertyId: { in: [23] },
           status: "confirmed",
           checkOut: { gte: from, lt: toExclusive },
         },
@@ -42,5 +54,35 @@ describe("financial report workbook", () => {
     expect(loaded.worksheets.map((sheet) => sheet.name)).toEqual(["Gerencial", "Reservas", "Rendimiento", "Movimientos"]);
     expect(loaded.getWorksheet("Reservas")?.getCell("B2").value).toBe("Sky Elite 331");
     expect(loaded.getWorksheet("Movimientos")?.getCell("H2").value).toBe(580);
+  });
+
+  it("creates the owner administration report with zebra rows, formulas and totals", async () => {
+    process.env.DATABASE_URL ||= "file:./data/test.db";
+    const { buildAdministrationWorkbook } = await import("./route");
+    const workbook = buildAdministrationWorkbook({
+      period: { from: "2026-09-01", to: "2026-09-30" },
+      property: "Luxe Suites 113",
+      feeBps: 1000,
+      cleaningFeeBOB: 70,
+      exchangeRate: 6.96,
+      rows: [
+        { id: 1, checkIn: "2026-09-08", checkOut: "2026-09-10", guest: "Francisco", nights: 2, receivedBOB: 560, receivedUSD: 0 },
+        { id: 2, checkIn: "2026-09-18", checkOut: "2026-09-21", guest: "Melanny", nights: 3, receivedBOB: 0, receivedUSD: 84.67 },
+      ],
+    });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const loaded = new ExcelJS.Workbook();
+    await loaded.xlsx.load(buffer);
+    const sheet = loaded.getWorksheet("Administración 113")!;
+    expect(sheet.getCell("B7").value).toBe("Francisco");
+    expect(sheet.getCell("B4").value).toBe(6.96);
+    expect(sheet.getCell("E7").value).toMatchObject({ formula: "ROUND(J7+D7*$B$4,2)", result: 560 });
+    expect(sheet.getCell("F7").value).toMatchObject({ formula: "ROUND(E7*$E$4,2)", result: 56 });
+    expect(sheet.getCell("I7").value).toMatchObject({ formula: "G7-H7", result: 434 });
+    expect(sheet.getCell("E8").value).toMatchObject({ formula: "ROUND(J8+D8*$B$4,2)", result: 589.3 });
+    expect(sheet.getCell("I8").value).toMatchObject({ formula: "G8-H8", result: 460.37 });
+    expect(sheet.getCell("A9").value).toBe("TOTALES");
+    expect(sheet.getCell("E9").value).toMatchObject({ formula: "SUM(E7:E8)", result: 1149.3 });
+    expect(sheet.getCell("A7").fill).not.toEqual(sheet.getCell("A8").fill);
   });
 });

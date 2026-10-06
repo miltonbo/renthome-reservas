@@ -17,6 +17,28 @@ const asCurrency = (value: string): Currency => value === "USD" ? "USD" : "BOB";
 const dateKey = (value: Date) => value.toISOString().slice(0, 10);
 const nights = (start: Date, end: Date) => Math.max(0, Math.round((end.getTime() - start.getTime()) / 86_400_000));
 
+export function personToPersonTransfers(
+  held: Record<Person, Record<Currency, number>>,
+  custodyEntitled: Record<Person, Record<Currency, number>>,
+) {
+  const transfers: Array<{ from: Person; to: Person; currency: Currency; amountMinor: number }> = [];
+  for (const currency of currencies) {
+    let deysiBalance = held.deysi[currency] - custodyEntitled.deysi[currency];
+    let miltonBalance = held.milton[currency] - custodyEntitled.milton[currency];
+    if (deysiBalance > 0 && miltonBalance < 0) {
+      const transfer = Math.min(deysiBalance, -miltonBalance);
+      transfers.push({ from: "deysi", to: "milton", currency, amountMinor: transfer });
+      deysiBalance -= transfer;
+      miltonBalance += transfer;
+    }
+    if (miltonBalance > 0 && deysiBalance < 0) {
+      const transfer = Math.min(miltonBalance, -deysiBalance);
+      transfers.push({ from: "milton", to: "deysi", currency, amountMinor: transfer });
+    }
+  }
+  return transfers;
+}
+
 /** Financial movements follow the report period of their reservation segment,
  * not the day on which the payment was entered. Otherwise a long Airbnb stay
  * paid at check-in can appear as a zero-income reservation in its checkout
@@ -27,9 +49,9 @@ export function financialMovementPeriodWhere(
   toExclusive: Date,
 ) {
   return {
-    propertyId: { in: propertyIds },
     reservation: {
       is: {
+        propertyId: { in: propertyIds },
         status: "confirmed",
         checkOut: { gte: from, lt: toExclusive },
       },
@@ -108,21 +130,57 @@ export async function GET(request: NextRequest) {
     else observations.push({ reservationId: reservation.id, reservationName: reservation.name, reason: concluded ? "outstanding" : "active" });
     for (const [id, amount] of reconciliableMovementAmounts(reservation)) effectiveAmounts.set(id, amount);
   }
-  const eligibleMovements = movements.filter((movement) => eligibleReservationIds.has(movement.reservationId) && (effectiveAmounts.get(movement.id) || 0) !== 0);
-  for (const movement of eligibleMovements) {
+  // The management totals and the detailed table must describe the same
+  // reservations. They include every reconciliable payment attached to a
+  // reservation in the report period, even when a Direct/Booking stay still
+  // needs attention before it can participate in the final reconciliation.
+  const reportMovements = movements.filter((movement) => (effectiveAmounts.get(movement.id) || 0) !== 0);
+  for (const movement of reportMovements) {
     const channel = movement.reservation.platform.toLowerCase();
     channelTotals[channel] ||= { reservations: 0, BOB: 0, USD: 0 };
     channelTotals[channel][asCurrency(movement.currency)] += (effectiveAmounts.get(movement.id) || 0) / 100;
   }
 
+  const received: Record<Person, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency() };
+  for (const movement of reportMovements) {
+    const currency = asCurrency(movement.currency);
+    const effectiveAmount = effectiveAmounts.get(movement.id) || 0;
+    if (movement.paymentMethod === "airbnb") {
+      if (movement.property.financialModel === "owner_fee") {
+        const receiver: Person = movement.property.managementBeneficiary === "milton" ? "milton" : "deysi";
+        received[receiver][currency] += effectiveAmount;
+      } else {
+        for (const allocation of financialAllocations(effectiveAmount, movement.property)) {
+          received[allocation.person][currency] += allocation.amountMinor;
+        }
+      }
+    } else {
+      const receiver = movement.receivedBy as Person;
+      if (people.includes(receiver)) received[receiver][currency] += effectiveAmount;
+    }
+  }
+
+  const eligibleMovements = movements.filter((movement) => eligibleReservationIds.has(movement.reservationId) && (effectiveAmounts.get(movement.id) || 0) !== 0);
+
   const held: Record<Person, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency() };
   const entitled: Record<Person, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency() };
+  // Economic entitlement and settlement custody are deliberately separate.
+  // Under an owner-fee contract the beneficiary only earns the configured
+  // fee, but must receive and safeguard 100% of the collection before paying
+  // the owner outside the Deysi/Milton reconciliation.
+  const custodyEntitled: Record<Person, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency() };
   const fixedFeePolicies = new Map<number, { financialOperator: string; financialModel: string; managementFeeBps: number; managementFixedFeeMinor: number; managementFixedFeeCurrency: string; managementBeneficiary: string }>();
   for (const movement of eligibleMovements) {
     const currency = asCurrency(movement.currency);
     const effectiveAmount = effectiveAmounts.get(movement.id) || 0;
     const allocationPolicy = movement.property;
     const policyAllocations = financialAllocations(effectiveAmount, allocationPolicy);
+    if (allocationPolicy.financialModel === "owner_fee") {
+      const custodian: Person = allocationPolicy.managementBeneficiary === "milton" ? "milton" : "deysi";
+      custodyEntitled[custodian][currency] += effectiveAmount;
+    } else {
+      for (const allocation of policyAllocations) custodyEntitled[allocation.person][currency] += allocation.amountMinor;
+    }
     if (effectiveAmount > 0 && allocationPolicy.financialModel === "owner_fee") fixedFeePolicies.set(movement.reservationId, allocationPolicy);
     if (movement.paymentMethod === "airbnb") {
       if (movement.property.financialModel === "owner_fee") {
@@ -178,25 +236,19 @@ export async function GET(request: NextRequest) {
     if (physicalPolicy) {
       for (const allocation of financialAllocations(commission.amountMinor, physicalPolicy)) {
         entitled[allocation.person][commission.currency] -= allocation.amountMinor;
+        if (physicalPolicy.financialModel !== "owner_fee") custodyEntitled[allocation.person][commission.currency] -= allocation.amountMinor;
       }
     }
-    if (people.includes(to)) entitled[to][commission.currency] += commission.amountMinor;
+    if (people.includes(to)) {
+      entitled[to][commission.currency] += commission.amountMinor;
+      if (physicalPolicy?.financialModel !== "owner_fee") custodyEntitled[to][commission.currency] += commission.amountMinor;
+    }
     if (!people.includes(from) || !people.includes(to) || from === to) continue;
     commissionReimbursements.push({ reservationId: commission.reservationId, reservationName: commission.reservationName, physicalProperty: commission.physicalProperty, originalProperty: commission.originalProperty, from, to, currency: commission.currency, amountMinor: commission.amountMinor });
   }
   const ownerPayable = blankCurrency();
   for (const currency of currencies) ownerPayable[currency] = held.deysi[currency] + held.milton[currency] - entitled.deysi[currency] - entitled.milton[currency];
-  const transfers: Array<{ from: Person | "owner"; to: Person | "owner"; currency: Currency; amountMinor: number }> = [];
-  for (const currency of currencies) {
-    let deysiBalance = held.deysi[currency] - entitled.deysi[currency];
-    let miltonBalance = held.milton[currency] - entitled.milton[currency];
-    if (deysiBalance > 0 && miltonBalance < 0) { const transfer = Math.min(deysiBalance, -miltonBalance); transfers.push({ from: "deysi", to: "milton", currency, amountMinor: transfer }); deysiBalance -= transfer; miltonBalance += transfer; }
-    if (miltonBalance > 0 && deysiBalance < 0) { const transfer = Math.min(miltonBalance, -deysiBalance); transfers.push({ from: "milton", to: "deysi", currency, amountMinor: transfer }); miltonBalance -= transfer; deysiBalance += transfer; }
-    if (deysiBalance > 0) transfers.push({ from: "deysi", to: "owner", currency, amountMinor: deysiBalance });
-    if (miltonBalance > 0) transfers.push({ from: "milton", to: "owner", currency, amountMinor: miltonBalance });
-    if (deysiBalance < 0) transfers.push({ from: "owner", to: "deysi", currency, amountMinor: -deysiBalance });
-    if (miltonBalance < 0) transfers.push({ from: "owner", to: "milton", currency, amountMinor: -miltonBalance });
-  }
+  const transfers = personToPersonTransfers(held, custodyEntitled);
 
   const detailedReservations = reportReservations.map((reservation) => {
     const received = blankCurrency();
@@ -286,8 +338,39 @@ export async function GET(request: NextRequest) {
     for (const item of commissionParts.filter((part) => part.physicalPropertyId === property.id)) commission[item.currency] += item.amountMinor;
     return { propertyId: property.id, property: property.name, gross, management, payable, bookingCommission: commission, reservationsWithFixedFee: reservationIds.size };
   });
-  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, ownerFeeProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, held, entitled, commissions, commissionReimbursements, ownerPayable, ownerSettlements, transfers, observations, reservations: detailedReservations, performance, monthlyIncome: [...monthlyMap.values()] };
-  if (request.nextUrl.searchParams.get("format") !== "xlsx") return NextResponse.json(data);
+  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, ownerFeeProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, received, held, entitled, commissions, commissionReimbursements, ownerPayable, ownerSettlements, transfers, observations, reservations: detailedReservations, performance, monthlyIncome: [...monthlyMap.values()] };
+  const format = request.nextUrl.searchParams.get("format");
+  if (!format) return NextResponse.json(data);
+
+  if (format === "administration") {
+    const property = properties.find((item) => item.financialModel === "owner_fee");
+    if (!property) return NextResponse.json({ error: "El reporte de administración solo está disponible para propiedades con contrato de administración." }, { status: 400 });
+    const exchangeRate = Number(request.nextUrl.searchParams.get("exchangeRate"));
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) return NextResponse.json({ error: "Debe ingresar un tipo de cambio válido mayor a cero." }, { status: 400 });
+    const rows = detailedReservations
+      .filter((reservation) => reservation.property === property.name && reservation.reconciliationStatus === "included")
+      .map((reservation) => ({
+        id: reservation.id,
+        checkIn: reservation.checkIn,
+        checkOut: reservation.checkOut,
+        guest: reservation.guest,
+        nights: reservation.nights,
+        receivedBOB: reservation.receivedBOB / 100,
+        receivedUSD: reservation.receivedUSD / 100,
+      }));
+    const workbook = buildAdministrationWorkbook({
+      period: data.period,
+      property: property.name,
+      feeBps: property.managementFeeBps,
+      cleaningFeeBOB: property.managementFixedFeeCurrency === "BOB" ? property.managementFixedFeeMinor / 100 : 0,
+      exchangeRate,
+      rows,
+    });
+    const buffer = await workbook.xlsx.writeBuffer();
+    return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="reporte-administracion-113-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
+  }
+
+  if (format !== "xlsx") return NextResponse.json({ error: "Formato de reporte no reconocido" }, { status: 400 });
 
   const workbook = buildFinancialWorkbook(data, eligibleMovements.map((movement) => ({
     date: movement.occurredAt,
@@ -354,5 +437,156 @@ export function buildFinancialWorkbook(data: any, movements: any[]) {
   movements.forEach((item) => movementSheet.addRow([item.date, item.property, item.guest, item.channel, item.type, item.method, item.currency, item.amount, item.receivedBy, item.note]));
   styleSheet(movementSheet); movementSheet.getColumn(1).numFmt = "yyyy-mm-dd hh:mm"; movementSheet.getColumn(8).numFmt = "#,##0.00";
   [management, detail, performance, movementSheet].forEach((sheet) => { sheet.getRow(1).height = 24; sheet.getRow(1).alignment = { vertical: "middle" }; sheet.getRow(1).eachCell((cell) => { cell.border = { bottom: { style: "medium", color: { argb: `FF${orange}` } } }; }); });
+  return workbook;
+}
+
+type AdministrationWorkbookData = {
+  period: { from: string; to: string };
+  property: string;
+  feeBps: number;
+  cleaningFeeBOB: number;
+  exchangeRate: number;
+  rows: Array<{
+    id: number;
+    checkIn: string;
+    checkOut: string;
+    guest: string;
+    nights: number;
+    receivedBOB: number;
+    receivedUSD: number;
+  }>;
+};
+
+export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "DeptosBO";
+  workbook.created = new Date();
+  workbook.calcProperties.fullCalcOnLoad = true;
+
+  const sheet = workbook.addWorksheet("Administración 113", {
+    views: [{ state: "frozen", ySplit: 6, showGridLines: false }],
+    pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 } },
+  });
+  sheet.properties.defaultRowHeight = 20;
+  sheet.columns = [
+    { key: "dates", width: 21 },
+    { key: "guest", width: 28 },
+    { key: "nights", width: 10 },
+    { key: "priceUSD", width: 15 },
+    { key: "priceBOB", width: 18 },
+    { key: "commissionBOB", width: 17 },
+    { key: "afterCommissionBOB", width: 18 },
+    { key: "cleaningBOB", width: 15 },
+    { key: "ownerBOB", width: 20 },
+    { key: "sourceBOB", width: 2, hidden: true },
+  ];
+
+  const navy = "10252E";
+  const teal = "13B8A6";
+  const orange = "F28C28";
+  const pale = "F4F8F8";
+  const line = "CBD9DC";
+  const dark = "172B34";
+  const title = `REPORTE DE ADMINISTRACIÓN · ${data.property.toUpperCase()}`;
+  sheet.mergeCells("A2:I2");
+  sheet.getCell("A2").value = title;
+  sheet.getCell("A2").font = { name: "Arial", size: 15, bold: true, color: { argb: `FF${navy}` } };
+  sheet.getCell("A2").alignment = { vertical: "middle", horizontal: "left" };
+  sheet.getRow(2).height = 26;
+  sheet.mergeCells("A3:I3");
+  sheet.getCell("A3").value = `Período: ${data.period.from} al ${data.period.to}`;
+  sheet.getCell("A3").font = { name: "Arial", size: 10, italic: true, color: { argb: "FF647780" } };
+  sheet.getCell("A4").value = "Tipo de cambio USD/BOB";
+  sheet.getCell("B4").value = data.exchangeRate;
+  sheet.getCell("B4").numFmt = '"Bs" 0.0000';
+  sheet.getCell("D4").value = "Comisión de administración";
+  sheet.getCell("E4").value = data.feeBps / 10000;
+  sheet.getCell("E4").numFmt = "0.0%";
+  sheet.getCell("G4").value = "Limpieza por reserva";
+  sheet.getCell("H4").value = data.cleaningFeeBOB;
+  sheet.getCell("H4").numFmt = '"Bs" #,##0.00';
+  for (let column = 1; column <= 8; column += 1) sheet.getRow(4).getCell(column).font = { name: "Arial", size: 10, color: { argb: `FF${dark}` } };
+  sheet.getCell("A4").font = { name: "Arial", size: 10, bold: true, color: { argb: `FF${dark}` } };
+  sheet.getCell("D4").font = { name: "Arial", size: 10, bold: true, color: { argb: `FF${dark}` } };
+  sheet.getCell("G4").font = { name: "Arial", size: 10, bold: true, color: { argb: `FF${dark}` } };
+  sheet.mergeCells("A5:I5");
+  sheet.getCell("A5").value = "Los cobros en USD se convierten al tipo de cambio indicado. Comisión, limpieza y pago al propietario se expresan íntegramente en bolivianos.";
+  sheet.getCell("A5").font = { name: "Arial", size: 9, italic: true, color: { argb: "FF647780" } };
+  sheet.getCell("A5").alignment = { vertical: "middle", horizontal: "left" };
+
+  const headers = ["Fechas", "Huésped", "Noches", "Precio USD", "Precio total Bs", "Comisión Bs", "Total después de comisión Bs", "Limpieza Bs", "Pago propietario Bs"];
+  sheet.getRow(6).values = headers;
+  sheet.getRow(6).height = 34;
+  sheet.getRow(6).eachCell((cell) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navy}` } };
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cell.border = { bottom: { style: "medium", color: { argb: `FF${orange}` } } };
+  });
+
+  const firstDataRow = 7;
+  const roundMoney = (value: number) => Math.round(value * 100) / 100;
+  for (const [index, item] of data.rows.entries()) {
+    const rowNumber = firstDataRow + index;
+    const row = sheet.getRow(rowNumber);
+    row.values = [
+      `${item.checkIn.slice(8, 10)}/${item.checkIn.slice(5, 7)} al ${item.checkOut.slice(8, 10)}/${item.checkOut.slice(5, 7)}`,
+      item.guest,
+      item.nights,
+      item.receivedUSD || null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      item.receivedBOB || null,
+    ];
+    const totalBOB = roundMoney(item.receivedBOB + item.receivedUSD * data.exchangeRate);
+    const commissionBOB = roundMoney(totalBOB * data.feeBps / 10000);
+    const afterCommissionBOB = roundMoney(totalBOB - commissionBOB);
+    const cleaningBOB = totalBOB > 0 ? data.cleaningFeeBOB : 0;
+    row.getCell(5).value = { formula: `ROUND(J${rowNumber}+D${rowNumber}*$B$4,2)`, result: totalBOB };
+    row.getCell(6).value = { formula: `ROUND(E${rowNumber}*$E$4,2)`, result: commissionBOB };
+    row.getCell(7).value = { formula: `E${rowNumber}-F${rowNumber}`, result: afterCommissionBOB };
+    row.getCell(8).value = { formula: `IF(E${rowNumber}>0,$H$4,0)`, result: cleaningBOB };
+    row.getCell(9).value = { formula: `G${rowNumber}-H${rowNumber}`, result: roundMoney(afterCommissionBOB - cleaningBOB) };
+    row.height = 22;
+    row.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+      cell.font = { name: "Arial", size: 10, color: { argb: `FF${dark}` } };
+      cell.alignment = { vertical: "middle", horizontal: columnNumber === 2 ? "left" : columnNumber <= 3 ? "center" : "right" };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${index % 2 === 0 ? "FFFFFF" : pale}` } };
+      cell.border = { bottom: { style: "thin", color: { argb: `FF${line}` } } };
+    });
+  }
+
+  const totalRowNumber = firstDataRow + data.rows.length;
+  const totalRow = sheet.getRow(totalRowNumber);
+  totalRow.getCell(1).value = "TOTALES";
+  if (data.rows.length > 0) {
+    totalRow.getCell(3).value = { formula: `SUM(C${firstDataRow}:C${totalRowNumber - 1})`, result: data.rows.reduce((sum, item) => sum + item.nights, 0) };
+    for (let column = 5; column <= 9; column += 1) {
+      const letter = sheet.getColumn(column).letter;
+      const result = data.rows.reduce((sum, _item, index) => sum + Number(sheet.getRow(firstDataRow + index).getCell(column).result || 0), 0);
+      totalRow.getCell(column).value = { formula: `SUM(${letter}${firstDataRow}:${letter}${totalRowNumber - 1})`, result: roundMoney(result) };
+    }
+  } else {
+    for (let column = 3; column <= 10; column += 1) totalRow.getCell(column).value = 0;
+  }
+  totalRow.height = 26;
+  totalRow.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${teal}` } };
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.alignment = { vertical: "middle", horizontal: columnNumber === 1 ? "left" : "right" };
+    cell.border = { top: { style: "medium", color: { argb: `FF${navy}` } }, bottom: { style: "medium", color: { argb: `FF${navy}` } } };
+  });
+  sheet.mergeCells(`A${totalRowNumber}:B${totalRowNumber}`);
+
+  sheet.getColumn(4).numFmt = '"USD" #,##0.00;[Red]("USD" #,##0.00);-';
+  [5, 6, 7, 8, 9].forEach((column) => { sheet.getColumn(column).numFmt = '"Bs" #,##0.00;[Red]("Bs" #,##0.00);-'; });
+  sheet.getColumn(3).numFmt = "0";
+  if (data.rows.length > 0) sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: totalRowNumber - 1, column: 9 } };
+  sheet.pageSetup.printArea = `A1:I${totalRowNumber}`;
+  sheet.pageSetup.printTitlesRow = "6:6";
+  sheet.headerFooter.oddFooter = "&LDeptosBO&CReporte de administración&RPage &P de &N";
   return workbook;
 }

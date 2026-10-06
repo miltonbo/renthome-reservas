@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import type { Reservation } from "@/lib/types";
 import { reservationNights, toReservationDateInput } from "@/lib/reservation-dates";
 import { segmentChargeStatus } from "@/lib/finance";
+import { downloadReservationReceipt } from "@/lib/reservation-receipt";
+import { PaymentReceiptButton } from "@/components/payment-receipt-button";
 
 interface ReservationViewProps {
   reservation: Reservation;
@@ -23,7 +26,7 @@ function money(value?: number | null, currency: "BOB" | "USD" = "BOB"): string {
   return `${currency === "USD" ? "USD" : "Bs"} ${new Intl.NumberFormat("es-BO", { maximumFractionDigits: 2 }).format(value || 0)}`;
 }
 
-const MOVEMENT_LABELS: Record<string, string> = { lodging: "Hospedaje", parking: "Parqueo", guarantee: "Garantía", additional: "Ingreso adicional", adjustment: "Ajuste", refund: "Reembolso" };
+const MOVEMENT_LABELS: Record<string, string> = { lodging: "Hospedaje", guarantee: "Garantía", additional: "Ingreso adicional", adjustment: "Ajuste", refund: "Reembolso" };
 const METHOD_LABELS: Record<string, string> = { qr: "QR", cash: "Efectivo", takenos: "Takenos", qpos: "QPos", binance: "Binance", transfer: "Transferencia", sepa: "SEPA", airbnb: "Airbnb" };
 
 function segmentTotals(segment: Reservation) {
@@ -40,6 +43,7 @@ function movementDateLabel(value: string): string {
 }
 
 export function ReservationView({ reservation, propertyName, relatedReservations = [] }: ReservationViewProps) {
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false);
   const rootId = reservation.extensionOfId || reservation.id;
   const family = relatedReservations
     .filter((item) => item.id === rootId || item.extensionOfId === rootId)
@@ -48,11 +52,31 @@ export function ReservationView({ reservation, propertyName, relatedReservations
   const root = segments.find((item) => item.id === rootId) || segments[0];
   const checkIn = segments[0].checkIn;
   const checkOut = segments[segments.length - 1].checkOut;
-  const allMovements = segments.flatMap((item) => item.moneyMovements || []);
+  const allMovements = segments.flatMap((item) => item.moneyMovements || []).filter((movement) => movement.type !== "parking");
   const receivedTotals = allMovements.reduce((totals, movement) => {
     totals[movement.currency] += movement.amountMinor / 100;
     return totals;
   }, { BOB: 0, USD: 0 });
+  const receiptTotal = segments.reduce((total, segment) => segment.priceCurrency === root.priceCurrency ? total + (segment.totalPrice || 0) : total, 0);
+  const receiptNights = reservationNights(checkIn, checkOut);
+
+  const downloadReceipt = async () => {
+    setDownloadingReceipt(true);
+    try {
+      await downloadReservationReceipt({
+        guestName: root.name,
+        propertyName: propertyName || "Departamento",
+        channel: CHANNELS[root.platform] || root.platform,
+        checkIn: toReservationDateInput(checkIn),
+        checkOut: toReservationDateInput(checkOut),
+        nightlyPrice: receiptTotal / Math.max(receiptNights, 1),
+        totalPrice: receiptTotal,
+        currency: root.priceCurrency || "BOB",
+      });
+    } finally {
+      setDownloadingReceipt(false);
+    }
+  };
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-5 px-3 py-4 sm:px-6 sm:py-7">
@@ -63,7 +87,11 @@ export function ReservationView({ reservation, propertyName, relatedReservations
           <p className="mt-1 text-sm text-[var(--ink-3)]">{propertyName}</p>
           {root.platform === "booking" && <p className="mt-1 text-xs text-[var(--ink-3)]">Departamento que recibió la reserva: <strong className="text-[var(--ink)]">{root.bookingOriginalProperty?.name || propertyName || "—"}</strong></p>}
         </div>
-        <span className="rounded-full bg-emerald-500/12 px-3 py-1 text-xs font-semibold text-emerald-500">Reserva confirmada</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" disabled={downloadingReceipt} onClick={downloadReceipt} className="rounded-lg border border-[var(--brand-orange)] px-3 py-2 text-xs font-semibold text-[var(--brand-orange)] hover:bg-[var(--brand-orange-soft)] disabled:opacity-50">{downloadingReceipt ? "Generando…" : "Descargar comprobante"}</button>
+          <PaymentReceiptButton guestName={root.name} propertyName={propertyName || "Departamento"} checkIn={toReservationDateInput(checkIn)} checkOut={toReservationDateInput(checkOut)} amount={receiptTotal} currency={root.priceCurrency || "BOB"} />
+          <span className="rounded-full bg-emerald-500/12 px-3 py-1 text-xs font-semibold text-emerald-500">Reserva confirmada</span>
+        </div>
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -80,14 +108,13 @@ export function ReservationView({ reservation, propertyName, relatedReservations
         </div>
         <div className="space-y-2">
           {segments.map((segment, index) => (
-            <div key={segment.id} className="grid gap-2 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+            <div key={segment.id} className="grid gap-2 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2"><span className="font-semibold text-[var(--ink)]">{index === 0 ? "Reserva inicial" : `Extensión ${index}`}</span><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${CHANNEL_STYLES[segment.platform] || "bg-[var(--bg-3)] text-[var(--ink-3)]"}`}>{CHANNELS[segment.platform] || segment.platform}</span></div>
                 <p className="mt-1 text-xs text-[var(--ink-3)]">{dateLabel(segment.checkIn)} → {dateLabel(segment.checkOut)} · {reservationNights(segment.checkIn, segment.checkOut)} {reservationNights(segment.checkIn, segment.checkOut) === 1 ? "noche" : "noches"}</p>
               </div>
-              <div className="text-xs text-[var(--ink-3)]">{segment.hasParking ? `Parqueo ${money(segment.parkingTotalPrice, segment.parkingCurrency || "BOB")}` : "Sin parqueo"}</div>
               <div className="text-right"><div className="font-semibold tabular-nums text-[var(--ink)]">{money(segment.totalPrice, segment.priceCurrency || "BOB")}</div>{(() => { const totals = segmentTotals(segment); const pending = totals.balance.BOB < -0.005 || totals.balance.USD < -0.005; const excess = totals.balance.BOB > 0.005 || totals.balance.USD > 0.005; return <div className={`mt-0.5 text-[10px] font-semibold ${pending ? "text-amber-400" : "text-emerald-500"}`}>{pending ? <>{totals.balance.BOB < 0 && `- ${money(Math.abs(totals.balance.BOB))} `}{totals.balance.USD < 0 && `- ${money(Math.abs(totals.balance.USD), "USD")}`}</> : excess ? <>{totals.balance.BOB > 0 && `+ ${money(totals.balance.BOB)} `}{totals.balance.USD > 0 && `+ ${money(totals.balance.USD, "USD")}`}</> : totals.manuallySettled ? "Saldado manualmente" : "Saldado"}</div>; })()}</div>
-              {segment.note && <div className="rounded-lg bg-[var(--bg-3)] px-3 py-2 text-xs text-[var(--ink-2)] sm:col-span-3"><span className="font-semibold">Nota:</span> {segment.note}</div>}
+              {segment.note && <div className="rounded-lg bg-[var(--bg-3)] px-3 py-2 text-xs text-[var(--ink-2)] sm:col-span-2"><span className="font-semibold">Nota:</span> {segment.note}</div>}
             </div>
           ))}
         </div>
