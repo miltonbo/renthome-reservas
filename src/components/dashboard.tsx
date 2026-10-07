@@ -633,6 +633,7 @@ interface DashboardProps {
   }) => Promise<{ ok: boolean; error?: string }>;
   onUpdateReservation?: (id: number, data: {
     name?: string; checkIn?: string; checkOut?: string; platform?: string;
+    propertyId?: number;
     nightlyPrice?: number | null; totalPrice?: number | null;
     priceCurrency?: "BOB" | "USD";
     guaranteeAmount?: number | null; hasParking?: boolean;
@@ -1203,6 +1204,7 @@ export function Dashboard({
     setReservationSaveError("");
     const reservationData = {
       name: formName.trim(),
+      propertyId: Number(formPropertyId),
       checkIn: formCheckIn,
       checkOut: formCheckOut,
       platform: formPlatform,
@@ -1222,7 +1224,6 @@ export function Dashboard({
       ? await onUpdateReservation(formEditingId, reservationData).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }))
       : await onAddReservation({
           ...reservationData,
-          propertyId: Number(formPropertyId),
           extensionOfId: formExtensionOfId,
         }).catch(() => ({ ok: false, error: "No se pudo conectar con el servidor." }));
     setSavingReservation(false);

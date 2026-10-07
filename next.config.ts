@@ -34,6 +34,10 @@ const CSP_DIRECTIVES = [
 const CSP_HEADER_VALUE = CSP_DIRECTIVES.join("; ");
 
 const nextConfig: NextConfig = {
+  // Hide the floating Next.js development badge. It is useful to framework
+  // developers, but looks like part of the product during local demos.
+  devIndicators: false,
+
   // Security headers. X-Frame-Options dates to RT-21.6 — kept for legacy
   // browsers that don't understand `frame-ancestors`. CSP added in RT-21.2.
   async headers() {

@@ -53,6 +53,16 @@ export async function PATCH(
 
     const body = await request.json();
     const data: Record<string, unknown> = {};
+    if (body.propertyId !== undefined) {
+      if (
+        !Number.isInteger(body.propertyId) ||
+        body.propertyId <= 0 ||
+        !(await canManageProperty(body.propertyId, session.userId, session.role))
+      ) {
+        return NextResponse.json({ error: "Invalid property" }, { status: 400 });
+      }
+      data.propertyId = body.propertyId;
+    }
     if (body.bookingOriginalPropertyId !== undefined) {
       if (body.bookingOriginalPropertyId !== null && (!Number.isInteger(body.bookingOriginalPropertyId) || body.bookingOriginalPropertyId <= 0 || !(await canManageProperty(body.bookingOriginalPropertyId, session.userId, session.role)))) {
         return NextResponse.json({ error: "Invalid Booking original property" }, { status: 400 });
@@ -200,7 +210,7 @@ export async function PATCH(
     // does this for new reservations; PATCH was missing the same
     // guard, which let a host shorten or extend a reservation into
     // a range covered by another reservation — silent double-booking.
-    if (data.checkIn !== undefined || data.checkOut !== undefined) {
+    if (data.checkIn !== undefined || data.checkOut !== undefined || data.propertyId !== undefined) {
       const current = await prisma.reservation.findUnique({
         where: { id: numId },
         select: { checkIn: true, checkOut: true, propertyId: true },
@@ -208,12 +218,13 @@ export async function PATCH(
       if (current) {
         const newCheckIn = (data.checkIn as Date | undefined) ?? current.checkIn;
         const newCheckOut = (data.checkOut as Date | undefined) ?? current.checkOut;
+        const targetPropertyId = (data.propertyId as number | undefined) ?? current.propertyId;
         if (newCheckOut <= newCheckIn) {
           return NextResponse.json({ error: "checkOut must be after checkIn" }, { status: 400 });
         }
         const overlap = await prisma.reservation.findFirst({
           where: {
-            propertyId: current.propertyId,
+            propertyId: targetPropertyId,
             id: { not: numId },
             status: "confirmed",
             checkIn: { lt: newCheckOut },
@@ -338,7 +349,7 @@ export async function PATCH(
 
         const claimedSources = await prisma.reservation.findMany({
           where: {
-            propertyId: current.propertyId,
+            propertyId: targetPropertyId,
             status: "confirmed",
             linkedEventRole: "claim",
             linkedEventUid: { not: null },
@@ -358,7 +369,7 @@ export async function PATCH(
         const sourceExclusions = sourceIdentity ? [{ NOT: sourceIdentity }] : [];
         const overlapExclusions = [...claimedSourceExclusions, ...sourceExclusions];
         const syncedOverlapWhere = {
-            propertyId: current.propertyId,
+            propertyId: targetPropertyId,
             startDate: { lt: newEndStr },
             endDate: { gt: newStartStr },
             // A claimed iCal booking has a local Reservation row for

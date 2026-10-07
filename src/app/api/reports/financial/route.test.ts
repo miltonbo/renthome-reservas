@@ -76,6 +76,8 @@ describe("financial report workbook", () => {
     const sheet = loaded.getWorksheet("Administración 113")!;
     expect(sheet.getCell("B7").value).toBe("Francisco");
     expect(sheet.getCell("B4").value).toBe(6.96);
+    expect(sheet.getCell("E4").value).toBe(0.1);
+    expect(sheet.getCell("E4").numFmt).toBe("0.0%");
     expect(sheet.getCell("E7").value).toMatchObject({ formula: "ROUND(J7+D7*$B$4,2)", result: 560 });
     expect(sheet.getCell("F7").value).toMatchObject({ formula: "ROUND(E7*$E$4,2)", result: 56 });
     expect(sheet.getCell("I7").value).toMatchObject({ formula: "G7-H7", result: 434 });

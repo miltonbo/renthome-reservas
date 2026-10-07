@@ -583,6 +583,9 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
 
   sheet.getColumn(4).numFmt = '"USD" #,##0.00;[Red]("USD" #,##0.00);-';
   [5, 6, 7, 8, 9].forEach((column) => { sheet.getColumn(column).numFmt = '"Bs" #,##0.00;[Red]("Bs" #,##0.00);-'; });
+  // Column E contains monetary values in the reservation table, but E4 is a
+  // percentage. Reapply its cell-level format after styling the whole column.
+  sheet.getCell("E4").numFmt = "0.0%";
   sheet.getColumn(3).numFmt = "0";
   if (data.rows.length > 0) sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: totalRowNumber - 1, column: 9 } };
   sheet.pageSetup.printArea = `A1:I${totalRowNumber}`;

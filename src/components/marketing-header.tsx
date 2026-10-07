@@ -21,11 +21,11 @@ interface MarketingHeaderProps {
 }
 
 const NAV_LABELS = {
-  en: { blog: "Blog", signIn: "Sign in", getStarted: "Get started", dashboard: "Dashboard" },
-  ru: { blog: "Блог", signIn: "Войти", getStarted: "Начать", dashboard: "Панель" },
-  de: { blog: "Blog", signIn: "Anmelden", getStarted: "Loslegen", dashboard: "Dashboard" },
-  fr: { blog: "Blog", signIn: "Se connecter", getStarted: "Commencer", dashboard: "Tableau de bord" },
-  es: { blog: "Blog", signIn: "Iniciar sesión", getStarted: "Comenzar", dashboard: "Panel" },
+  en: { signIn: "Sign in", contact: "Contact us", dashboard: "Dashboard" },
+  ru: { signIn: "Войти", contact: "Связаться", dashboard: "Панель" },
+  de: { signIn: "Anmelden", contact: "Kontakt", dashboard: "Dashboard" },
+  fr: { signIn: "Se connecter", contact: "Nous contacter", dashboard: "Tableau de bord" },
+  es: { signIn: "Iniciar sesión", contact: "Contáctanos", dashboard: "Panel" },
 };
 
 /**
@@ -36,8 +36,8 @@ const NAV_LABELS = {
  * Brand mark: animated coral pill + house silhouette + three SMIL smoke
  * puffs from the chimney. Same SVG that ships in the home-page header.
  *
- * Nav: Blog · Sign in · Get started · ThemeToggle · LocaleSwitcher.
- * Get started hides on <sm to keep the small-screen header
+ * Nav: Sign in · Contact · ThemeToggle · LocaleSwitcher.
+ * Contact hides on <sm to keep the small-screen header
  * to a single readable row.
  */
 export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: MarketingHeaderProps) {
@@ -78,20 +78,8 @@ export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: Ma
         </Link>
 
         {/* Right cluster — uses shrink-0 + whitespace-nowrap on every
-            child so the auth labels never wrap onto a second line at
-            ~375px (previously "Sign in" wrapped to two lines because
-            the cluster ran out of space). The Blog link is hidden on
-            the smallest viewports — the brand mark + the primary CTA
-            + the chrome (theme/locale) win precedence over a
-            discoverable nav link the user can still reach via the
-            footer or the dashboard side panel. */}
+            child so the auth labels never wrap onto a second line. */}
         <nav className="flex shrink-0 items-center gap-0.5 sm:gap-2">
-          <Link
-            href={localized("/blog")}
-            className="hidden whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] text-[var(--ink-3)] transition-colors hover:bg-[var(--bg-2)] hover:text-[var(--ink)] sm:inline-flex sm:px-3"
-          >
-            {t.blog}
-          </Link>
           {isAuthenticated ? (
             // Already signed in — collapse Sign in + Get started into a
             // single Dashboard button. Anything else is the wrong call:
@@ -114,10 +102,10 @@ export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: Ma
                 {t.signIn}
               </Link>
               <Link
-                href={localized("/onboard")}
+                href={localized("/#contacto")}
                 className="hidden whitespace-nowrap rounded-md bg-[var(--ink)] px-3 py-1.5 text-[13px] font-medium text-[var(--bg)] transition-colors hover:bg-[var(--ink-2)] sm:inline-flex"
               >
-                {t.getStarted}
+                {t.contact}
               </Link>
             </>
           )}

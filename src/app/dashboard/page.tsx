@@ -213,6 +213,7 @@ function AppContent({
     id: number,
     data: {
       name?: string;
+      propertyId?: number;
       checkIn?: string;
       checkOut?: string;
       platform?: string;

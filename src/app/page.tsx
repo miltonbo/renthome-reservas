@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getSetting } from "@/lib/site-settings";
 import { applySeoOverrides } from "@/lib/seo";
 import { localePath } from "@/lib/i18n/alternates";
 import { GoogleOneTap } from "@/components/google-one-tap";
@@ -11,51 +11,29 @@ import { MarketingHeader } from "@/components/marketing-header";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/translations";
 
-// Per-path SEO override hook (RT-18.3). The root layout already supplies
-// title / description / OG / canonical defaults; this lets a super-admin
-// swap any of those for "/" specifically without redeploying.
-//
-// hreflang + per-language canonical is wired via `localizedAlternates`
-// so Google indexes each language version separately and ranks each
-// in its own market. The page lives at the same file regardless of
-// locale — middleware rewrites /ru/ to / internally — so the canonical
-// is built from the resolved locale, not the file path.
-//
-// Per-locale title + description + OG locale are set here too. Without
-// them, the root layout's English defaults would leak through onto
-// /ru/, giving Google a `<title>` and `og:description` that say one
-// thing and a `<html lang="ru">` body that says another — exactly the
-// signal mismatch that drops a page out of the Russian SERP.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const CONTACT_EMAIL = "info@technovabolivia.com";
+
 const HOME_META: Record<Locale, { title: string; description: string }> = {
-  en: {
-    title:
-      "DeptosBO — open-source property manager for short-term rentals",
-    description:
-      "Free open-source property manager for short-term rental hosts. Sync Airbnb + Booking.com calendars, automate cleaning, extract guest passports.",
+  es: {
+    title: "DeptosBO — gestión profesional de alquileres temporales",
+    description: "Centraliza calendarios, reservas, check-ins, limpiezas y reportes de todas tus propiedades en un solo lugar.",
   },
-  ru: {
-    title:
-      "DeptosBO — открытый менеджер краткосрочной аренды",
-    description:
-      "Бесплатный менеджер для хостов краткосрочной аренды с открытым кодом. Синхронизация календарей Airbnb и Booking.com, автоматизация уборок, распознавание паспортов гостей.",
+  en: {
+    title: "DeptosBO — professional short-term rental management",
+    description: "Centralize calendars, reservations, check-ins, cleaning and reports for every property in one place.",
   },
   de: {
-    title:
-      "DeptosBO — Open-Source-Verwaltung für Kurzzeitvermietung",
-    description:
-      "Kostenlose Open-Source-Verwaltung für Kurzzeitvermieter. Airbnb- und Booking.com-Kalender synchronisieren, Reinigung automatisieren, Gast-Pässe auslesen.",
+    title: "DeptosBO — professionelle Verwaltung von Kurzzeitvermietungen",
+    description: "Kalender, Reservierungen, Check-ins, Reinigung und Berichte für alle Unterkünfte an einem Ort.",
   },
   fr: {
-    title:
-      "DeptosBO — gestionnaire open source pour la location courte durée",
-    description:
-      "Gestionnaire open source gratuit pour les hôtes de location courte durée. Synchronisez les calendriers Airbnb et Booking.com, automatisez le ménage, extrayez les passeports voyageurs.",
+    title: "DeptosBO — gestion professionnelle de locations courte durée",
+    description: "Centralisez calendriers, réservations, arrivées, ménages et rapports pour tous vos logements.",
   },
-  es: {
-    title:
-      "DeptosBO — gestor de alquiler vacacional de código abierto",
-    description:
-      "Gestor de código abierto y gratuito para anfitriones de alquiler vacacional. Sincroniza los calendarios de Airbnb y Booking.com, automatiza la limpieza y extrae datos de pasaportes de huéspedes.",
+  ru: {
+    title: "DeptosBO — профессиональное управление краткосрочной арендой",
+    description: "Календари, бронирования, заезды, уборки и отчёты по всем объектам в одном месте.",
   },
 };
 
@@ -63,1069 +41,281 @@ export async function generateMetadata(): Promise<Metadata> {
   const { localizedAlternates, SUPPORTED_LOCALES } = await import("@/lib/i18n/alternates");
   const { toOgLocale } = await import("@/lib/i18n/locale-tags");
   const locale = await getLocale();
-  const alts = localizedAlternates("/", locale);
   const meta = HOME_META[locale];
-  // OG `alternateLocale` declares the hreflang siblings inside the
-  // OpenGraph block too — Facebook / LinkedIn use it the same way
-  // Google uses `<link rel="alternate" hreflang>`.
-  const alternateLocale = SUPPORTED_LOCALES
-    .filter((l) => l !== locale)
-    .map(toOgLocale);
-  const ogLocale = toOgLocale(locale);
-  return applySeoOverrides<Metadata>(
-    {
+  const alternates = localizedAlternates("/", locale);
+  return applySeoOverrides<Metadata>({
+    title: meta.title,
+    description: meta.description,
+    alternates,
+    openGraph: {
+      type: "website",
       title: meta.title,
       description: meta.description,
-      alternates: alts,
-      openGraph: {
-        type: "website",
-        title: meta.title,
-        description: meta.description,
-        url: alts.canonical,
-        siteName: "DeptosBO",
-        locale: ogLocale,
-        alternateLocale,
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: meta.title,
-        description: meta.description,
-      },
+      url: alternates.canonical,
+      siteName: "DeptosBO",
+      locale: toOgLocale(locale),
+      alternateLocale: SUPPORTED_LOCALES.filter((item) => item !== locale).map(toOgLocale),
     },
-    "/",
-    locale,
-  );
+    twitter: { card: "summary_large_image", title: meta.title, description: meta.description },
+  }, "/", locale);
 }
 
-interface SectionStep { title: string; body: string }
-interface SectionFeature { title: string; body: string }
-interface SectionFaq { q: string; a: string }
-interface CopyBlock {
-  hero: { eyebrow: string; titleLead: string; titleAccent: string; subtitleA: string; platforms: string; subtitleB: string; subtitleC: string; subtitleD: string; cta: string; ctaNote: string };
-  how: { eyebrow: string; title: string; steps: SectionStep[]; tryWizard: string };
-  features: { eyebrow: string; titleA: string; titleB: string; items: SectionFeature[] };
-  compatible: { label: string; footer: string };
-  trust: { open: { title: string; body: string; link: string }; gdpr: { title: string; body: string; link: string } };
-  faq: { eyebrow: string; title: string; items: SectionFaq[] };
-  finalCta: { titleA: string; titleB: string; body: string; primary: string; secondary: string };
-  footer: { copyright: string; blog: string; changelog: string; terms: string; privacy: string; signIn: string; advertise: string; cookieNoteA: string; cookieNoteLink: string; cookieNoteB: string };
-}
-
-// All marketing copy split EN/RU. The EN block also seeds the FAQPage +
-// SoftwareApplication JSON-LD so the structured data Google sees stays
-// in English (international SEO signal). The RU block drives only the
-// visible page render when the rt-locale cookie is "ru".
-const COPY: Record<Locale, CopyBlock> = {
-  en: {
-    hero: {
-      eyebrow: "Open source · Forever free",
-      titleLead: "Stop juggling",
-      titleAccent: "calendar tabs",
-      subtitleA: "Cross-sync calendars across",
-      platforms: "Airbnb, Booking.com, Vrbo",
-      subtitleB: "and any iCal source so each platform sees the others' bookings —",
-      subtitleC: "drastically fewer double-booking surprises",
-      subtitleD: ". Forever free, open-source.",
-      cta: "Start now — forever free",
-      ctaNote: "No credit card. No paid tier. Try the wizard before signing up.",
-    },
-    how: {
-      eyebrow: "How it works",
-      title: "Three steps. Most hosts finish in seven minutes.",
-      steps: [
-        {
-          title: "Paste your platform iCal URLs",
-          body: "Airbnb has one in Calendar → Sync calendars → Export. Booking.com has one in Calendar → Sync calendars. Vrbo too. Drop them in our wizard.",
-        },
-        {
-          title: "We hand you back a unified feed",
-          body: "One iCal URL per platform that includes everyone else's bookings plus your manual entries plus cleaning buffer days. No double bookings.",
-        },
-        {
-          title: "Paste our URL back into each platform",
-          body: "Airbnb and Booking.com pull our feed every few hours. Now their calendars know about each other and about your manual blocks.",
-        },
-      ],
-      tryWizard: "Try the wizard without signing up",
-    },
-    features: {
-      eyebrow: "Built for the parts that hurt",
-      titleA: "Everything a host needs.",
-      titleB: "Nothing you'll never use.",
-      items: [
-        {
-          title: "Cross-platform calendar sync",
-          body: "Every 10 minutes we pull each platform's iCal feed and republish it for the others. Airbnb sees Booking's bookings and vice versa — the same protection paid channel managers offer, just free and open-source.",
-        },
-        {
-          title: "Cleaning automation",
-          body: "Buffer days the platforms can't do natively. Daily cleaning list. Cleaner role with restricted dashboard access.",
-        },
-        {
-          title: "Multi-property dashboard",
-          body: "Run as many places as you want from one panel. Switch context with a keystroke. Property managers + cleaners get scoped roles.",
-        },
-        {
-          title: "Message templates",
-          body: "Per-property templates with variables (guest name, check-in, wifi). Copy to clipboard, paste into Airbnb / WhatsApp.",
-        },
-        {
-          title: "Public iCal feed",
-          body: "Every property has its own feed URL. Paste it back into Airbnb / Booking and let them pull your manual blocks.",
-        },
-        {
-          title: "Cmd-K guest search",
-          body: "Find any past guest across every property in one keystroke. With document export when you need to file paperwork.",
-        },
-      ],
-    },
-    compatible: {
-      label: "Compatible with",
-      footer: "…and any platform that exports an iCal feed.",
-    },
-    trust: {
-      open: {
-        title: "Open source",
-        body: "Your operational information stays centralized under DeptosBO.",
-        link: "Read our privacy policy",
-      },
-      gdpr: {
-        title: "GDPR compliant",
-        body: "One essential session cookie. No analytics, no ads, no third-party trackers. Delete your account, your data is gone.",
-        link: "Privacy policy",
-      },
-    },
-    faq: {
-      eyebrow: "Quick answers",
-      title: "The questions hosts ask first.",
-      items: [
-        {
-          q: "Does this actually prevent double-bookings?",
-          a: "It cuts the risk dramatically — not to zero, but close. We pull each platform's iCal feed every 10 minutes and republish it for the others, so Airbnb learns about Booking.com bookings (and vice versa) within ~10 min on our side. The platforms refresh imported feeds every 2-12h on their side. Real-time API sync would be faster, but Airbnb / Booking.com don't sell their channel-manager APIs to individual hosts — only to certified PMS providers who charge $100-300/mo to forward the same feeds we sync for free. For 99% of small hosts, the iCal handshake is more than enough.",
-        },
-        {
-          q: "Is it really free?",
-          a: "Yes. The hosted instance is free for personal use, rate-limited per account so the bills stay sane. The source is MIT — clone it, run it on a $4 droplet, you owe nothing.",
-        },
-        {
-          q: "What does it actually do?",
-          a: "Pulls any iCal-compatible calendar — Airbnb, Booking.com, Vrbo, or anything else that exposes an export URL — so you stop juggling tabs. Adds buffer days for cleaning that the platforms can't do natively. Generates a daily cleaning list. Per-property message templates and Cmd-K guest search across every property you own.",
-        },
-        {
-          q: "Do I have to host my own?",
-          a: "No. Sign up here and use the hosted version. If one day you outgrow the free tier or want full data ownership, export and self-host — your data, your call.",
-        },
-        {
-          q: "Where does my guest data live?",
-          a: "On a single SQLite file inside the hosted server. No third-party processors except Google Gemini for passport OCR (and only for that one request). Delete your account and the data is gone.",
-        },
-      ],
-    },
-    finalCta: {
-      titleA: "Built by a host.",
-      titleB: "For hosts.",
-      body: "No paid tier. No upsell. No tracking. The maintainer pays the hosting bill so you can focus on guests instead of calendar tabs.",
-      primary: "Start now — forever free",
-      secondary: "Read the source",
-    },
-    footer: {
-      copyright: "© 2026 DeptosBO · MIT License",
-      blog: "Blog",
-      changelog: "Changelog",
-      terms: "Terms",
-      privacy: "Privacy",
-      signIn: "Sign in",
-      advertise: "Advertise",
-      cookieNoteA: "Essential cookies only — no tracking, no analytics. See ",
-      cookieNoteLink: "Privacy",
-      cookieNoteB: ".",
-    },
-  },
-  ru: {
-    hero: {
-      eyebrow: "Открытый код · Бесплатно навсегда",
-      titleLead: "Хватит метаться между",
-      titleAccent: "календарями",
-      // Drops the awkward "Соединяем календари в Airbnb..." (reads as "inside
-      // Airbnb"). New flow: "Synchronize calendars between Airbnb, Booking,
-      // Vrbo and anything else with iCal." Same word count, native preposition.
-      subtitleA: "Синхронизируем календари между",
-      platforms: "Airbnb, Booking.com, Vrbo",
-      subtitleB: "и всем, что отдаёт iCal. Каждая платформа видит чужие брони —",
-      subtitleC: "двойные бронирования почти исчезают",
-      subtitleD: ". Бесплатно навсегда, с открытым кодом.",
-      cta: "Начать — бесплатно навсегда",
-      ctaNote: "Без карты. Без платных тарифов. Сначала пробуете — потом регистрируетесь.",
-    },
-    how: {
-      eyebrow: "Как это работает",
-      title: "Три шага. У большинства уходит семь минут.",
-      steps: [
-        {
-          title: "Скопируйте iCal-ссылки с каждой платформы",
-          body: "В Airbnb — Calendar → Sync calendars → Export. В Booking.com — Calendar → Sync calendars. В Vrbo всё там же. Вставляете ссылки в форму.",
-        },
-        {
-          title: "Забираете единый фид — по одному на платформу",
-          body: "Один iCal-URL на платформу — внутри уже чужие брони, ваши ручные блокировки и буферные дни на уборку. Двойному бронированию просто негде случиться.",
-        },
-        {
-          title: "Вставляете нашу ссылку обратно — в каждую платформу",
-          body: "Airbnb и Booking.com подтянут наш фид за несколько часов. С этого момента они знают про брони друг друга — и про ваши ручные блокировки.",
-        },
-      ],
-      tryWizard: "Попробовать без регистрации",
-    },
-    features: {
-      eyebrow: "Сделано под боль, а не под презентацию",
-      titleA: "Всё, что нужно хосту.",
-      titleB: "Ничего лишнего.",
-      items: [
-        {
-          title: "Связь между платформами",
-          body: "Каждые 10 минут забираем iCal со всех платформ и раздаём остальным. Airbnb видит брони Booking и наоборот — та же защита, что у платного channel manager, только бесплатно и с открытым кодом.",
-        },
-        {
-          title: "Автоматизация уборок",
-          body: "Буферные дни, которых сами платформы не умеют. Список уборок на день. Отдельная роль уборщика — со своим доступом, без лишнего.",
-        },
-        {
-          title: "Несколько объектов — одна панель",
-          body: "Сколько угодно объектов — из одной панели. Переключение между ними по горячей клавише. У соведущих и уборщиков свои роли — каждый видит только своё.",
-        },
-        {
-          title: "Шаблоны сообщений",
-          body: "Свои шаблоны для каждого объекта с автоподстановкой (имя гостя, дата заезда, пароль от wifi). Одно нажатие — и текст уже в Airbnb или WhatsApp.",
-        },
-        {
-          title: "Публичный iCal-фид",
-          body: "У каждого объекта свой URL. Вставьте его в Airbnb или Booking — и они подхватят ваши ручные блокировки.",
-        },
-        {
-          title: "Поиск гостей по Cmd-K",
-          body: "Любой прошлый гость по всем объектам — одним сочетанием клавиш. С экспортом документов, когда нужно сдать отчётность или отправить данные в МВД.",
-        },
-      ],
-    },
-    compatible: {
-      label: "Работает с",
-      footer: "…и с любой платформой с iCal-экспортом.",
-    },
-    trust: {
-      open: {
-        title: "Открытый код",
-        body: "Ваши операционные данные централизованы под управлением DeptosBO.",
-        link: "Политика конфиденциальности",
-      },
-      gdpr: {
-        title: "Соответствует GDPR",
-        body: "Одна служебная cookie сессии. Без аналитики, без рекламы, без сторонних трекеров. Удалили аккаунт — данные пропали вместе с ним.",
-        link: "Политика конфиденциальности",
-      },
-    },
-    faq: {
-      eyebrow: "Что спрашивают первым",
-      title: "Главные вопросы хостов.",
-      items: [
-        {
-          q: "Это действительно защищает от двойных бронирований?",
-          a: "Снижает риск резко — не до нуля, но почти. iCal каждой платформы мы забираем каждые 10 минут и отдаём остальным, так что про бронь на Booking Airbnb узнаёт минут через 10 (и наоборот). Сами платформы перечитывают чужие фиды у себя раз в 2–12 часов. API в реальном времени было бы быстрее, но Airbnb и Booking.com не продают свои channel-manager API частникам — только сертифицированным PMS, а те берут за то же самое $100–300 в месяц. 99% небольших хостов спокойно живут на iCal-обмене.",
-        },
-        {
-          q: "И это правда бесплатно?",
-          a: "Да. Нашей версией пользуйтесь бесплатно — с разумным лимитом запросов на аккаунт, чтобы наши счета за хостинг не улетели в космос. Исходники под MIT: клонируете, поднимаете на $4 дроплете — и никому ничего не должны.",
-        },
-        {
-          q: "А что он, собственно, делает?",
-          a: "Забирает любой iCal-календарь — Airbnb, Booking.com, Vrbo и всё, что отдаёт ссылку на экспорт, — чтобы вы перестали скакать по вкладкам. Добавляет буферные дни на уборку, которых сами платформы не умеют. Каждое утро присылает список уборок. Плюс шаблоны сообщений на каждый объект и поиск гостей по Cmd-K — сразу по всем объектам.",
-        },
-        {
-          q: "А нужно разворачивать у себя на сервере?",
-          a: "Нет. Регистрируетесь — и пользуетесь нашей версией. Если когда-нибудь упрётесь в бесплатный лимит или захотите полный контроль над данными — выгружаете всё и ставите на свой сервер. Дело ваше.",
-        },
-        {
-          q: "Где живут данные гостей?",
-          a: "В одном SQLite-файле на нашем сервере. Никаких сторонних сервисов — кроме Google Gemini, и тот вызываем ровно один раз: распознать паспорт. Удалите аккаунт — и данных нет.",
-        },
-      ],
-    },
-    finalCta: {
-      titleA: "Сделано хостом.",
-      titleB: "Для хостов.",
-      body: "Без платных тарифов. Без допродаж. Без слежки. Хостинг платим сами — чтобы вы занимались гостями, а не вкладками браузера.",
-      primary: "Начать — бесплатно навсегда",
-      secondary: "Посмотреть исходники",
-    },
-    footer: {
-      copyright: "© 2026 DeptosBO · MIT License",
-      blog: "Блог",
-      changelog: "История изменений",
-      terms: "Условия",
-      privacy: "Конфиденциальность",
-      signIn: "Войти",
-      advertise: "Реклама",
-      cookieNoteA: "Только служебные cookie — без трекинга и аналитики. Подробнее в ",
-      cookieNoteLink: "Политике конфиденциальности",
-      cookieNoteB: ".",
-    },
-  },
-  de: {
-    hero: {
-      eyebrow: "Open Source · Für immer kostenlos",
-      titleLead: "Schluss mit dem",
-      titleAccent: "Kalender-Chaos",
-      // "Cross-sync calendars between Airbnb, Booking.com, Vrbo and
-      // anything that speaks iCal." Native German preposition (zwischen)
-      // and a clean compound flow.
-      subtitleA: "Wir synchronisieren Kalender zwischen",
-      platforms: "Airbnb, Booking.com, Vrbo",
-      subtitleB: "und allem, was iCal spricht. Jede Plattform sieht die Buchungen der anderen —",
-      subtitleC: "Doppelbuchungen werden zur Ausnahme",
-      subtitleD: ". Für immer kostenlos, Open Source.",
-      cta: "Loslegen — für immer kostenlos",
-      ctaNote: "Keine Karte. Kein Bezahltarif. Erst ausprobieren, dann registrieren.",
-    },
-    how: {
-      eyebrow: "So läuft's",
-      title: "Drei Schritte. Die meisten Hosts sind in sieben Minuten durch.",
-      steps: [
-        {
-          title: "iCal-Links Ihrer Plattformen einfügen",
-          body: "Bei Airbnb unter Calendar → Sync calendars → Export. Bei Booking.com unter Calendar → Sync calendars. Bei Vrbo genauso. Im Wizard einfügen — fertig.",
-        },
-        {
-          title: "Sie bekommen einen einheitlichen Feed zurück",
-          body: "Eine iCal-URL pro Plattform — inklusive Buchungen der anderen, Ihrer manuellen Sperren und Puffertage für die Reinigung. Keine Doppelbuchungen mehr.",
-        },
-        {
-          title: "Unsere URL zurück in jede Plattform einfügen",
-          body: "Airbnb und Booking.com holen unseren Feed alle paar Stunden ab. Ab da kennen ihre Kalender einander — und Ihre manuellen Sperren.",
-        },
-      ],
-      tryWizard: "Wizard ohne Registrierung ausprobieren",
-    },
-    features: {
-      eyebrow: "Gebaut für die Stellen, die wirklich wehtun",
-      titleA: "Alles, was ein Host braucht.",
-      titleB: "Nichts, was Sie nie nutzen.",
-      items: [
-        {
-          title: "Plattformübergreifende Kalendersynchronisation",
-          body: "Alle 10 Minuten ziehen wir den iCal-Feed jeder Plattform und veröffentlichen ihn für die anderen. Airbnb sieht Booking-Buchungen und umgekehrt — derselbe Schutz wie bei kostenpflichtigen Channel Managern, nur kostenlos und Open Source.",
-        },
-        {
-          title: "Automatische Reinigungsplanung",
-          body: "Puffertage, die die Plattformen selbst nicht können. Tägliche Reinigungsliste. Eigene Rolle für die Reinigungskraft mit eingeschränktem Dashboard-Zugriff.",
-        },
-        {
-          title: "Mehrere Unterkünfte, ein Dashboard",
-          body: "Beliebig viele Unterkünfte aus einer Übersicht steuern. Per Tastendruck wechseln. Co-Hosts und Reinigungskräfte bekommen eigene Rollen mit passendem Zugriff.",
-        },
-        {
-          title: "Nachrichtenvorlagen",
-          body: "Vorlagen pro Unterkunft mit Variablen (Gastname, Check-in, WLAN). In die Zwischenablage und direkt in Airbnb oder WhatsApp einfügen.",
-        },
-        {
-          title: "Öffentlicher iCal-Feed",
-          body: "Jede Unterkunft hat ihre eigene Feed-URL. In Airbnb oder Booking einfügen — und Ihre manuellen Sperren werden mit übernommen.",
-        },
-        {
-          title: "Gästesuche per Cmd-K",
-          body: "Jeden früheren Gast über alle Unterkünfte mit einem Tastendruck finden. Mit Dokumentenexport, falls Sie Papierkram einreichen müssen.",
-        },
-      ],
-    },
-    compatible: {
-      label: "Kompatibel mit",
-      footer: "…und jeder Plattform mit iCal-Export.",
-    },
-    trust: {
-      open: {
-        title: "Open Source",
-        body: "Ihre Betriebsdaten werden zentral von DeptosBO verwaltet.",
-        link: "Datenschutz lesen",
-      },
-      gdpr: {
-        title: "DSGVO-konform",
-        body: "Ein einziger technisch notwendiger Session-Cookie. Keine Analytics, keine Werbung, keine Drittanbieter-Tracker. Konto löschen, Daten weg.",
-        link: "Datenschutzerklärung",
-      },
-    },
-    faq: {
-      eyebrow: "Schnelle Antworten",
-      title: "Was Hosts zuerst fragen.",
-      items: [
-        {
-          q: "Verhindert das wirklich Doppelbuchungen?",
-          a: "Es senkt das Risiko drastisch — nicht auf null, aber nah dran. Wir holen den iCal-Feed jeder Plattform alle 10 Minuten und veröffentlichen ihn für die anderen, also erfährt Airbnb von einer Booking.com-Buchung (und umgekehrt) auf unserer Seite innerhalb von ~10 Min. Die Plattformen aktualisieren importierte Feeds bei sich alle 2–12 Stunden. Echtzeit-API-Sync wäre schneller, aber Airbnb und Booking.com verkaufen ihre Channel-Manager-APIs nicht an einzelne Hosts — nur an zertifizierte PMS-Anbieter, die 100–300 $/Monat dafür nehmen, dieselben Feeds weiterzureichen, die wir kostenlos synchronisieren. Für 99 % der kleinen Hosts reicht der iCal-Handshake bei Weitem.",
-        },
-        {
-          q: "Ist es wirklich kostenlos?",
-          a: "Ja. Die gehostete Version ist für den Eigenbedarf kostenlos, mit Rate-Limits pro Konto, damit unsere Hosting-Rechnung im Rahmen bleibt. Der Code steht unter MIT — klonen, auf einem 4-$-Droplet laufen lassen, fertig. Sie schulden uns nichts.",
-        },
-        {
-          q: "Was macht es eigentlich?",
-          a: "Holt jeden iCal-kompatiblen Kalender ab — Airbnb, Booking.com, Vrbo oder alles andere mit Export-URL — damit Sie nicht mehr zwischen Tabs wechseln. Fügt Puffertage für die Reinigung hinzu, die die Plattformen selbst nicht können. Erstellt täglich einen Reinigungsplan. Dazu Nachrichtenvorlagen pro Unterkunft und Cmd-K-Gästesuche über alle Unterkünfte hinweg.",
-        },
-        {
-          q: "Muss ich selbst hosten?",
-          a: "Nein. Hier registrieren und die gehostete Version nutzen. Falls Sie irgendwann das kostenlose Limit sprengen oder volle Datenhoheit wollen — Daten exportieren und selbst hosten. Ihre Daten, Ihre Entscheidung.",
-        },
-        {
-          q: "Wo liegen die Gastdaten?",
-          a: "In einer einzigen SQLite-Datei auf dem gehosteten Server. Keine Drittanbieter-Verarbeiter außer Google Gemini für die Pass-OCR (und auch nur für diese eine Anfrage). Konto löschen — Daten weg.",
-        },
-      ],
-    },
-    finalCta: {
-      titleA: "Von einem Host gebaut.",
-      titleB: "Für Hosts.",
-      body: "Kein Bezahltarif. Kein Upsell. Kein Tracking. Der Maintainer zahlt die Hosting-Rechnung, damit Sie sich um Gäste kümmern statt um Browser-Tabs.",
-      primary: "Loslegen — für immer kostenlos",
-      secondary: "Quellcode lesen",
-    },
-    footer: {
-      copyright: "© 2026 DeptosBO · MIT-Lizenz",
-      blog: "Blog",
-      changelog: "Änderungsverlauf",
-      terms: "AGB",
-      privacy: "Datenschutz",
-      signIn: "Anmelden",
-      advertise: "Werben",
-      cookieNoteA: "Nur technisch notwendige Cookies — kein Tracking, keine Analytics. Mehr im ",
-      cookieNoteLink: "Datenschutz",
-      cookieNoteB: ".",
-    },
-  },
-  fr: {
-    hero: {
-      eyebrow: "Open source · Gratuit à vie",
-      titleLead: "Arrêtez de jongler entre",
-      titleAccent: "vos calendriers",
-      // "Cross-sync calendars between Airbnb, Booking.com, Vrbo and
-      // anything that speaks iCal." French preposition "entre" reads
-      // naturally; non-breaking space respected before the em dash.
-      subtitleA: "On synchronise les calendriers entre",
-      platforms: "Airbnb, Booking.com, Vrbo",
-      subtitleB: "et tout ce qui parle iCal. Chaque plateforme voit les réservations des autres —",
-      subtitleC: "les doubles réservations deviennent l’exception",
-      subtitleD: ". Gratuit à vie, open source.",
-      cta: "Commencer — gratuit à vie",
-      ctaNote: "Sans carte bancaire. Aucune offre payante. Essayez l’assistant avant de créer un compte.",
-    },
-    how: {
-      eyebrow: "Comment ça marche",
-      title: "Trois étapes. La plupart des hôtes terminent en sept minutes.",
-      steps: [
-        {
-          title: "Collez les liens iCal de vos plateformes",
-          body: "Chez Airbnb : Calendar → Sync calendars → Export. Chez Booking.com : Calendar → Sync calendars. Vrbo aussi. Déposez-les dans l’assistant.",
-        },
-        {
-          title: "On vous renvoie un flux unifié",
-          body: "Une URL iCal par plateforme avec les réservations des autres, vos blocages manuels et les jours tampons pour le ménage. Plus de fenêtre pour une double réservation.",
-        },
-        {
-          title: "Recollez notre URL dans chaque plateforme",
-          body: "Airbnb et Booking.com récupèrent notre flux toutes les quelques heures. Leurs calendriers se parlent enfin — et connaissent vos blocages manuels.",
-        },
-      ],
-      tryWizard: "Essayer l’assistant sans s’inscrire",
-    },
-    features: {
-      eyebrow: "Pensé pour ce qui fait mal",
-      titleA: "Tout ce qu’il faut à un hôte.",
-      titleB: "Rien d’inutile.",
-      items: [
-        {
-          title: "Synchronisation multi-plateforme",
-          body: "Toutes les 10 minutes, on récupère le flux iCal de chaque plateforme et on le republie pour les autres. Airbnb voit les réservations de Booking et inversement — la même protection qu’un Channel Manager payant, mais gratuite et open source.",
-        },
-        {
-          title: "Automatisation du ménage",
-          body: "Jours tampons que les plateformes ne savent pas gérer nativement. Liste de ménage du jour. Rôle « personnel de ménage » dédié, avec accès limité au tableau de bord.",
-        },
-        {
-          title: "Tableau de bord multi-logements",
-          body: "Pilotez autant de logements que vous voulez depuis un seul endroit. Changement de logement au clavier. Co-hôtes et personnel de ménage ont leurs propres rôles avec les bons droits.",
-        },
-        {
-          title: "Modèles de messages",
-          body: "Modèles par logement avec variables (nom du voyageur, arrivée, wifi). Copie en un clic — collage direct dans Airbnb ou WhatsApp.",
-        },
-        {
-          title: "Flux iCal public",
-          body: "Chaque logement a sa propre URL de flux. Collez-la dans Airbnb ou Booking — vos blocages manuels suivent automatiquement.",
-        },
-        {
-          title: "Recherche voyageurs en Cmd-K",
-          body: "Retrouvez n’importe quel ancien voyageur, sur tous vos logements, en un raccourci. Avec export de documents quand il faut envoyer de la paperasse.",
-        },
-      ],
-    },
-    compatible: {
-      label: "Compatible avec",
-      footer: "…et toute plateforme qui exporte un flux iCal.",
-    },
-    trust: {
-      open: {
-        title: "Open source",
-        body: "Vos données opérationnelles sont centralisées sous DeptosBO.",
-        link: "Lire la confidentialité",
-      },
-      gdpr: {
-        title: "Conforme RGPD",
-        body: "Un seul cookie de session strictement nécessaire. Pas d’analytics, pas de pub, aucun traceur tiers. Vous supprimez le compte, les données disparaissent avec.",
-        link: "Politique de confidentialité",
-      },
-    },
-    faq: {
-      eyebrow: "Réponses rapides",
-      title: "Les questions que les hôtes posent en premier.",
-      items: [
-        {
-          q: "Est-ce que ça empêche vraiment les doubles réservations ?",
-          a: "Le risque baisse drastiquement — pas à zéro, mais on s’en approche. On récupère le flux iCal de chaque plateforme toutes les 10 minutes et on le republie pour les autres : Airbnb découvre une réservation Booking.com (et inversement) sous 10 min de notre côté. Les plateformes rafraîchissent les flux importés toutes les 2 à 12 h chez elles. Une synchro API en temps réel serait plus rapide, mais Airbnb et Booking.com ne vendent pas leurs API Channel Manager aux hôtes individuels — uniquement aux PMS certifiés qui facturent 100 à 300 $/mois pour relayer les mêmes flux que nous synchronisons gratuitement. Pour 99 % des petits hôtes, le handshake iCal suffit largement.",
-        },
-        {
-          q: "C’est vraiment gratuit ?",
-          a: "Oui. La version hébergée est gratuite pour un usage personnel, avec un rate-limit par compte pour que la facture reste raisonnable. Le code source est sous MIT — clonez-le, faites-le tourner sur un droplet à 4 $, vous ne devez rien à personne.",
-        },
-        {
-          q: "Concrètement, qu’est-ce que ça fait ?",
-          a: "Ça récupère n’importe quel calendrier iCal — Airbnb, Booking.com, Vrbo, ou tout autre service avec une URL d’export — pour vous éviter de jongler entre les onglets. Ajoute des jours tampons pour le ménage que les plateformes ne savent pas gérer. Génère une liste de ménage quotidienne. Modèles de messages par logement et recherche voyageurs en Cmd-K sur tous vos biens.",
-        },
-        {
-          q: "Faut-il s’auto-héberger ?",
-          a: "Non. Inscrivez-vous ici et utilisez la version hébergée. Si un jour vous dépassez la limite gratuite ou voulez la pleine maîtrise des données — exportez et auto-hébergez. Vos données, votre choix.",
-        },
-        {
-          q: "Où vivent les données des voyageurs ?",
-          a: "Dans un seul fichier SQLite sur le serveur hébergé. Aucun sous-traitant tiers, sauf Google Gemini pour l’OCR des passeports (et seulement pour cette unique requête). Vous supprimez le compte, les données disparaissent.",
-        },
-      ],
-    },
-    finalCta: {
-      titleA: "Construit par un hôte.",
-      titleB: "Pour des hôtes.",
-      body: "Pas d’offre payante. Pas d’upsell. Pas de tracking. Le mainteneur paie l’hébergement pour que vous vous occupiez des voyageurs, pas des onglets.",
-      primary: "Commencer — gratuit à vie",
-      secondary: "Lire le code source",
-    },
-    footer: {
-      copyright: "© 2026 DeptosBO · Licence MIT",
-      blog: "Blog",
-      changelog: "Journal des modifications",
-      terms: "Conditions",
-      privacy: "Confidentialité",
-      signIn: "Se connecter",
-      advertise: "Annonceurs",
-      cookieNoteA: "Cookies strictement nécessaires uniquement — pas de tracking, pas d’analytics. Voir la ",
-      cookieNoteLink: "politique de confidentialité",
-      cookieNoteB: ".",
-    },
-  },
-  es: {
-    hero: {
-      eyebrow: "Código abierto · Gratis para siempre",
-      titleLead: "Deje de saltar entre",
-      titleAccent: "pestañas de calendario",
-      // "Cross-sync calendars between Airbnb, Booking.com, Vrbo and
-      // anything that speaks iCal." Spanish prefers "entre" plus a
-      // clean enumeration; usted register throughout.
-      subtitleA: "Sincronizamos calendarios entre",
-      platforms: "Airbnb, Booking.com, Vrbo",
-      subtitleB: "y cualquier fuente compatible con iCal. Cada plataforma ve las reservas de las demás —",
-      subtitleC: "las reservas dobles casi desaparecen",
-      subtitleD: ". Gratis para siempre, código abierto.",
-      cta: "Empezar — gratis para siempre",
-      ctaNote: "Sin tarjeta. Sin planes de pago. Pruebe el asistente antes de registrarse.",
-    },
-    how: {
-      eyebrow: "Cómo funciona",
-      title: "Tres pasos. La mayoría de los anfitriones termina en siete minutos.",
-      steps: [
-        {
-          title: "Pegue las URL iCal de cada plataforma",
-          body: "En Airbnb está en Calendar → Sync calendars → Export. En Booking.com, en Calendar → Sync calendars. Vrbo igual. Péguelas en el asistente.",
-        },
-        {
-          title: "Le devolvemos un feed unificado",
-          body: "Una URL iCal por plataforma con las reservas de las demás, sus bloqueos manuales y los días buffer de limpieza. No hay hueco para una reserva doble.",
-        },
-        {
-          title: "Pegue nuestra URL de vuelta en cada plataforma",
-          body: "Airbnb y Booking.com importan nuestro feed cada pocas horas. A partir de ahí, sus calendarios se conocen entre sí — y conocen sus bloqueos manuales.",
-        },
-      ],
-      tryWizard: "Probar el asistente sin registrarse",
-    },
-    features: {
-      eyebrow: "Pensado para lo que duele de verdad",
-      titleA: "Todo lo que necesita un anfitrión.",
-      titleB: "Nada que no vaya a usar.",
-      items: [
-        {
-          title: "Sincronización entre plataformas",
-          body: "Cada 10 minutos descargamos el feed iCal de cada plataforma y lo republicamos para las demás. Airbnb ve las reservas de Booking y viceversa — la misma protección que ofrece un Channel Manager de pago, pero gratis y de código abierto.",
-        },
-        {
-          title: "Automatización de limpiezas",
-          body: "Días buffer que las plataformas no saben gestionar de forma nativa. Lista de limpiezas del día. Rol de personal de limpieza con acceso restringido al panel.",
-        },
-        {
-          title: "Panel multi-propiedad",
-          body: "Gestione cuantos alojamientos quiera desde un solo sitio. Cambio de contexto con una tecla. Co-anfitriones y personal de limpieza tienen sus propios roles con los permisos justos.",
-        },
-        {
-          title: "Plantillas de mensajes",
-          body: "Plantillas por alojamiento con variables (nombre del huésped, entrada, wifi). Copiar al portapapeles, pegar en Airbnb o WhatsApp.",
-        },
-        {
-          title: "Feed iCal público",
-          body: "Cada alojamiento tiene su propia URL de feed. Péguela en Airbnb o Booking — y arrastrarán también sus bloqueos manuales.",
-        },
-        {
-          title: "Búsqueda de huéspedes con Cmd-K",
-          body: "Encuentre cualquier huésped anterior, en cualquier alojamiento, con un solo atajo. Con exportación de documentos cuando toque presentar papeleo.",
-        },
-      ],
-    },
-    compatible: {
-      label: "Compatible con",
-      footer: "…y cualquier plataforma que exporte un feed iCal.",
-    },
-    trust: {
-      open: {
-        title: "Código abierto",
-        body: "Su información operativa permanece centralizada bajo DeptosBO.",
-        link: "Ver política de privacidad",
-      },
-      gdpr: {
-        title: "Conforme con el RGPD",
-        body: "Una sola cookie de sesión imprescindible. Sin analítica, sin publicidad, sin rastreadores de terceros. Borre la cuenta y los datos se van con ella.",
-        link: "Política de privacidad",
-      },
-    },
-    faq: {
-      eyebrow: "Respuestas rápidas",
-      title: "Lo primero que preguntan los anfitriones.",
-      items: [
-        {
-          q: "¿De verdad evita las reservas dobles?",
-          a: "Reduce el riesgo drásticamente — no a cero, pero casi. Descargamos el feed iCal de cada plataforma cada 10 minutos y lo republicamos para las demás, así que Airbnb se entera de una reserva en Booking.com (y viceversa) en unos 10 min por nuestra parte. Las plataformas refrescan los feeds importados cada 2-12 h por la suya. Una sincronización por API en tiempo real sería más rápida, pero Airbnb y Booking.com no venden sus API de Channel Manager a anfitriones particulares — solo a PMS certificados que cobran 100-300 $/mes por reenviar los mismos feeds que aquí sincronizamos gratis. Para el 99 % de los anfitriones pequeños, el handshake por iCal sobra.",
-        },
-        {
-          q: "¿De verdad es gratis?",
-          a: "Sí. La versión alojada es gratuita para uso personal, con un límite de uso por cuenta para que las facturas no se disparen. El código está bajo MIT — clónelo, levántelo en un droplet de 4 $ y no debe nada a nadie.",
-        },
-        {
-          q: "¿Qué hace exactamente?",
-          a: "Importa cualquier calendario compatible con iCal — Airbnb, Booking.com, Vrbo o cualquier otro servicio con URL de exportación — para que deje de saltar entre pestañas. Añade días buffer de limpieza que las plataformas no saben hacer de forma nativa. Genera la lista de limpiezas del día. Plantillas de mensajes por alojamiento y búsqueda de huéspedes con Cmd-K en todas sus propiedades.",
-        },
-        {
-          q: "¿Tengo que autoalojarlo?",
-          a: "No. Regístrese aquí y use la versión alojada. Si algún día se le queda corto el plan gratuito o quiere control total de los datos, expórtelo y autoalójelo. Sus datos, su decisión.",
-        },
-        {
-          q: "¿Dónde viven los datos de los huéspedes?",
-          a: "En un único archivo SQLite dentro del servidor alojado. Sin procesadores de terceros salvo Google Gemini para el OCR de pasaportes (y solo para esa única petición). Borre la cuenta y los datos desaparecen.",
-        },
-      ],
-    },
-    finalCta: {
-      titleA: "Hecho por un anfitrión.",
-      titleB: "Para anfitriones.",
-      body: "Sin planes de pago. Sin upsell. Sin tracking. El mantenedor paga la factura del hosting para que usted se ocupe de los huéspedes y no de las pestañas del navegador.",
-      primary: "Empezar — gratis para siempre",
-      secondary: "Leer el código fuente",
-    },
-    footer: {
-      copyright: "© 2026 DeptosBO · Licencia MIT",
-      blog: "Blog",
-      changelog: "Registro de cambios",
-      terms: "Términos",
-      privacy: "Privacidad",
-      signIn: "Iniciar sesión",
-      advertise: "Publicidad",
-      cookieNoteA: "Solo cookies imprescindibles — sin tracking ni analítica. Consulte la ",
-      cookieNoteLink: "política de privacidad",
-      cookieNoteB: ".",
-    },
-  },
-};
-
-const FAQ_LD = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: COPY.en.faq.items.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: { "@type": "Answer", text: f.a },
-  })),
-};
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-// SoftwareApplication schema — describes the *product* DeptosBO is.
-// Distinct from the Organization block in the root layout (which
-// describes the *publisher*). Required-by-Google fields: name, applicationCategory,
-// operatingSystem, offers. The price=0 + priceCurrency=USD pair is what makes
-// the "Free" badge appear in the rich result.
-const SOFTWARE_LD = {
+const softwareData: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "@id": `${SITE_URL}/#software`,
   name: "DeptosBO",
-  description:
-    "Free open-source property management software for short-term rental hosts. Cross-syncs Airbnb, Booking.com, and Vrbo iCal calendars; automates cleaning schedules; manages multi-property guest data.",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   url: SITE_URL,
-  softwareVersion: "1.0",
+  description: HOME_META.es.description,
   offers: {
-    "@type": "Offer",
-    price: "0",
+    "@type": "AggregateOffer",
     priceCurrency: "USD",
-    availability: "https://schema.org/InStock",
+    lowPrice: "2",
+    highPrice: "3",
+    offerCount: "2",
   },
-  publisher: { "@id": `${SITE_URL}/#organization` },
   featureList: [
-    "Cross-platform iCal calendar sync",
-    "Cleaning schedule automation",
-    "Multi-property dashboard",
-    "Guest passport extraction",
-    "Per-property message templates",
-    "Cmd-K guest search",
-    "GDPR-compliant data export and deletion",
+    "Calendario maestro",
+    "Sincronización de calendarios",
+    "Registro de reservas",
+    "Panel de check-ins y check-outs",
+    "Coordinación de limpiezas",
+    "Reportes financieros",
   ],
 };
+
+const features = [
+  { icon: "calendar", title: "Calendario maestro", body: "Visualiza todas tus propiedades y reservas en una línea de tiempo clara, sin saltar entre calendarios." },
+  { icon: "sync", title: "Calendarios sincronizados", body: "Conecta calendarios externos y reduce el riesgo de cruces o reservas duplicadas." },
+  { icon: "door", title: "Operación diaria", body: "Check-ins, check-outs, cambios de huésped y limpiezas reunidos por día y departamento." },
+  { icon: "payment", title: "Control de cobros", body: "Registra lo recibido, identifica saldos pendientes y mantén cada reserva bajo control." },
+  { icon: "currency", title: "Manejo multimoneda", body: "Trabaja con dólares estadounidenses como moneda predeterminada y registra operaciones en otras monedas." },
+  { icon: "chart", title: "Reportes útiles", body: "Revisa ingresos, detalle de reservas y rendimiento por propiedad o período." },
+  { icon: "team", title: "Trabajo en equipo", body: "Da acceso a más usuarios y centraliza la información que necesita tu operación." },
+  { icon: "document", title: "Documentos para huéspedes", body: "Genera comprobantes de reserva y recibos de pago con una presentación profesional." },
+];
+
+const baseFeatures = [
+  "Sincronización de calendarios",
+  "Registro y control de reservas",
+  "Calendario por propiedad",
+  "Panel de check-ins y check-outs",
+  "Reporte gerencial",
+  "Manejo multimoneda (USD predeterminado)",
+];
+
+const proFeatures = [
+  ...baseFeatures,
+  "Control de cobros y saldos",
+  "Comprobante de reserva",
+  "Recibo de pago",
+  "Reporte detallado",
+  "Reporte de rendimiento",
+  "Gestión de más de un usuario",
+];
+
+const expertFeatures = [
+  ...proFeatures,
+  "Todas las funcionalidades incluidas",
+  "Descuento especial por volumen",
+];
 
 export default async function HomePage() {
   const session = await getSession();
   if (session) redirect("/dashboard");
-  const supportEmail = (await getSetting("support_email", "")).trim();
   const locale = await getLocale();
-  const t = COPY[locale];
+  const mailBody = encodeURIComponent(
+    "Hola, quiero conocer DeptosBO.\n\nNombre de la empresa:\nPaís(es) y ciudad(es) donde operamos:\nCantidad de propiedades:\nCanales que utilizamos:\nCantidad de personas en el equipo:\nInformación adicional:",
+  );
+  const contactHref = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Quiero conocer DeptosBO")}&body=${mailBody}`;
 
   return (
-    <div className="editorial min-h-screen flex flex-col">
-      <JsonLd data={FAQ_LD} />
-      <JsonLd data={SOFTWARE_LD} />
-      <GoogleOneTap />
-
+    <main className="min-h-screen overflow-hidden bg-white text-[#102b36] dark:bg-[#07191f] dark:text-white">
+      <JsonLd data={softwareData} />
+      <GoogleOneTap next="/dashboard" />
       <MarketingHeader />
 
-      {/* ─────────────── Hero ─────────────── */}
-      <section className="relative overflow-hidden">
-        <div className="grid-bg absolute inset-0 pointer-events-none opacity-60" aria-hidden="true" />
-        <div className="calendar-pills absolute inset-0 pointer-events-none" aria-hidden="true" />
-        <div className="relative mx-auto max-w-[1180px] px-4 pt-16 sm:px-6 pb-16 text-center sm:pt-20 sm:pb-20">
-          <p className="hero-in mono mb-5 inline-block rounded-full bg-[var(--bg-2)] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)]">
-            {t.hero.eyebrow}
-          </p>
-          <h1 className="hero-in hero-in-2 display mx-auto max-w-[820px] text-[36px] font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--ink)] sm:text-[52px] lg:text-[60px]">
-            {t.hero.titleLead}{" "}
-            <span className="relative whitespace-nowrap">
-              <span className="italic font-normal">{t.hero.titleAccent}</span>
-              <svg
-                className="absolute left-0 right-0 -bottom-1 sm:-bottom-1.5"
-                width="100%"
-                height="10"
-                viewBox="0 0 220 10"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <path
-                  className="underline-draw"
-                  d="M2 6 Q 55 1, 110 5 T 218 5"
-                  fill="none"
-                  stroke="var(--m-accent)"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-            .
-          </h1>
-          <p className="hero-in hero-in-3 mx-auto mt-6 max-w-[620px] text-[16px] leading-[1.55] text-[var(--ink-2)] sm:text-[18px]">
-            {t.hero.subtitleA}{" "}
-            <span className="text-[var(--ink)] font-medium">{t.hero.platforms}</span>{" "}
-            {t.hero.subtitleB}{" "}
-            <span className="text-[var(--ink)] font-medium">{t.hero.subtitleC}</span>
-            {t.hero.subtitleD}
-          </p>
-
-          <div className="hero-in hero-in-4 mt-8 flex justify-center">
-            <Link
-              href={localePath("/onboard", locale)}
-              className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-[var(--m-accent)] px-8 text-[14px] font-medium text-white transition-all hover:bg-[var(--m-accent-2)] hover:translate-y-[-1px] active:translate-y-0 shadow-[0_2px_8px_rgba(255,56,92,0.25)] sm:w-auto"
-            >
-              {t.hero.cta}
-              <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                <path d="M3 7h8m0 0L7 3m4 4l-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </div>
-          <p className="hero-in hero-in-4 mt-4 text-[12.5px] text-[var(--ink-3)]">
-            {t.hero.ctaNote}
-          </p>
-        </div>
-      </section>
-
-      {/* ─────────────── How it works ─────────────── */}
-      <section id="how-it-works" className="border-t border-[var(--line)] bg-[var(--bg-2)]">
-        <div className="mx-auto max-w-[1180px] px-4 py-20 sm:px-6 sm:py-24">
-          <div className="mx-auto max-w-[640px] text-center">
-            <p className="mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)]">{t.how.eyebrow}</p>
-            <h2 className="display-tight mt-3 text-[32px] font-semibold tracking-tight text-[var(--ink)] sm:text-[42px]">
-              {t.how.title}
-            </h2>
-          </div>
-          <ol className="mt-14 grid gap-6 sm:grid-cols-3 sm:gap-8">
-            {t.how.steps.map((s, i) => (
-              <Step key={i} n={`0${i + 1}`} title={s.title} body={s.body} />
-            ))}
-          </ol>
-          <div className="mt-12 text-center">
-            <Link
-              href={localePath("/onboard", locale)}
-              className="inline-flex items-center gap-2 text-[14px] font-medium text-[var(--m-accent)] hover:underline"
-            >
-              {t.how.tryWizard}
-              <svg className="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                <path d="M3 7h8m0 0L7 3m4 4l-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────── Features ─────────────── */}
-      <section className="border-t border-[var(--line)]">
-        <div className="mx-auto max-w-[1180px] px-4 py-20 sm:px-6 sm:py-24">
-          <div className="mx-auto max-w-[640px] text-center">
-            <p className="mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)]">{t.features.eyebrow}</p>
-            <h2 className="display-tight mt-3 text-[32px] font-semibold tracking-tight text-[var(--ink)] sm:text-[42px]">
-              {t.features.titleA}<br className="hidden sm:inline" /> {t.features.titleB}
-            </h2>
-          </div>
-          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {t.features.items.map((f, i) => (
-              <Feature key={i} title={f.title} body={f.body} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────── Compatible with strip ─────────────── */}
-      <section className="border-t border-[var(--line)]">
-        <div className="mx-auto max-w-[1180px] px-4 py-12 sm:px-6 sm:py-16">
-          <p className="mono text-center text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)]">
-            {t.compatible.label}
-          </p>
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:gap-x-4">
-            {[
-              { name: "Airbnb", color: "#ff385c" },
-              { name: "Booking.com", color: "#003580" },
-              { name: "Vrbo", color: "#245abc" },
-              { name: "Expedia", color: "#c69a14" },
-              { name: "Hostaway", color: "#2e5bff" },
-              { name: "Lodgify", color: "#00928a" },
-              { name: "Smoobu", color: "#5b1a98" },
-              { name: "Plum Guide", color: "#2e1065" },
-            ].map((p) => (
-              <PlatformChip key={p.name} name={p.name} color={p.color} />
-            ))}
-          </div>
-          <p className="mt-6 text-center text-[12.5px] text-[var(--ink-3)]">
-            {t.compatible.footer}
-          </p>
-        </div>
-      </section>
-
-      {/* ─────────────── Trust ─────────────── */}
-      <section className="border-t border-[var(--line)] bg-[var(--bg-2)]">
-        <div className="mx-auto max-w-[1180px] px-4 py-16 sm:px-6 sm:py-20">
-          <div className="grid gap-8 sm:grid-cols-2 sm:gap-12">
-            <Trust
-              title={t.trust.open.title}
-              body={t.trust.open.body}
-              link={{ href: "/privacy", label: t.trust.open.link }}
-            />
-            <Trust
-              title={t.trust.gdpr.title}
-              body={t.trust.gdpr.body}
-              link={{ href: "/privacy", label: t.trust.gdpr.link }}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────── FAQ ─────────────── */}
-      <section className="border-t border-[var(--line)]">
-        <div className="mx-auto max-w-[760px] px-4 py-20 sm:px-6 sm:py-24">
-          <div className="text-center">
-            <p className="mono text-[11px] uppercase tracking-[0.14em] text-[var(--ink-3)]">{t.faq.eyebrow}</p>
-            <h2 className="display-tight mt-3 text-[32px] font-semibold tracking-tight text-[var(--ink)] sm:text-[40px]">
-              {t.faq.title}
-            </h2>
-          </div>
-          <div className="mt-12 space-y-3">
-            {t.faq.items.map((f) => (
-              <Faq key={f.q} q={f.q}>
-                {f.a}
-              </Faq>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────── Final CTA ─────────────── */}
-      <section className="border-t border-[var(--line)] bg-[var(--bg-2)]">
-        <div className="mx-auto max-w-[1180px] px-4 py-20 sm:px-6 sm:py-28">
-          <div className="mx-auto max-w-[680px] text-center">
-            <h2 className="display text-[36px] font-semibold tracking-[-0.03em] text-[var(--ink)] sm:text-[52px]">
-              {t.finalCta.titleA} <span className="italic font-normal">{t.finalCta.titleB}</span>
-            </h2>
-            <p className="mt-6 text-[17px] leading-relaxed text-[var(--ink-2)]">
-              {t.finalCta.body}
+      <section className="relative isolate border-b border-white/10 bg-[#071b22] text-white">
+        <div className="absolute inset-0 -z-20 bg-cover bg-[position:68%_center] lg:bg-center" style={{ backgroundImage: "url('/marketing/short-stay-arrival-hero.webp')" }} />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#061b23]/95 via-[#061b23]/75 to-[#061b23]/30" />
+        <div className="mx-auto grid min-w-0 max-w-[1180px] grid-cols-1 gap-14 px-5 pb-20 pt-16 lg:grid-cols-[.9fr_1.1fr] lg:items-center lg:px-6 lg:pb-28 lg:pt-24">
+          <div className="min-w-0">
+            <p className="mb-5 inline-block max-w-full rounded-full border border-[#65dfd2]/30 bg-[#071b22]/45 px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-[#65dfd2] backdrop-blur-sm">
+              Para anfitriones y gestores con más de 3 propiedades
             </p>
-            <div className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <Link
-                href={localePath("/onboard", locale)}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-[var(--m-accent)] px-7 text-[14px] font-medium text-white transition-all hover:bg-[var(--m-accent-2)] hover:translate-y-[-1px] active:translate-y-0 shadow-[0_2px_8px_rgba(255,56,92,0.25)] sm:w-auto"
-              >
-                {t.finalCta.primary}
-              </Link>
-              <Link
-                href="/privacy"
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-6 text-[14px] font-medium text-[var(--ink)] transition-colors hover:bg-[var(--bg-3)] sm:w-auto"
-              >
-                {t.finalCta.secondary}
-              </Link>
+            <h1 className="max-w-2xl text-4xl font-black leading-[1.03] tracking-[-.045em] text-white sm:text-6xl">
+              Toda tu operación de alquileres, <span className="text-[#11a99a]">en una sola vista.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-200">
+              Organiza reservas, calendarios, cobros, check-ins, limpiezas y reportes sin depender de hojas dispersas ni revisar cada canal por separado.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a href="#planes" className="rounded-xl bg-[#11aa9b] px-7 py-3.5 text-center font-bold text-white shadow-lg shadow-teal-500/25 transition hover:-translate-y-0.5 hover:bg-[#0d9589]">
+                Ver planes
+              </a>
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-2 text-sm text-slate-300">
+              <span className="mr-1 font-semibold text-white">Centraliza tu operación:</span>
+              <Channel label="Airbnb" color="bg-[#ff385c]" />
+              <Channel label="Booking.com" color="bg-[#1475b8]" />
+              <Channel label="Vrbo" color="bg-[#6552cb]" />
+              <Channel label="Directo" color="bg-[#179f7d]" />
             </div>
           </div>
+          <ProductCalendarMock />
         </div>
       </section>
 
-      {/* ─────────────── Footer ─────────────── */}
-      <footer className="mt-auto border-t border-[var(--line)]">
-        <div className="mx-auto max-w-[1180px] px-4 py-8 sm:px-6">
-          <div className="flex flex-col items-center justify-between gap-4 text-[12.5px] text-[var(--ink-3)] sm:flex-row">
-            <p>{t.footer.copyright}</p>
-            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              <Link href={localePath("/blog", locale)} className="hover:text-[var(--ink)] transition-colors">{t.footer.blog}</Link>
-              <Link href={localePath("/changelog", locale)} className="hover:text-[var(--ink)] transition-colors">{t.footer.changelog}</Link>
-              <Link href="/terms" className="hover:text-[var(--ink)] transition-colors">{t.footer.terms}</Link>
-              <Link href="/privacy" className="hover:text-[var(--ink)] transition-colors">{t.footer.privacy}</Link>
-              <a
-                href="mailto:soporte@deptosbo.local?subject=Advertising%20enquiry"
-                className="hover:text-[var(--ink)] transition-colors"
-              >
-                {t.footer.advertise}
-              </a>
-              {supportEmail && (
-                <a href={`mailto:${supportEmail}`} className="hover:text-[var(--ink)] transition-colors">
-                  {supportEmail}
-                </a>
-              )}
-              <Link href={localePath("/login", locale)} className="hover:text-[var(--ink)] transition-colors">{t.footer.signIn}</Link>
-            </nav>
+      <section id="funciones" className="mx-auto max-w-[1180px] px-5 py-20 lg:px-6 lg:py-28">
+        <SectionHeading eyebrow="Una plataforma para operar mejor" title="Menos tareas dispersas. Más control sobre cada estadía." body="DeptosBO reúne la información importante para que tu equipo sepa qué ocurre hoy, qué viene después y cómo está funcionando el negocio." />
+        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {features.map((feature) => <FeatureCard key={feature.title} {...feature} />)}
+        </div>
+      </section>
+
+      <section id="cobros" className="border-y border-slate-200 bg-[#f5f9fa] py-20 dark:border-white/10 dark:bg-[#0a2027] lg:py-28">
+        <div className="mx-auto grid max-w-[1180px] gap-12 px-5 lg:grid-cols-[.85fr_1.15fr] lg:items-center lg:px-6">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#0f9f91]">Control de cobros</p>
+            <h2 className="mt-4 text-3xl font-black tracking-[-.03em] text-[#0b2b36] sm:text-5xl dark:text-white">Cada pago claro. Cada saldo bajo control.</h2>
+            <p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-300">Registra el dinero recibido por reserva, identifica quién lo cobró y detecta de inmediato cuánto falta por pagar.</p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              {["Seguimiento de cobros por reserva", "Saldos pendientes visibles", "Registro por moneda y método", "Responsable de cada ingreso"].map((item) => <div key={item} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-[#173743] dark:border-white/10 dark:bg-white/5 dark:text-white"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#14b8a6]/15 text-xs text-[#0e9f91]">✓</span>{item}</div>)}
+            </div>
+            <p className="mt-6 inline-flex rounded-full bg-[#0b2b36] px-4 py-2 text-sm font-bold text-white dark:bg-[#14b8a6]">Incluido desde el plan Intermedio</p>
           </div>
-          <p className="mt-3 text-center text-[11px] text-[var(--ink-4)] sm:text-left">
-            {t.footer.cookieNoteA}<Link href="/privacy" className="underline underline-offset-2 hover:text-[var(--ink-3)]">{t.footer.cookieNoteLink}</Link>{t.footer.cookieNoteB}
-          </p>
+          <PaymentControlMock />
+        </div>
+      </section>
+
+      <section id="experiencia" className="relative isolate min-h-[430px] overflow-hidden bg-[#071b22] text-white">
+        <div className="absolute inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: "url('/marketing/short-stay-rooftop-pool.webp')" }} />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#061b23]/95 via-[#061b23]/65 to-transparent" />
+        <div className="mx-auto flex min-h-[430px] max-w-[1180px] items-center px-5 py-16 lg:px-6">
+          <div className="max-w-xl">
+            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#65dfd2]">Hospitalidad que crece contigo</p>
+            <h2 className="mt-4 text-3xl font-black tracking-[-.03em] sm:text-5xl">Menos tiempo ordenando datos. Más tiempo para tus huéspedes.</h2>
+            <p className="mt-5 text-lg leading-8 text-slate-200">DeptosBO convierte una operación compleja en una experiencia clara para que puedas enfocarte en hacer crecer tus rentas cortas.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#082731] py-20 text-white lg:py-28">
+        <div className="mx-auto grid max-w-[1180px] gap-12 px-5 lg:grid-cols-[.75fr_1.25fr] lg:items-center lg:px-6">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#55d7c9]">La operación del día, resuelta</p>
+            <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Tu equipo sabe dónde actuar.</h2>
+            <p className="mt-5 text-lg leading-8 text-slate-300">Identifica ingresos, salidas, cambios de huésped y limpiezas desde un panel consolidado y fácil de leer.</p>
+            <ul className="mt-7 space-y-3 text-slate-200">
+              {["Totales diarios de ingresos y limpiezas", "Cambios de huésped destacados", "Información ordenada por alojamiento"].map((item) => (
+                <li key={item} className="flex items-center gap-3"><span className="grid size-6 place-items-center rounded-full bg-[#14b8a6] text-xs font-black">✓</span>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <OperationsMock />
+        </div>
+      </section>
+
+      <section id="planes" className="bg-[#f5f9fa] py-20 dark:bg-[#0a2027] lg:py-28">
+        <div className="mx-auto max-w-[1080px] px-5 lg:px-6">
+          <SectionHeading centered eyebrow="Planes simples" title="Paga por las propiedades que administras." body="Prueba cualquiera de nuestros planes durante dos semanas sin costo y elige el nivel adecuado para tu operación." />
+          <div className="mx-auto mt-6 w-fit rounded-full border border-[#14b8a6]/30 bg-[#14b8a6]/10 px-4 py-2 text-sm font-extrabold text-[#0d8f83] dark:text-[#65dfd2]">14 días de prueba gratuita en cualquier plan</div>
+          <div className="mx-auto mt-10 grid max-w-6xl gap-6 md:grid-cols-3">
+            <PriceCard name="Inicial" price="2" description="Lo esencial para centralizar calendarios y el trabajo diario." features={baseFeatures} ctaHref={contactHref} />
+            <PriceCard featured name="Intermedio" price="3" description="Más análisis, documentos y colaboración para una operación en crecimiento." features={proFeatures} ctaHref={contactHref} />
+            <PriceCard name="Experto" description="Para operaciones con 20 propiedades o más, con todas las funcionalidades y condiciones preferenciales." features={expertFeatures} ctaHref={contactHref} condition="20 propiedades o más" />
+          </div>
+        </div>
+      </section>
+
+      <section id="contacto" className="mx-auto max-w-[1180px] px-5 py-20 lg:px-6 lg:py-28">
+        <div className="overflow-hidden rounded-[2rem] bg-[#0b2b36] p-7 text-white shadow-2xl shadow-slate-900/10 sm:p-12 lg:grid lg:grid-cols-[1.1fr_.9fr] lg:gap-16">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#62ded0]">Conversemos</p>
+            <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Una operación más clara empieza aquí.</h2>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">Cuéntanos cómo trabajas y te ayudaremos a identificar el plan adecuado para tu portafolio.</p>
+            <a href={contactHref} className="mt-8 inline-flex rounded-xl bg-[#14b8a6] px-6 py-3.5 font-bold text-white transition hover:bg-[#10a494]">Contactarnos</a>
+            <p className="mt-4 text-sm text-slate-400">O escríbenos a <a className="font-bold text-white underline decoration-[#14b8a6] underline-offset-4" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+          </div>
+          <div className="mt-10 rounded-2xl border border-white/10 bg-white/[.06] p-6 lg:mt-0">
+            <p className="font-bold">Para responderte mejor, comparte:</p>
+            <ul className="mt-5 space-y-3 text-sm text-slate-300">
+              {["Nombre de tu empresa", "Países y ciudades donde operas", "Cantidad de propiedades", "Canales que utilizas", "Cantidad de personas en tu equipo", "Cualquier necesidad particular de tu operación"].map((item) => (
+                <li key={item} className="flex gap-3"><span className="text-[#55d7c9]">●</span>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-200 px-5 py-8 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400">
+        <div className="mx-auto flex max-w-[1180px] flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <p>© {new Date().getFullYear()} DeptosBO. Gestión profesional de alquileres temporales.</p>
+          <div className="flex gap-5"><Link href={localePath("/terms", locale)}>Términos</Link><Link href={localePath("/privacy", locale)}>Privacidad</Link><a href={`mailto:${CONTACT_EMAIL}`}>Contacto</a></div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }
 
-/* ─────────────── Sub-components ─────────────── */
-
-function Step({ n, title, body }: { n: string; title: string; body: string }) {
-  return (
-    <li className="relative rounded-xl border border-[var(--line)] bg-[var(--bg)] p-6 transition-colors hover:border-[var(--line-2)]">
-      <span className="mono absolute -top-3 left-6 inline-block rounded-md bg-[var(--ink)] px-2 py-0.5 text-[11px] font-medium text-[var(--bg)]">
-        {n}
-      </span>
-      <h3 className="mt-2 text-[16px] font-semibold tracking-tight text-[var(--ink)]">{title}</h3>
-      <p className="mt-2 text-[14px] leading-relaxed text-[var(--ink-2)]">{body}</p>
-    </li>
-  );
+function SectionHeading({ eyebrow, title, body, centered = false }: { eyebrow: string; title: string; body: string; centered?: boolean }) {
+  return <div className={centered ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}><p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#0f9f91]">{eyebrow}</p><h2 className="mt-4 text-3xl font-black tracking-[-.03em] text-[#0b2b36] sm:text-5xl dark:text-white">{title}</h2><p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-300">{body}</p></div>;
 }
 
-function Feature({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--line)] bg-[var(--bg)] p-6 transition-all hover:border-[var(--line-2)] hover:translate-y-[-2px]">
-      <h3 className="text-[15px] font-semibold tracking-tight text-[var(--ink)]">{title}</h3>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--ink-2)]">{body}</p>
-    </div>
-  );
+function Channel({ label, color }: { label: string; color: string }) {
+  return <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/90 px-2.5 py-1 text-slate-700 shadow-sm backdrop-blur-sm"><span className={`size-2 rounded-full ${color}`} />{label}</span>;
 }
 
-function Trust({
-  title,
-  body,
-  link,
-}: {
-  title: string;
-  body: string;
-  link?: { href: string; label: string; external?: boolean };
-}) {
-  return (
-    <div>
-      <h3 className="text-[14px] font-semibold tracking-tight text-[var(--ink)]">{title}</h3>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--ink-2)]">{body}</p>
-      {link && (
-        link.external ? (
-          <a href={link.href} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-[12.5px] text-[var(--m-accent)] hover:underline">
-            {link.label}
-            <svg className="h-3 w-3" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M3 7h8m0 0L7 3m4 4l-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
-        ) : (
-          <Link href={link.href} className="mt-3 inline-flex items-center gap-1 text-[12.5px] text-[var(--m-accent)] hover:underline">
-            {link.label}
-            <svg className="h-3 w-3" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M3 7h8m0 0L7 3m4 4l-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
-        )
-      )}
-    </div>
-  );
+function FeatureIcon({ name }: { name: string }) {
+  const paths: Record<string, ReactNode> = {
+    calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M7 14h3M14 14h3M7 18h3"/></>,
+    sync: <><path d="M20 7h-5V2"/><path d="M4 17h5v5"/><path d="M19 11a7 7 0 0 0-12-5L5 8M5 13a7 7 0 0 0 12 5l2-2"/></>,
+    door: <><path d="M4 21h16M6 21V3h12v18M14 12h.01"/></>,
+    payment: <><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h2"/></>,
+    chart: <><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 5-6"/></>,
+    currency: <><circle cx="12" cy="12" r="9"/><path d="M16 8.5c-.7-.9-1.8-1.5-3.2-1.5-1.8 0-3.3.9-3.3 2.4 0 3.6 6.8 1.6 6.8 5.2 0 1.5-1.5 2.4-3.5 2.4-1.5 0-2.8-.6-3.6-1.6M12.8 5v14"/></>,
+    document: <><path d="M6 2h9l4 4v16H6z"/><path d="M14 2v5h5M9 12h7M9 16h7"/></>,
+    team: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
+  };
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-6">{paths[name]}</svg>;
 }
 
-function PlatformChip({ name, color }: { name: string; color: string }) {
-  return (
-    <span
-      className="inline-flex items-center rounded-full border px-3.5 py-1.5 text-[13px] font-medium tracking-tight transition-colors"
-      style={{
-        color,
-        borderColor: `${color}33`,
-        backgroundColor: `${color}0d`,
-      }}
-    >
-      {name}
-    </span>
-  );
+function FeatureCard({ icon, title, body }: { icon: string; title: string; body: string }) {
+  return <article className="rounded-2xl border border-slate-200 bg-white p-6 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/5 dark:border-white/10 dark:bg-white/[.04]"><div className="grid size-11 place-items-center rounded-xl bg-[#14b8a6]/12 text-[#0e9f91]"><FeatureIcon name={icon} /></div><h3 className="mt-5 text-lg font-extrabold text-[#0b2b36] dark:text-white">{title}</h3><p className="mt-2 leading-7 text-slate-600 dark:text-slate-300">{body}</p></article>;
 }
 
-function Faq({ q, children }: { q: string; children: React.ReactNode }) {
-  return (
-    <details className="group rounded-lg border border-[var(--line)] bg-[var(--bg)] open:border-[var(--line-2)] transition-colors">
-      <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-[14px] font-medium text-[var(--ink)] [&::-webkit-details-marker]:hidden">
-        {q}
-        <svg className="h-4 w-4 text-[var(--ink-3)] transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-        </svg>
-      </summary>
-      <div className="border-t border-[var(--line)] px-5 py-4 text-[13.5px] leading-relaxed text-[var(--ink-2)]">
-        {children}
-      </div>
-    </details>
-  );
+function PaymentControlMock() {
+  return <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-900/10 dark:border-white/10 dark:bg-[#0b2028] sm:p-6"><div className="rounded-2xl border border-[#14b8a6]/45 bg-[#14b8a6]/10 p-4"><div className="flex items-center justify-between gap-4"><p className="text-sm font-extrabold text-[#173743] dark:text-white">Cobro de esta reserva</p><span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-600 dark:text-emerald-300">Saldado</span></div><div className="mt-4 grid grid-cols-3 gap-3"><PaymentMetric label="A cobrar" value="USD 485" /><PaymentMetric label="Pagado" value="USD 485" /><PaymentMetric label="Adeudado" value="USD 0" positive /></div><div className="mt-4 rounded-xl border border-[#14b8a6]/45 bg-white/55 px-4 py-2.5 text-center text-sm font-extrabold text-[#0e9f91] dark:bg-white/5">Tramo conciliado y pagado</div></div><div className="mt-4 rounded-2xl border border-slate-200 p-4 dark:border-white/10"><p className="text-sm font-extrabold text-[#173743] dark:text-white">Dinero recibido</p><PaymentRow amount="USD 185" type="Hospedaje" method="Tarjeta" person="Equipo 1" /><PaymentRow amount="USD 300" type="Hospedaje" method="Tarjeta" person="Equipo 2" /></div><div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[.03]"><p className="text-sm font-extrabold text-[#173743] dark:text-white">Registrar dinero recibido</p><div className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Hospedaje <span className="float-right">⌄</span></div><div className="mt-2 grid grid-cols-[1fr_.8fr] gap-2"><div className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">Tarjeta <span className="float-right">⌄</span></div><div className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-400 dark:border-white/10 dark:bg-white/5">USD &nbsp; Monto</div></div><div className="mt-2 rounded-lg bg-[#8fd8d1] px-4 py-2.5 text-center text-sm font-extrabold text-white">Registrar ingreso</div></div><p className="mt-3 text-center text-[11px] text-slate-400">Información ficticia para demostración · USD predeterminado</p></div>;
+}
+
+function PaymentMetric({ label, value, positive = false }: { label: string; value: string; positive?: boolean }) {
+  return <div><p className="text-[11px] text-slate-500 dark:text-slate-400">{label}</p><p className={`mt-1 text-sm font-black ${positive ? "text-emerald-600 dark:text-emerald-300" : "text-[#173743] dark:text-white"}`}>{value}</p></div>;
+}
+
+function PaymentRow({ amount, type, method, person }: { amount: string; type: string; method: string; person: string }) {
+  return <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs dark:border-white/10"><span className="font-black text-[#173743] dark:text-white">{amount}</span><span className="rounded bg-slate-100 px-2 py-1 font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">{type}</span><span className="text-slate-400">{method}</span><span className="ml-auto text-slate-500 dark:text-slate-300">{person}</span><span className="grid size-5 place-items-center rounded-full bg-rose-100 font-bold text-rose-500">×</span></div>;
+}
+
+function PriceCard({ name, price, description, features: items, ctaHref, condition, featured = false }: { name: string; price?: string; description: string; features: string[]; ctaHref: string; condition?: string; featured?: boolean }) {
+  return <article className={`relative flex flex-col rounded-3xl border p-7 ${featured ? "border-[#14b8a6] bg-[#0b2b36] text-white shadow-xl shadow-teal-900/15" : "border-slate-200 bg-white dark:border-white/10 dark:bg-white/5"}`}>{featured && <span className="absolute right-5 top-5 rounded-full bg-[#14b8a6] px-3 py-1 text-xs font-bold text-white">Más completo</span>}<h3 className="text-xl font-black">{name}</h3><p className={`mt-2 min-h-12 text-sm leading-6 ${featured ? "text-slate-300" : "text-slate-600 dark:text-slate-300"}`}>{description}</p>{price ? <div className="mt-6 flex items-end gap-2"><span className="pb-1 text-sm font-bold">USD</span><span className="text-5xl font-black tracking-tight">{price}</span><span className={`pb-1 text-sm ${featured ? "text-slate-300" : "text-slate-500"}`}>por propiedad</span></div> : <div className="mt-6"><p className="text-2xl font-black text-[#0d8f83] dark:text-[#65dfd2]">Descuento especial</p><p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-300">{condition}</p></div>}<p className={`mt-5 w-fit rounded-full px-3 py-1 text-xs font-bold ${featured ? "bg-white/10 text-[#65dfd2]" : "bg-[#14b8a6]/10 text-[#0d8f83]"}`}>2 semanas de prueba gratuita</p><ul className="mt-6 flex-1 space-y-3">{items.map((item) => <li key={item} className="flex gap-3 text-sm"><span className="font-black text-[#14b8a6]">✓</span>{item}</li>)}</ul><a href={ctaHref} className={`mt-8 block rounded-xl px-5 py-3 text-center font-bold ${featured ? "bg-[#14b8a6] text-white" : "bg-[#0b2b36] text-white dark:bg-[#14b8a6]"}`}>Solicitar información</a></article>;
+}
+
+function ProductCalendarMock() {
+  const dates = ["LU 14", "MA 15", "MI 16", "JU 17", "VI 18", "SÁ 19", "DO 20"];
+  return <div className="relative min-w-0 max-w-full overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white p-3 shadow-2xl shadow-[#0b2b36]/15 dark:border-white/10 dark:bg-[#0b2028]"><div className="flex min-w-0 items-center justify-between gap-2 px-2 pb-3"><div className="min-w-0"><p className="truncate font-extrabold">Calendario maestro</p><p className="truncate text-xs text-slate-500 dark:text-slate-400">Reservas confirmadas en una sola vista</p></div><span className="shrink-0 rounded-full bg-[#14b8a6]/12 px-2 py-1 text-[10px] font-bold text-[#0f9f91] sm:px-3 sm:text-xs">12 alojamientos</span></div><div className="max-w-full overflow-hidden rounded-xl border border-slate-200 text-[10px] dark:border-white/10"><div className="grid min-w-0 grid-cols-[90px_repeat(7,minmax(0,1fr))] bg-slate-50 sm:grid-cols-[115px_repeat(7,minmax(0,1fr))] dark:bg-white/5"><div className="truncate p-2 font-bold text-slate-400 sm:p-3">DEPARTAMENTO</div>{dates.map((date) => <div key={date} className="truncate border-l border-slate-200 px-0 py-2 text-center text-[8px] font-bold text-slate-500 sm:p-3 sm:text-[10px] dark:border-white/10">{date}</div>)}</div><div className="bg-[#0d4353] px-3 py-2 font-black tracking-widest text-white">SKY CENTRAL</div><CalendarRow name="Departamento 301" bars={[{ start: 1, span: 2, color: "bg-[#1d75b7]", label: "Andrea · USD 120" }, { start: 4, span: 3, color: "bg-[#ff3d63]", label: "Reserva Airbnb" }]} /><CalendarRow name="Departamento 406" bars={[{ start: 2, span: 4, color: "bg-[#16a07e]", label: "Lucas · USD 205" }]} /><CalendarRow name="Departamento 512" bars={[{ start: 1, span: 3, color: "bg-[#6552cb]", label: "Martín · USD 185" }]} /><div className="bg-[#0d4353] px-3 py-2 font-black tracking-widest text-white">LUXE TOWER</div><CalendarRow name="Departamento 104" bars={[{ start: 3, span: 3, color: "bg-[#ff3d63]", label: "Reserva Airbnb" }]} /><CalendarRow name="Departamento 205" bars={[{ start: 1, span: 4, color: "bg-[#1d75b7]", label: "Sofía · USD 210" }]} /></div><div className="pointer-events-none absolute -right-7 -top-7 -z-10 size-40 rounded-full bg-[#14b8a6]/20 blur-3xl" /></div>;
+}
+
+function CalendarRow({ name, bars }: { name: string; bars: Array<{ start: number; span: number; color: string; label: string }> }) {
+  return <div className="grid min-h-12 min-w-0 grid-cols-[90px_repeat(7,minmax(0,1fr))] border-t border-slate-200 sm:grid-cols-[115px_repeat(7,minmax(0,1fr))] dark:border-white/10"><div className="flex min-w-0 items-center p-2 font-bold text-slate-700 dark:text-slate-200"><span className="truncate">{name}</span></div>{[1,2,3,4,5,6,7].map((day) => <div key={day} className="min-w-0 border-l border-slate-200 dark:border-white/10" />)}{bars.map((bar) => <div key={`${bar.start}-${bar.label}`} style={{ gridColumn: `${bar.start + 1} / span ${bar.span}`, gridRow: 1 }} className={`z-10 m-1 flex min-w-0 items-center overflow-hidden rounded-lg px-1 font-bold text-white shadow-sm sm:px-2 ${bar.color}`}><span className="truncate">{bar.label}</span></div>)}</div>;
+}
+
+function OperationsMock() {
+  const rows = [
+    ["Departamento 406", "INGRESO", "Valentina R.", "Limpieza"],
+    ["Departamento 512", "CAMBIO DE HUÉSPED", "Carlos → Mariana", "Limpieza"],
+    ["Departamento 301", "SALIDA", "Gabriel M.", "Limpieza"],
+    ["Departamento 205", "INGRESO", "Lucía P.", ""],
+  ];
+  return <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[.06] shadow-2xl"><div className="flex items-center gap-3 border-b border-[#14b8a6]/50 px-5 py-4"><p className="font-extrabold">Hoy</p><span className="rounded-full bg-cyan-500/15 px-2.5 py-1 text-xs font-bold text-cyan-300">3 ingresos</span><span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-bold text-emerald-300">3 limpiezas</span></div>{rows.map(([property, status, guest, cleaning]) => <div key={property} className={`grid grid-cols-[1fr_1.5fr_auto] items-center gap-3 border-b border-white/[.07] px-5 py-4 last:border-0 ${status === "CAMBIO DE HUÉSPED" ? "bg-amber-400/[.07]" : ""}`}><p className="text-sm font-bold">{property}</p><div className="flex min-w-0 items-center gap-2"><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${status === "INGRESO" ? "bg-cyan-500/15 text-cyan-300" : status === "SALIDA" ? "bg-slate-500/20 text-slate-300" : "bg-amber-500/15 text-amber-300"}`}>{status}</span><span className="truncate text-sm text-slate-300">{guest}</span></div>{cleaning && <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-300">{cleaning}</span>}</div>)}</div>;
 }

@@ -97,6 +97,46 @@ beforeEach(() => {
 });
 
 describe("PATCH /api/reservations/:id — date edits", () => {
+  it("moves a reservation to an accessible property and checks conflicts there", async () => {
+    const destinationPropertyId = 21;
+    mocks.reservationFindUnique.mockResolvedValue({
+      ...original,
+      platform: "direct",
+      linkedEventUid: null,
+    });
+
+    const response = await PATCH(
+      patchRequest({ propertyId: destinationPropertyId }),
+      patchParams(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.reservationFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ propertyId: destinationPropertyId }),
+      }),
+    );
+    expect(mocks.reservationUpdate).toHaveBeenCalledWith({
+      where: { id: reservationId },
+      data: { propertyId: destinationPropertyId },
+    });
+  });
+
+  it("rejects moving a reservation to a property the user cannot manage", async () => {
+    mocks.canManageProperty
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+
+    const response = await PATCH(
+      patchRequest({ propertyId: 21 }),
+      patchParams(),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Invalid property" });
+    expect(mocks.reservationUpdate).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["checkIn", "not-a-date", "Invalid checkIn date"],
     ["checkOut", "not-a-date", "Invalid checkOut date"],
