@@ -14,6 +14,7 @@ export interface MasterCalendarStay {
   hasOutstandingBalance?: boolean;
   hasMissingAirbnbDetails?: boolean;
   uid?: string;
+  blockReason?: string;
 }
 
 interface MasterCalendarProperty {
@@ -51,12 +52,14 @@ const VISIBLE_DAYS = 42;
 const PLATFORM_COLORS: Record<string, { background: string; foreground: string }> = {
   airbnb: { background: "#ff385c", foreground: "#ffffff" },
   "airbnb-block": { background: "transparent", foreground: "#64748b" },
+  "deptosbo-block": { background: "transparent", foreground: "#64748b" },
   booking: { background: "#1769aa", foreground: "#ffffff" },
   direct: { background: "#159a73", foreground: "#ffffff" },
   vrbo: { background: "#5b4bc4", foreground: "#ffffff" },
 };
 
 function platformLabel(platform: string): string {
+  if (platform === "deptosbo-block") return "Bloqueo manual";
   if (platform.endsWith("-block")) return "Bloqueo del canal";
   if (platform === "direct") return "Directa";
   if (platform === "booking") return "Booking";
@@ -327,7 +330,7 @@ export function MasterCalendar({
                               : isAvailabilityBlock ? "" : "rounded-lg px-2"
                           } ${(stay.hasOutstandingBalance || stay.hasMissingAirbnbDetails) && !isAvailabilityBlock ? "ring-1 ring-inset ring-amber-300/80" : ""}`}
                           style={{ left, width, backgroundColor: isAvailabilityBlock ? undefined : color.background, color: isAvailabilityBlock ? undefined : color.foreground }}
-                          title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.totalPrice != null ? ` · ${stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}` : ""}`}
+                          title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.blockReason ? ` · Motivo: ${stay.blockReason}` : ""}${stay.totalPrice != null ? ` · ${stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}` : ""}`}
                         >
                           {(stay.hasOutstandingBalance || stay.hasMissingAirbnbDetails) && !isAvailabilityBlock && (
                             <span

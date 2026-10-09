@@ -13,6 +13,7 @@ import { isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
 import { segmentChargeStatus } from "@/lib/finance";
 import { downloadReservationReceipt } from "@/lib/reservation-receipt";
 import { PaymentReceiptButton } from "@/components/payment-receipt-button";
+import { groupClosedDateOverrides } from "@/lib/date-overrides";
 
 interface CopyShape {
   dateLocale: string;
@@ -247,6 +248,7 @@ export interface UnifiedStay {
   hasOutstandingBalance?: boolean;
   hasMissingAirbnbDetails?: boolean;
   uid?: string;
+  blockReason?: string;
 }
 
 type LinkedEventRole = "claim" | "extension";
@@ -553,6 +555,7 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
 export function buildMasterCalendarStays(
   property: Property,
   events: CalendarEvent[],
+  overrides: DateOverride[] = [],
 ): UnifiedStay[] {
   const stays = buildUnifiedStays(property, events);
   for (const event of events.filter(isAvailabilityBlock)) {
@@ -561,6 +564,15 @@ export function buildMasterCalendarStays(
       end: reservationLocalDate(event.endDate),
       name: "No disponible",
       platform: `${event.platform}-block`,
+    });
+  }
+  for (const range of groupClosedDateOverrides(overrides)) {
+    stays.push({
+      start: reservationLocalDate(range.startDate),
+      end: reservationLocalDate(range.endDate),
+      name: "Noches bloqueadas",
+      platform: "deptosbo-block",
+      blockReason: range.reason,
     });
   }
   return stays.sort((a, b) => a.start.getTime() - b.start.getTime());
@@ -1470,9 +1482,9 @@ export function Dashboard({
   const masterCalendarProperties = useMemo(() => properties.map((property) => ({
     id: property.id,
     name: property.name,
-    stays: buildMasterCalendarStays(property, allSyncedEvents[property.id] || []),
+    stays: buildMasterCalendarStays(property, allSyncedEvents[property.id] || [], allOverrides[property.id] || []),
     syncError: (allLinks[property.id] || []).some((link) => Boolean(link.lastError)),
-  })), [properties, allSyncedEvents, allLinks]);
+  })), [properties, allSyncedEvents, allLinks, allOverrides]);
 
   const openReservationFormForProperty = (propertyId: number) => {
     setFormPropertyId(propertyId);
@@ -2282,6 +2294,7 @@ export function Dashboard({
         const property = properties.find((item) => item.id === inspectedImportedStay.propertyId);
         const stay = inspectedImportedStay.stay;
         const isBlock = stay.platform.endsWith("-block");
+        const isManualBlock = stay.platform === "deptosbo-block";
         const nights = Math.max(0, Math.round((stay.end.getTime() - stay.start.getTime()) / 86_400_000));
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label="Detalle de reserva importada">
@@ -2291,13 +2304,14 @@ export function Dashboard({
                 <button type="button" onClick={() => setInspectedImportedStay(null)} aria-label="Cerrar" className="p-1.5 text-[var(--ink-4)]">✕</button>
               </div>
               <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
-                <div><dt className="text-xs text-[var(--ink-4)]">Estado</dt><dd className="mt-1 font-medium">{isBlock ? "Bloqueado por el canal" : "Reserva confirmada"}</dd></div>
-                <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="mt-1 font-medium">{platformDisplayName(stay.platform.replace(/-block$/, ""))}</dd></div>
+                <div><dt className="text-xs text-[var(--ink-4)]">Estado</dt><dd className="mt-1 font-medium">{isManualBlock ? "Bloqueado manualmente" : isBlock ? "Bloqueado por el canal" : "Reserva confirmada"}</dd></div>
+                <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="mt-1 font-medium">{isManualBlock ? "DeptosBO" : platformDisplayName(stay.platform.replace(/-block$/, ""))}</dd></div>
                 <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="mt-1 font-medium">{stay.start.toLocaleDateString("es-BO")} · 14:00</dd></div>
                 <div><dt className="text-xs text-[var(--ink-4)]">Salida</dt><dd className="mt-1 font-medium">{stay.end.toLocaleDateString("es-BO")} · 11:00</dd></div>
                 <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Duración</dt><dd className="mt-1 font-medium">{nights} {nights === 1 ? "noche" : "noches"}</dd></div>
+                {isManualBlock && <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Motivo</dt><dd className="mt-1 whitespace-pre-wrap rounded-lg bg-[var(--bg-2)] p-3 font-medium text-[var(--ink-2)]">{stay.blockReason || "Sin motivo especificado"}</dd></div>}
               </dl>
-              <p className="mt-5 rounded-lg bg-[var(--bg-2)] p-3 text-xs text-[var(--ink-3)]">La información importada por iCal no incluye datos personales, precios ni detalles del huésped.</p>
+              {!isManualBlock && <p className="mt-5 rounded-lg bg-[var(--bg-2)] p-3 text-xs text-[var(--ink-3)]">La información importada por iCal no incluye datos personales, precios ni detalles del huésped.</p>}
               {!isBlock && stay.platform === "airbnb" && <div className="mt-4 rounded-xl border border-[var(--brand-orange)]/30 bg-[var(--brand-orange-soft)] p-3">
                 <div className="text-sm font-semibold text-[var(--ink)]">Completar datos de Airbnb</div>
                 <p className="mt-1 text-xs text-[var(--ink-3)]">El monto representa el total ya recibido y se distribuirá automáticamente según el operador del departamento.</p>

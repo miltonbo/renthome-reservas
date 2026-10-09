@@ -78,6 +78,11 @@ interface CopyShape {
   cancel: string;
   saving: string;
   save: string;
+  blockReasonTitle: string;
+  blockReasonDescription: string;
+  blockReasonLabel: string;
+  blockReasonPlaceholder: string;
+  confirmBlock: string;
   /** Trim a manual reservation by clicking a date INSIDE its bar.
    *  Two flavours: clicking a midstay day shortens the bar to end on
    *  that day; clicking the existing checkout day removes that one
@@ -154,6 +159,11 @@ const COPY: Record<Locale, CopyShape> = {
     cancel: "Cancel",
     saving: "Saving…",
     save: "Save",
+    blockReasonTitle: "Why are these nights blocked?",
+    blockReasonDescription: "This reason will be visible in the master calendar and the reservations report.",
+    blockReasonLabel: "Reason",
+    blockReasonPlaceholder: "E.g. maintenance, owner stay, repairs…",
+    confirmBlock: "Block nights",
     trimToDate: (date) => `End reservation on ${date}`,
     trimToDateDesc: "Shorten this booking so the chosen day is the last one.",
     trimRemoveDate: (date) => `Remove ${date} from reservation`,
@@ -223,6 +233,11 @@ const COPY: Record<Locale, CopyShape> = {
     cancel: "Отмена",
     saving: "Сохраняю…",
     save: "Сохранить",
+    blockReasonTitle: "Почему эти ночи заблокированы?",
+    blockReasonDescription: "Причина будет видна в главном календаре и отчёте по бронированиям.",
+    blockReasonLabel: "Причина",
+    blockReasonPlaceholder: "Например: ремонт или проживание владельца…",
+    confirmBlock: "Заблокировать ночи",
     trimToDate: (date) => `Закончить бронь ${date}`,
     trimToDateDesc: "Сократить бронь так, чтобы выбранный день был последним.",
     trimRemoveDate: (date) => `Убрать ${date} из брони`,
@@ -292,6 +307,11 @@ const COPY: Record<Locale, CopyShape> = {
     cancel: "Abbrechen",
     saving: "Wird gespeichert…",
     save: "Speichern",
+    blockReasonTitle: "Warum werden diese Nächte gesperrt?",
+    blockReasonDescription: "Der Grund wird im Hauptkalender und im Reservierungsbericht angezeigt.",
+    blockReasonLabel: "Grund",
+    blockReasonPlaceholder: "Z. B. Wartung, Eigennutzung oder Reparatur…",
+    confirmBlock: "Nächte sperren",
     trimToDate: (date) => `Buchung am ${date} beenden`,
     trimToDateDesc: "Buchung so kürzen, dass der gewählte Tag der letzte ist.",
     trimRemoveDate: (date) => `${date} aus Buchung entfernen`,
@@ -361,6 +381,11 @@ const COPY: Record<Locale, CopyShape> = {
     cancel: "Annuler",
     saving: "Enregistrement…",
     save: "Enregistrer",
+    blockReasonTitle: "Pourquoi ces nuits sont-elles bloquées ?",
+    blockReasonDescription: "Le motif sera visible dans le calendrier principal et le rapport des réservations.",
+    blockReasonLabel: "Motif",
+    blockReasonPlaceholder: "Ex. entretien, séjour du propriétaire ou travaux…",
+    confirmBlock: "Bloquer les nuits",
     trimToDate: (date) => `Terminer la réservation le ${date}`,
     trimToDateDesc: "Raccourcir la réservation pour que le jour choisi soit le dernier.",
     trimRemoveDate: (date) => `Retirer le ${date} de la réservation`,
@@ -430,6 +455,11 @@ const COPY: Record<Locale, CopyShape> = {
     cancel: "Cancelar",
     saving: "Guardando…",
     save: "Guardar",
+    blockReasonTitle: "¿Por qué se bloquean estas noches?",
+    blockReasonDescription: "El motivo será visible en el calendario maestro y en el reporte de reservas.",
+    blockReasonLabel: "Motivo",
+    blockReasonPlaceholder: "Ej. mantenimiento, uso del propietario o reparación…",
+    confirmBlock: "Bloquear noches",
     trimToDate: (date) => `Terminar la reserva el ${date}`,
     trimToDateDesc: "Acorta la reserva para que el día elegido sea el último.",
     trimRemoveDate: (date) => `Quitar ${date} de la reserva`,
@@ -531,7 +561,7 @@ interface DateActionsPanelProps {
   stayPlan: StayPlan | null;
   onClose: () => void;
   onToggleDate: (dateStr: string) => void;
-  onCloseDate: () => void;
+  onCloseDate: (note: string) => void | Promise<void>;
   onOpenDate: () => void;
   onScheduleCleaning: () => void;
   onRemoveOverride: () => void;
@@ -586,17 +616,40 @@ export function DateActionsPopover({
   const popRef = useRef<HTMLDivElement>(null);
   const extendingRef = useRef(false);
   const [creating, setCreating] = useState(false);
+  const [blockReasonOpen, setBlockReasonOpen] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
+  const [savingBlock, setSavingBlock] = useState(false);
   const [resName, setResName] = useState("");
   const [resPlatform, setResPlatform] = useState<string>("airbnb");
   const [submitting, setSubmitting] = useState(false);
   const [extendingKey, setExtendingKey] = useState<string | null>(null);
   const [extendError, setExtendError] = useState<string | null>(null);
 
+  const requestBlock = () => {
+    setBlockReason("");
+    setBlockReasonOpen(true);
+  };
+
+  const confirmBlock = async () => {
+    const reason = blockReason.trim();
+    if (!reason || savingBlock) return;
+    setSavingBlock(true);
+    try {
+      await onCloseDate(reason);
+      setBlockReasonOpen(false);
+      setBlockReason("");
+    } finally {
+      setSavingBlock(false);
+    }
+  };
+
   // Reset the create-reservation form whenever the selection changes
   // (e.g. user added another date). Otherwise typed name would carry
   // over into a different selection state.
   useEffect(() => {
     setCreating(false);
+    setBlockReasonOpen(false);
+    setBlockReason("");
     setResName("");
     setResPlatform("airbnb");
     setSubmitting(false);
@@ -839,13 +892,13 @@ export function DateActionsPopover({
       ];
     }
     if (singleStatus.isManualCleaning) {
-      return [createAction, { kind: "removeCleaning", label: lRemoveCleaning, description: lRemoveOverrideDesc, tone: "open", onClick: onRemoveOverride }, { kind: "block", label: lBlock, description: lBlockDesc, tone: "block", onClick: onCloseDate }];
+      return [createAction, { kind: "removeCleaning", label: lRemoveCleaning, description: lRemoveOverrideDesc, tone: "open", onClick: onRemoveOverride }, { kind: "block", label: lBlock, description: lBlockDesc, tone: "block", onClick: requestBlock }];
     }
     if (singleStatus.isClosedOverride) {
       return [createAction, { kind: "removeBlock", label: lUnblock, description: lRemoveOverrideDesc, tone: "open", onClick: onRemoveOverride }];
     }
     if (singleStatus.isOpenOverride) {
-      return [createAction, { kind: "removeOverride", label: lRemoveOverride, description: lRemoveOverrideDesc, tone: "neutral", onClick: onRemoveOverride }, { kind: "block", label: lBlock, description: lBlockDesc, tone: "block", onClick: onCloseDate }, { kind: "scheduleCleaning", label: lSchedule, description: lScheduleDesc, tone: "cleaning", onClick: onScheduleCleaning }];
+      return [createAction, { kind: "removeOverride", label: lRemoveOverride, description: lRemoveOverrideDesc, tone: "neutral", onClick: onRemoveOverride }, { kind: "block", label: lBlock, description: lBlockDesc, tone: "block", onClick: requestBlock }, { kind: "scheduleCleaning", label: lSchedule, description: lScheduleDesc, tone: "cleaning", onClick: onScheduleCleaning }];
     }
     // Auto-detected unavailable. Two label flavours:
     //   * Cleaning days (buffer / same-day / potential): "Cancel
@@ -861,7 +914,7 @@ export function DateActionsPopover({
     if (singleStatus.isUnbookable) {
       return [createAction, { kind: "openForBooking", label: lOpen, description: lOpenDesc, tone: "open", onClick: onOpenDate }];
     }
-    return [createAction, { kind: "block", label: lBlock, description: lBlockDesc, tone: "block", onClick: onCloseDate }, { kind: "scheduleCleaning", label: lSchedule, description: lScheduleDesc, tone: "cleaning", onClick: onScheduleCleaning }];
+    return [createAction, { kind: "block", label: lBlock, description: lBlockDesc, tone: "block", onClick: requestBlock }, { kind: "scheduleCleaning", label: lSchedule, description: lScheduleDesc, tone: "cleaning", onClick: onScheduleCleaning }];
   })();
 
   // Bulk-mode actions: simpler — operate on the whole selection.
@@ -884,7 +937,7 @@ export function DateActionsPopover({
       out.push({ kind: "createReservation", label: lCreate, description: lCreateDesc, tone: "primary", onClick: () => setCreating(true) });
     }
     if (allUnbooked) {
-      out.push({ kind: "block", label: lBlockAll, tone: "block", onClick: onCloseDate });
+      out.push({ kind: "block", label: lBlockAll, tone: "block", onClick: requestBlock });
       // "Make available" only when at least one selected date is
       // actually unavailable — otherwise the action is a no-op on
       // already-free days.
@@ -1344,6 +1397,32 @@ export function DateActionsPopover({
           </div>
         )}
       </div>
+
+      {blockReasonOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="block-reason-title">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
+            <h2 id="block-reason-title" className="text-lg font-semibold text-[var(--ink)]">{c.blockReasonTitle}</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-[var(--ink-3)]">{c.blockReasonDescription}</p>
+            <label className="mt-4 block">
+              <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">{c.blockReasonLabel}</span>
+              <textarea
+                autoFocus
+                rows={4}
+                maxLength={500}
+                value={blockReason}
+                onChange={(event) => setBlockReason(event.target.value)}
+                placeholder={c.blockReasonPlaceholder}
+                className="w-full resize-none rounded-xl border border-[var(--line-2)] bg-[var(--bg-2)] p-3 text-sm text-[var(--ink)] outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-400/15"
+              />
+              <span className="mt-1 block text-right text-[10px] text-[var(--ink-4)]">{blockReason.length}/500</span>
+            </label>
+            <div className="mt-4 flex gap-2">
+              <button type="button" onClick={() => setBlockReasonOpen(false)} disabled={savingBlock} className="flex-1 rounded-lg border border-[var(--line-2)] px-3 py-2.5 text-sm font-medium text-[var(--ink-2)] hover:bg-[var(--bg-3)] disabled:opacity-50">{c.cancel}</button>
+              <button type="button" onClick={confirmBlock} disabled={savingBlock || !blockReason.trim()} className="flex-1 rounded-lg bg-rose-500 px-3 py-2.5 text-sm font-semibold text-white hover:bg-rose-600 disabled:opacity-45">{savingBlock ? c.saving : c.confirmBlock}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky footer for the create form */}
       {creating && (

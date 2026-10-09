@@ -211,7 +211,7 @@ interface CalendarEvent {
 type CleaningKind = "after" | "before" | "turnover" | "gap-potential" | "manual";
 type BufferMode = "full" | "quick";
 
-interface CleaningDay {
+export interface CleaningDay {
   date: string;
   type: "cleaning" | "potential";
   property: string;
@@ -243,6 +243,38 @@ interface CleaningDay {
   // Used to detect cleaner conflicts (same key on the same date across
   // multiple properties). Undefined when no cleaner assigned.
   cleanerKey?: string;
+}
+
+function isAirbnbPlatform(platform?: string): boolean {
+  return platform?.trim().toLowerCase() === "airbnb";
+}
+
+export function formatDailyCleaningHeader(scheduleHeader: string, dateLocale: string, date: string): string {
+  const numericDate = `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+  return `*${scheduleHeader.toLocaleUpperCase(dateLocale)} ${numericDate}*`;
+}
+
+/** Compact, privacy-conscious wording used by the Today/Tomorrow WhatsApp copy. */
+export function formatDailyCleaningMovement(
+  day: Pick<CleaningDay, "kind" | "prevPlatform" | "nextPlatform" | "manualNote">
+): string {
+  if (day.kind === "manual") return day.manualNote?.trim() || "Limpieza manual";
+
+  const previousIsAirbnb = isAirbnbPlatform(day.prevPlatform);
+  const nextIsAirbnb = isAirbnbPlatform(day.nextPlatform);
+
+  if (day.kind === "turnover") {
+    if (previousIsAirbnb === nextIsAirbnb) {
+      return `Cambio de huésped: sale e ingresa huésped${previousIsAirbnb ? " Airbnb" : ""}`;
+    }
+    return `Cambio de huésped: sale huésped${previousIsAirbnb ? " Airbnb" : ""} e ingresa huésped${nextIsAirbnb ? " Airbnb" : ""}`;
+  }
+
+  if (day.kind === "before" || day.kind === "gap-potential") {
+    return `Ingresa huésped${nextIsAirbnb ? " Airbnb" : ""}`;
+  }
+
+  return `Sale huésped${previousIsAirbnb ? " Airbnb" : ""}`;
 }
 
 interface CleaningScheduleProps {
@@ -1123,23 +1155,13 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     const potentialPrefix = c.potentialPrefix;
 
     const lines: string[] = [];
-    const numericDate = dateFilter ? `${dateFilter.slice(8, 10)}/${dateFilter.slice(5, 7)}` : "";
-    lines.push(dateFilter ? `Calendario de limpiezas ${numericDate}` : c.scheduleHeader + headerSuffix);
+    lines.push(dateFilter ? formatDailyCleaningHeader(c.scheduleHeader, c.dateLocale, dateFilter) : c.scheduleHeader + headerSuffix);
     lines.push("");
     for (const day of visibleDays) {
       if (cleanerKey && day.cleanerKey !== cleanerKey) continue;
       if (dateFilter && day.date !== dateFilter) continue;
       if (dateFilter) {
-        const guestWithChannel = (name?: string, platform?: string) => {
-          const guest = guestName(name);
-          return platform ? `${guest} (${platformLabel(platform)})` : guest;
-        };
-        let movement: string;
-        if (day.kind === "manual") movement = day.manualNote?.trim() || "Limpieza manual";
-        else if (day.kind === "turnover") movement = `Cambio de huésped: ${guestWithChannel(day.prevGuest, day.prevPlatform)} → ${guestWithChannel(day.nextGuest, day.nextPlatform)}`;
-        else if (day.kind === "before" || day.kind === "gap-potential") movement = `Ingreso de ${guestWithChannel(day.nextGuest, day.nextPlatform)}`;
-        else movement = `Salida normal: ${guestWithChannel(day.prevGuest, day.prevPlatform)} · sin huésped posterior`;
-        lines.push(`${day.property} — ${movement}`);
+        lines.push(`${day.property} — ${formatDailyCleaningMovement(day)}`);
         continue;
       }
       const dateStr = formatDate(day.date);

@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/date-overrides — toggle a date override (create or delete)
+// POST /api/date-overrides — create or update a date override.
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { propertyId, date, type, note } = body;
+    const normalizedNote = typeof note === "string" ? note.trim().slice(0, 500) : "";
 
     if (!propertyId || !date || !type) {
       return NextResponse.json(
@@ -72,31 +73,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Upsert: if same type exists, remove it (toggle off). If different type or none, set it.
+    // POST is intentionally idempotent. Bulk selections can include a mix of
+    // new and already-blocked dates; treating an existing type as a toggle
+    // would accidentally unblock part of the range. Explicit removal uses
+    // DELETE below.
     const existing = await prisma.dateOverride.findUnique({
       where: { propertyId_date: { propertyId: numId, date } },
     });
 
-    if (existing && existing.type === type) {
-      // Toggle off — remove the override
-      await prisma.dateOverride.delete({ where: { id: existing.id } });
-      await logAudit(session.userId, "delete", "override", existing.id, {
-        propertyId: numId,
-        date,
-        type,
-      });
-      return NextResponse.json({ action: "removed", date, type });
-    }
-
     // Create or update
     const override = await prisma.dateOverride.upsert({
       where: { propertyId_date: { propertyId: numId, date } },
-      update: { type, note: note || "" },
+      update: { type, note: normalizedNote },
       create: {
         propertyId: numId,
         date,
         type,
-        note: note || "",
+        note: normalizedNote,
       },
     });
     await logAudit(
@@ -104,7 +97,7 @@ export async function POST(request: NextRequest) {
       existing ? "update" : "create",
       "override",
       override.id,
-      { propertyId: numId, date, type }
+      { propertyId: numId, date, type, note: normalizedNote }
     );
 
     return NextResponse.json({ action: "created", override });

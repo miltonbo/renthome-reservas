@@ -137,6 +137,25 @@ describe("generateFeed — Direct linked extensions", () => {
     expect(events).toEqual([]);
   });
 
+  it("exports manual DeptosBO blocks to every outbound iCal feed", async () => {
+    mocks.reservationFindMany.mockResolvedValue([]);
+    mocks.dateOverrideFindMany.mockResolvedValue([
+      { propertyId: 12, date: "2099-08-26", type: "closed", note: "Mantenimiento" },
+      { propertyId: 12, date: "2099-08-27", type: "closed", note: "Mantenimiento" },
+    ]);
+
+    const result = await generateFeed(12, "airbnb");
+    if ("error" in result) throw new Error(result.error);
+    const events = parseICal(result.ical).filter((event) => event.uid !== "renthome-placeholder");
+    expect(events).toEqual([
+      expect.objectContaining({
+        summary: "DeptosBO - Noches bloqueadas",
+        startDate: "2099-08-26",
+        endDate: "2099-08-28",
+      }),
+    ]);
+  });
+
   it("does not echo a reservation back to its own channel", async () => {
     mocks.reservationFindMany.mockResolvedValue([
       { ...extension, platform: "airbnb", linkedEventRole: "claim" },

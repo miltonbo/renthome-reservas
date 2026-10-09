@@ -350,14 +350,14 @@ export function PropertyCalendar({
   }, [selectedDates.size]);
 
   // Override + reservation handlers (same as before) -----------------
-  const setBulkOverride = async (type: "open" | "closed" | "cleaning") => {
+  const setBulkOverride = async (type: "open" | "closed" | "cleaning", note?: string) => {
     const dates = Array.from(selectedDates);
     await Promise.all(
       dates.map((dateStr) =>
         fetch(`/api/date-overrides`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ propertyId: property.id, date: dateStr, type }),
+          body: JSON.stringify({ propertyId: property.id, date: dateStr, type, note }),
         })
       )
     );
@@ -401,11 +401,11 @@ export function PropertyCalendar({
     window.location.reload();
   };
 
-  const setSingleOverride = async (dateStr: string, type: "open" | "closed" | "cleaning") => {
+  const setSingleOverride = async (dateStr: string, type: "open" | "closed" | "cleaning", note?: string) => {
     await fetch(`/api/date-overrides`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ propertyId: property.id, date: dateStr, type }),
+      body: JSON.stringify({ propertyId: property.id, date: dateStr, type, note }),
     });
     await refetchOverrides();
     clearSelection();

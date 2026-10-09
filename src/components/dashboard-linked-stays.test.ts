@@ -91,6 +91,23 @@ describe("buildUnifiedStays linked source roles", () => {
     }]);
   });
 
+  it("shows grouped manual blocks with their reason in the master calendar", () => {
+    const stays = buildMasterCalendarStays(property([]), [], [
+      { id: 1, propertyId: 68, date: "2026-08-24", type: "closed", note: "Mantenimiento", createdAt: "2026-08-01" },
+      { id: 2, propertyId: 68, date: "2026-08-25", type: "closed", note: "Mantenimiento", createdAt: "2026-08-01" },
+    ]);
+
+    expect(stays).toEqual([
+      expect.objectContaining({
+        name: "Noches bloqueadas",
+        platform: "deptosbo-block",
+        blockReason: "Mantenimiento",
+      }),
+    ]);
+    expect(localDate(stays[0].start)).toBe("2026-08-24");
+    expect(localDate(stays[0].end)).toBe("2026-08-26");
+  });
+
   it("lets an explicit claim replace only the exact platform+UID source", () => {
     const claim = reservation({
       id: 41,

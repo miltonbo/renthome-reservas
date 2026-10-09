@@ -149,7 +149,7 @@ export interface DateOverride {
   id: number;
   propertyId: number;
   date: string;
-  type: "open" | "closed";
+  type: "open" | "closed" | "cleaning";
   note: string;
   createdAt: string;
 }

@@ -32,9 +32,9 @@ interface CalendarDatePopoverProps {
   bufferBefore: number;
   onClose: () => void;
   onToggleDate: (dateStr: string) => void;
-  onSetSingleOverride: (dateStr: string, type: "open" | "closed" | "cleaning") => void;
+  onSetSingleOverride: (dateStr: string, type: "open" | "closed" | "cleaning", note?: string) => void | Promise<void>;
   onRemoveSingleOverride: (dateStr: string) => void;
-  onSetBulkOverride: (type: "open" | "closed" | "cleaning") => void;
+  onSetBulkOverride: (type: "open" | "closed" | "cleaning", note?: string) => void | Promise<void>;
   onRemoveBulkOverride: () => void;
   onExtendBooking: (
     rangeStart: string,
@@ -213,8 +213,8 @@ export function CalendarDatePopover({
       stayPlan={stayPlan}
       onClose={onClose}
       onToggleDate={onToggleDate}
-      onCloseDate={() =>
-        singleDate ? onSetSingleOverride(singleDate, "closed") : onSetBulkOverride("closed")
+      onCloseDate={(note) =>
+        singleDate ? onSetSingleOverride(singleDate, "closed", note) : onSetBulkOverride("closed", note)
       }
       onOpenDate={() =>
         singleDate ? onSetSingleOverride(singleDate, "open") : onSetBulkOverride("open")

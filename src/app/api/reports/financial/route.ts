@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { listAccessiblePropertyIds } from "@/lib/ownership";
 import { prisma } from "@/lib/prisma";
 import { bookingCommission, bookingCommissionLiability, financialAllocations, reconciliableMovementAmounts, segmentReconciliationStatus } from "@/lib/finance";
+import { groupClosedDateOverrides } from "@/lib/date-overrides";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,57 @@ const blankCurrency = () => ({ BOB: 0, USD: 0 });
 const asCurrency = (value: string): Currency => value === "USD" ? "USD" : "BOB";
 const dateKey = (value: Date) => value.toISOString().slice(0, 10);
 const nights = (start: Date, end: Date) => Math.max(0, Math.round((end.getTime() - start.getTime()) / 86_400_000));
+
+type FreePeriod = {
+  propertyId: number;
+  property: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+};
+
+type BlockedPeriod = FreePeriod & { reason: string };
+
+/** Returns the unoccupied night ranges inside the selected report period.
+ * Check-out is exclusive, matching the reservation model: a stay ending on
+ * September 29 leaves the night of September 29 available. */
+export function calculateFreePeriods(
+  properties: Array<{ id: number; name: string }>,
+  reservations: Array<{ propertyId: number; checkIn: Date; checkOut: Date }>,
+  from: Date,
+  toExclusive: Date,
+): FreePeriod[] {
+  const result: FreePeriod[] = [];
+  for (const property of properties) {
+    const occupied = reservations
+      .filter((reservation) => reservation.propertyId === property.id)
+      .map((reservation) => ({
+        start: new Date(Math.max(from.getTime(), reservation.checkIn.getTime())),
+        end: new Date(Math.min(toExclusive.getTime(), reservation.checkOut.getTime())),
+      }))
+      .filter((range) => range.start < range.end)
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    const merged: Array<{ start: Date; end: Date }> = [];
+    for (const range of occupied) {
+      const previous = merged.at(-1);
+      if (!previous || range.start > previous.end) merged.push({ ...range });
+      else if (range.end > previous.end) previous.end = range.end;
+    }
+
+    let cursor = new Date(from);
+    for (const range of merged) {
+      if (cursor < range.start) {
+        result.push({ propertyId: property.id, property: property.name, checkIn: dateKey(cursor), checkOut: dateKey(range.start), nights: nights(cursor, range.start) });
+      }
+      if (range.end > cursor) cursor = new Date(range.end);
+    }
+    if (cursor < toExclusive) {
+      result.push({ propertyId: property.id, property: property.name, checkIn: dateKey(cursor), checkOut: dateKey(toExclusive), nights: nights(cursor, toExclusive) });
+    }
+  }
+  return result;
+}
 
 export function personToPersonTransfers(
   held: Record<Person, Record<Currency, number>>,
@@ -87,7 +139,7 @@ export async function GET(request: NextRequest) {
   const propertyIds = requestedPropertyId && activeIds.includes(requestedPropertyId) ? [requestedPropertyId] : activeIds;
   if (requestedPropertyId && !propertyIds.includes(requestedPropertyId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const [properties, reservations, movements, calendarEvents] = await Promise.all([
+  const [properties, reservations, movements, calendarEvents, dateOverrides] = await Promise.all([
     prisma.property.findMany({ where: { id: { in: propertyIds } }, select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true }, orderBy: { name: "asc" } }),
     prisma.reservation.findMany({
       where: { propertyId: { in: propertyIds }, status: "confirmed", checkIn: { lt: period.toExclusive }, checkOut: { gt: period.from } },
@@ -100,6 +152,10 @@ export async function GET(request: NextRequest) {
       orderBy: { occurredAt: "asc" },
     }),
     prisma.calendarEvent.findMany({ where: { propertyId: { in: propertyIds }, startDate: { lt: period.toKey }, endDate: { gt: period.fromKey } } }),
+    prisma.dateOverride.findMany({
+      where: { propertyId: { in: propertyIds }, type: "closed", date: { gte: period.fromKey, lt: dateKey(period.toExclusive) } },
+      orderBy: [{ propertyId: "asc" }, { date: "asc" }],
+    }),
   ]);
 
   // A financial row belongs to the period in which its independent segment
@@ -338,7 +394,21 @@ export async function GET(request: NextRequest) {
     for (const item of commissionParts.filter((part) => part.physicalPropertyId === property.id)) commission[item.currency] += item.amountMinor;
     return { propertyId: property.id, property: property.name, gross, management, payable, bookingCommission: commission, reservationsWithFixedFee: reservationIds.size };
   });
-  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, ownerFeeProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, received, held, entitled, commissions, commissionReimbursements, ownerPayable, ownerSettlements, transfers, observations, reservations: detailedReservations, performance, monthlyIncome: [...monthlyMap.values()] };
+  const propertyNames = new Map(properties.map((property) => [property.id, property.name]));
+  const blockedPeriods: BlockedPeriod[] = groupClosedDateOverrides(dateOverrides).map((range) => ({
+    propertyId: range.propertyId,
+    property: propertyNames.get(range.propertyId) || `Departamento ${range.propertyId}`,
+    checkIn: range.startDate,
+    checkOut: range.endDate,
+    nights: range.nights,
+    reason: range.reason,
+  }));
+  const occupiedRanges = [
+    ...reservations,
+    ...blockedPeriods.map((period) => ({ propertyId: period.propertyId, checkIn: new Date(`${period.checkIn}T00:00:00.000Z`), checkOut: new Date(`${period.checkOut}T00:00:00.000Z`) })),
+  ];
+  const freePeriods = calculateFreePeriods(properties, occupiedRanges, period.from, period.toExclusive);
+  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, ownerFeeProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, received, held, entitled, commissions, commissionReimbursements, ownerPayable, ownerSettlements, transfers, observations, reservations: detailedReservations, blockedPeriods, freePeriods, performance, monthlyIncome: [...monthlyMap.values()] };
   const format = request.nextUrl.searchParams.get("format");
   if (!format) return NextResponse.json(data);
 
@@ -388,55 +458,269 @@ export async function GET(request: NextRequest) {
   return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="informe-deptosbo-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
 }
 
-export function buildFinancialWorkbook(data: any, movements: any[]) {
+type FinancialWorkbookData = {
+  period: { from: string; to: string };
+  policy: {
+    operatedProperties: Record<Person, string[]>;
+  };
+  channelTotals: Record<string, { reservations: number; BOB: number; USD: number }>;
+  received: Record<Person, Record<Currency, number>>;
+  held: Record<Person, Record<Currency, number>>;
+  entitled: Record<Person, Record<Currency, number>>;
+  commissions: Record<Person | "owner", Record<Currency, number>>;
+  ownerSettlements: Array<{
+    property: string;
+    gross: Record<Currency, number>;
+    management: Record<Currency, number>;
+    payable: Record<Currency, number>;
+    bookingCommission: Record<Currency, number>;
+  }>;
+  transfers: Array<{ from: string; to: string; currency: Currency; amountMinor: number }>;
+  reservations: Array<{
+    id: number;
+    property: string;
+    guest: string;
+    channel: string;
+    checkIn: string;
+    checkOut: string;
+    nights: number;
+    receivedBOB: number;
+    receivedUSD: number;
+    commissionBOB: number;
+    commissionUSD: number;
+    commissionResponsible: string | null;
+  }>;
+  blockedPeriods: BlockedPeriod[];
+  freePeriods: FreePeriod[];
+  performance: Array<{
+    property: string;
+    occupiedNights: number;
+    freeNights: number;
+    occupancy: number;
+    averageNightlyBOB: number;
+    averageNightlyUSD: number;
+  }>;
+};
+
+type FinancialMovementExport = {
+  date: Date;
+  property: string;
+  guest: string;
+  channel: string;
+  type: string;
+  method: string;
+  currency: string;
+  amount: number;
+  receivedBy: string;
+  note: string | null;
+};
+
+export function buildFinancialWorkbook(data: FinancialWorkbookData, movements: FinancialMovementExport[]) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "DeptosBO";
   workbook.created = new Date();
-  const orange = "F28C28", navy = "10252E", pale = "FFF2E4";
-  const styleSheet = (sheet: ExcelJS.Worksheet) => {
-    sheet.views = [{ state: "frozen", ySplit: 1 }];
-    sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    sheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${navy}` } };
-    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columnCount } };
-    sheet.columns.forEach((column) => { column.width = Math.min(34, Math.max(12, ...(column.values || []).map((value) => String(value || "").length + 2))); });
+  const orange = "F28C28", navy = "10252E", teal = "13B8A6", pale = "F4F8F8", line = "D7E2E5", dark = "172B34";
+  const fill = (color: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb: `FF${color}` } });
+  const setSection = (sheet: ExcelJS.Worksheet, rowNumber: number, title: string, lastColumn: number) => {
+    const range = sheet.getRow(rowNumber);
+    range.getCell(1).value = title;
+    for (let column = 1; column <= lastColumn; column += 1) {
+      const cell = range.getCell(column);
+      cell.fill = fill(navy);
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { vertical: "middle" };
+    }
+    range.height = 23;
+  };
+  const setHeader = (sheet: ExcelJS.Worksheet, rowNumber: number, headers: string[]) => {
+    const row = sheet.getRow(rowNumber);
+    headers.forEach((header, index) => {
+      const cell = row.getCell(index + 1);
+      cell.value = header;
+      cell.fill = fill(teal);
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      cell.border = { bottom: { style: "medium", color: { argb: `FF${orange}` } } };
+    });
+    row.height = 30;
+  };
+  const stripeRows = (sheet: ExcelJS.Worksheet, start: number, end: number, lastColumn: number) => {
+    for (let rowNumber = start; rowNumber <= end; rowNumber += 1) {
+      const row = sheet.getRow(rowNumber);
+      if ((rowNumber - start) % 2 === 1) {
+        for (let column = 1; column <= lastColumn; column += 1) row.getCell(column).fill = fill(pale);
+      }
+      row.height = 21;
+      row.eachCell({ includeEmpty: true }, (cell, column) => {
+        if (column <= lastColumn) {
+          cell.alignment = { vertical: "middle" };
+          cell.border = { bottom: { style: "thin", color: { argb: `FF${line}` } } };
+        }
+      });
+    }
+  };
+  const formatRange = (sheet: ExcelJS.Worksheet, start: number, end: number, columns: number[], numFmt: string) => {
+    for (let rowNumber = start; rowNumber <= end; rowNumber += 1) {
+      for (const column of columns) sheet.getRow(rowNumber).getCell(column).numFmt = numFmt;
+    }
+  };
+  const addTopBorder = (row: ExcelJS.Row, lastColumn: number) => {
+    for (let column = 1; column <= lastColumn; column += 1) {
+      row.getCell(column).border = { top: { style: "medium", color: { argb: `FF${teal}` } } };
+    }
+  };
+  const styleDataSheet = (sheet: ExcelJS.Worksheet, widths: number[]) => {
+    sheet.views = [{ state: "frozen", ySplit: 1, showGridLines: false }];
+    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: widths.length } };
+    setHeader(sheet, 1, widths.map((_, index) => String(sheet.getRow(1).getCell(index + 1).value ?? "")));
+    stripeRows(sheet, 2, sheet.rowCount, widths.length);
+    widths.forEach((width, index) => { sheet.getColumn(index + 1).width = width; });
+    sheet.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 } };
   };
 
   const management = workbook.addWorksheet("Gerencial", { views: [{ showGridLines: false }] });
-  management.columns = [{ header: "Indicador", key: "metric" }, { header: "Bs", key: "BOB" }, { header: "USD", key: "USD" }];
-  management.addRow({ metric: `Período ${data.period.from} al ${data.period.to}` });
-  management.addRow({ metric: `Opera Deysi: ${data.policy.operatedProperties.deysi.join(", ") || "—"}` });
-  management.addRow({ metric: `Opera Milton: ${data.policy.operatedProperties.milton.join(", ") || "—"}` });
-  management.addRow({ metric: "Política: propiedades de Milton 80% Milton / 20% Deysi; propiedades de Deysi 100% Deysi. Comisión Booking 15% a cargo del operador." });
-  for (const policy of data.policy.ownerFeeProperties || []) management.addRow({ metric: `Contrato ${policy.name}: ${(policy.feeBps / 100).toLocaleString("es-BO")}% + ${policy.fixedFeeCurrency} ${(policy.fixedFeeMinor / 100).toFixed(2)} por reserva para ${policy.beneficiary}; saldo al propietario.` });
-  for (const [channel, values] of Object.entries<any>(data.channelTotals)) management.addRow({ metric: `Ventas ${channel} (${values.reservations} reservas)`, BOB: values.BOB, USD: values.USD });
+  management.properties.defaultRowHeight = 20;
+  [24, 34, 17, 17, 17, 17, 17, 17, 19, 19].forEach((width, index) => { management.getColumn(index + 1).width = width; });
+  management.getCell("A1").value = "REPORTE GERENCIAL";
+  management.getCell("A1").font = { bold: true, size: 16, color: { argb: `FF${dark}` } };
+  management.getCell("A2").value = `Período: ${data.period.from} al ${data.period.to}`;
+  management.getCell("A2").font = { italic: true, color: { argb: "FF60747D" } };
+
+  let managementRow = 4;
+  setSection(management, managementRow, "MONTOS RECIBIDOS", 10);
+  managementRow += 1;
+  setHeader(management, managementRow, ["Responsable", "Recibido Bs", "Participación Bs", "Recibido USD", "Participación USD"]);
+  const receivedBOB = (data.received.deysi.BOB + data.received.milton.BOB) / 100;
+  const receivedUSD = (data.received.deysi.USD + data.received.milton.USD) / 100;
+  const receivedStart = managementRow + 1;
   for (const person of people) {
-    management.addRow({ metric: `Recibido por ${person}`, BOB: data.held[person].BOB / 100, USD: data.held[person].USD / 100 });
-    management.addRow({ metric: `Comisión Booking de ${person}`, BOB: data.commissions[person].BOB / 100, USD: data.commissions[person].USD / 100 });
+    const row = management.getRow(++managementRow);
+    const label = person === "deysi" ? "Deysi" : "Milton";
+    const bob = data.received[person].BOB / 100;
+    const usd = data.received[person].USD / 100;
+    row.values = [label, bob, receivedBOB ? bob / receivedBOB : 0, usd, receivedUSD ? usd / receivedUSD : 0];
   }
-  for (const settlement of data.ownerSettlements || []) {
-    management.addRow({ metric: `Ingresos cobrados · ${settlement.property}`, BOB: settlement.gross.BOB / 100, USD: settlement.gross.USD / 100 });
-    management.addRow({ metric: `Administración para Deysi · ${settlement.property}`, BOB: settlement.management.BOB / 100, USD: settlement.management.USD / 100 });
-    management.addRow({ metric: `Saldo a propietario · ${settlement.property}`, BOB: settlement.payable.BOB / 100, USD: settlement.payable.USD / 100 });
-    management.addRow({ metric: `Comisión Booking a cargo del propietario · ${settlement.property}`, BOB: settlement.bookingCommission.BOB / 100, USD: settlement.bookingCommission.USD / 100 });
+  const receivedTotalRow = management.getRow(++managementRow);
+  receivedTotalRow.values = ["Total recibido", receivedBOB, receivedBOB ? 1 : 0, receivedUSD, receivedUSD ? 1 : 0];
+  receivedTotalRow.font = { bold: true };
+  addTopBorder(receivedTotalRow, 5);
+  stripeRows(management, receivedStart, managementRow - 1, 5);
+  formatRange(management, receivedStart, managementRow, [2], '"Bs" #,##0.00');
+  formatRange(management, receivedStart, managementRow, [3, 5], "0.0%");
+  formatRange(management, receivedStart, managementRow, [4], '"USD" #,##0.00');
+
+  managementRow += 2;
+  setSection(management, managementRow, "RESERVAS POR CANAL", 10);
+  managementRow += 1;
+  setHeader(management, managementRow, ["Canal", "Reservas", "Total recibido Bs", "Total recibido USD"]);
+  const channelStart = managementRow + 1;
+  const channelLabels: Record<string, string> = { airbnb: "Airbnb", booking: "Booking.com", direct: "Directo", vrbo: "Vrbo" };
+  let channelReservations = 0, channelBOB = 0, channelUSD = 0;
+  for (const [channel, values] of Object.entries(data.channelTotals)) {
+    management.getRow(++managementRow).values = [channelLabels[channel] || channel, values.reservations, values.BOB, values.USD];
+    channelReservations += values.reservations; channelBOB += values.BOB; channelUSD += values.USD;
   }
-  for (const transfer of data.transfers) management.addRow({ metric: `${transfer.from} transfiere a ${transfer.to}`, [transfer.currency]: transfer.amountMinor / 100 });
-  styleSheet(management); management.getColumn(1).width = 95; management.getColumn(2).numFmt = '"Bs" #,##0.00'; management.getColumn(3).numFmt = '"USD" #,##0.00'; management.getRow(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${pale}` } };
+  const channelTotalRow = management.getRow(++managementRow);
+  channelTotalRow.values = ["Total", channelReservations, channelBOB, channelUSD];
+  channelTotalRow.font = { bold: true };
+  addTopBorder(channelTotalRow, 4);
+  stripeRows(management, channelStart, managementRow - 1, 4);
+  formatRange(management, channelStart, managementRow, [3], '"Bs" #,##0.00');
+  formatRange(management, channelStart, managementRow, [4], '"USD" #,##0.00');
+
+  managementRow += 2;
+  setSection(management, managementRow, "CONCILIACIÓN DEYSI Y MILTON", 10);
+  managementRow += 1;
+  setHeader(management, managementRow, ["Responsable", "Departamentos operados", "Recibido Bs", "Le corresponde Bs", "Diferencia Bs", "Recibido USD", "Le corresponde USD", "Diferencia USD", "Comisión Booking Bs", "Comisión Booking USD"]);
+  const reconciliationStart = managementRow + 1;
+  for (const person of people) {
+    const heldBOB = data.held[person].BOB / 100, entitledBOB = data.entitled[person].BOB / 100;
+    const heldUSD = data.held[person].USD / 100, entitledUSD = data.entitled[person].USD / 100;
+    management.getRow(++managementRow).values = [
+      person === "deysi" ? "Deysi" : "Milton",
+      data.policy.operatedProperties[person].join(", ") || "Ninguno en este alcance",
+      heldBOB, entitledBOB, heldBOB - entitledBOB,
+      heldUSD, entitledUSD, heldUSD - entitledUSD,
+      data.commissions[person].BOB / 100, data.commissions[person].USD / 100,
+    ];
+  }
+  stripeRows(management, reconciliationStart, managementRow, 10);
+  formatRange(management, reconciliationStart, managementRow, [3, 4, 5, 9], '"Bs" #,##0.00;[Red]("Bs" #,##0.00);-');
+  formatRange(management, reconciliationStart, managementRow, [6, 7, 8, 10], '"USD" #,##0.00;[Red]("USD" #,##0.00);-');
+
+  managementRow += 2;
+  setSection(management, managementRow, "CONCILIACIÓN RESULTANTE ENTRE DEYSI Y MILTON", 10);
+  managementRow += 1;
+  setHeader(management, managementRow, ["De", "Para", "Moneda", "Monto"]);
+  const transferStart = managementRow + 1;
+  if (data.transfers.length) {
+    for (const transfer of data.transfers) management.getRow(++managementRow).values = [transfer.from === "deysi" ? "Deysi" : "Milton", transfer.to === "deysi" ? "Deysi" : "Milton", transfer.currency, transfer.amountMinor / 100];
+  } else management.getRow(++managementRow).values = ["Sin transferencias pendientes", null, null, 0];
+  stripeRows(management, transferStart, managementRow, 4);
+  formatRange(management, transferStart, managementRow, [4], "#,##0.00");
+
+  if ((data.ownerSettlements || []).length) {
+    managementRow += 2;
+    setSection(management, managementRow, "CONTRATOS CON PROPIETARIO", 10);
+    managementRow += 1;
+    setHeader(management, managementRow, ["Departamento", "Cobrado Bs", "Cobrado USD", "Administración Bs", "Administración USD", "Pago propietario Bs", "Pago propietario USD", "Comisión Booking Bs", "Comisión Booking USD"]);
+    const ownerStart = managementRow + 1;
+    for (const settlement of data.ownerSettlements) management.getRow(++managementRow).values = [
+      settlement.property,
+      settlement.gross.BOB / 100, settlement.gross.USD / 100,
+      settlement.management.BOB / 100, settlement.management.USD / 100,
+      settlement.payable.BOB / 100, settlement.payable.USD / 100,
+      settlement.bookingCommission.BOB / 100, settlement.bookingCommission.USD / 100,
+    ];
+    stripeRows(management, ownerStart, managementRow, 9);
+    formatRange(management, ownerStart, managementRow, [2, 4, 6, 8], '"Bs" #,##0.00');
+    formatRange(management, ownerStart, managementRow, [3, 5, 7, 9], '"USD" #,##0.00');
+  }
+  management.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 } };
+  management.views = [{ state: "frozen", ySplit: 3, showGridLines: false }];
 
   const detail = workbook.addWorksheet("Reservas");
-  detail.columns = ["ID", "Departamento", "Huésped", "Canal", "Ingreso", "Salida", "Noches", "Hospedaje", "Moneda hospedaje", "Garantía referencial Bs", "Ingreso conciliable Bs", "Ingreso conciliable USD", "Comisión Bs", "Comisión USD", "Responsable comisión", "Nota"].map((header) => ({ header, key: header }));
-  for (const item of data.reservations) detail.addRow([item.id, item.property, item.guest, item.channel, new Date(`${item.checkIn}T12:00:00`), new Date(`${item.checkOut}T12:00:00`), item.nights, item.lodgingAmount, item.lodgingCurrency, item.guaranteeAmount, item.receivedBOB / 100, item.receivedUSD / 100, item.commissionBOB / 100, item.commissionUSD / 100, item.commissionResponsible || "", item.note]);
-  styleSheet(detail); detail.getColumn(5).numFmt = "yyyy-mm-dd"; detail.getColumn(6).numFmt = "yyyy-mm-dd"; [8,10,11,12,13,14].forEach((column) => detail.getColumn(column).numFmt = "#,##0.00");
+  const detailHeaders = ["ID", "Departamento", "Huésped / estado", "Canal", "Ingreso", "Salida", "Noches", "Ingreso conciliable Bs", "Ingreso conciliable USD", "Comisión Booking Bs", "Comisión Booking USD", "Responsable comisión", "Motivo del bloqueo"];
+  detail.columns = detailHeaders.map((header) => ({ header, key: header }));
+  const reservationRows = (data.reservations || []).map((item) => ({
+    sortProperty: item.property, sortDate: item.checkIn, free: false, blocked: false,
+    values: [item.id, item.property, item.guest, channelLabels[item.channel] || item.channel, new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, item.receivedBOB / 100, item.receivedUSD / 100, (item.commissionBOB || 0) / 100, (item.commissionUSD || 0) / 100, item.commissionResponsible || null, null],
+  }));
+  const freeRows = (data.freePeriods || []).map((item: FreePeriod) => ({
+    sortProperty: item.property, sortDate: item.checkIn, free: true, blocked: false,
+    values: [null, item.property, "Sin reserva / fechas no ocupadas", "Libre", new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, 0, 0, 0, 0, null, null],
+  }));
+  const blockedRows = (data.blockedPeriods || []).map((item) => ({
+    sortProperty: item.property, sortDate: item.checkIn, free: false, blocked: true,
+    values: [null, item.property, "Noches bloqueadas", "Bloqueo manual", new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, 0, 0, 0, 0, null, item.reason],
+  }));
+  const detailRows = [...reservationRows, ...blockedRows, ...freeRows].sort((a, b) => a.sortProperty.localeCompare(b.sortProperty, "es") || a.sortDate.localeCompare(b.sortDate));
+  for (const item of detailRows) {
+    const row = detail.addRow(item.values);
+    if (item.free) {
+      row.getCell(3).font = { italic: true, color: { argb: "FF60747D" } };
+      row.getCell(4).font = { italic: true, color: { argb: "FF60747D" } };
+    }
+    if (item.blocked) {
+      row.getCell(3).font = { bold: true, color: { argb: "FFBE3653" } };
+      row.getCell(4).font = { bold: true, color: { argb: "FFBE3653" } };
+      row.getCell(13).alignment = { vertical: "middle", wrapText: true };
+    }
+  }
+  styleDataSheet(detail, [10, 25, 31, 18, 14, 14, 10, 22, 22, 22, 22, 23, 34]);
+  detail.getColumn(5).numFmt = "yyyy-mm-dd"; detail.getColumn(6).numFmt = "yyyy-mm-dd";
+  for (const column of [8, 10]) detail.getColumn(column).numFmt = '"Bs" #,##0.00';
+  for (const column of [9, 11]) detail.getColumn(column).numFmt = '"USD" #,##0.00';
 
   const performance = workbook.addWorksheet("Rendimiento");
   performance.columns = ["Departamento", "Noches ocupadas", "Noches libres", "Ocupación", "Promedio noche Bs", "Promedio noche USD"].map((header) => ({ header, key: header }));
   for (const item of data.performance) performance.addRow([item.property, item.occupiedNights, item.freeNights, item.occupancy, item.averageNightlyBOB, item.averageNightlyUSD]);
-  styleSheet(performance); performance.getColumn(4).numFmt = "0.0%"; performance.getColumn(5).numFmt = '"Bs" #,##0.00'; performance.getColumn(6).numFmt = '"USD" #,##0.00';
+  styleDataSheet(performance, [28, 18, 16, 14, 21, 22]); performance.getColumn(4).numFmt = "0.0%"; performance.getColumn(5).numFmt = '"Bs" #,##0.00'; performance.getColumn(6).numFmt = '"USD" #,##0.00';
 
   const movementSheet = workbook.addWorksheet("Movimientos");
   movementSheet.columns = ["Fecha", "Departamento", "Huésped", "Canal", "Concepto", "Método", "Moneda", "Monto", "Recibido por", "Nota"].map((header) => ({ header, key: header }));
-  movements.forEach((item) => movementSheet.addRow([item.date, item.property, item.guest, item.channel, item.type, item.method, item.currency, item.amount, item.receivedBy, item.note]));
-  styleSheet(movementSheet); movementSheet.getColumn(1).numFmt = "yyyy-mm-dd hh:mm"; movementSheet.getColumn(8).numFmt = "#,##0.00";
-  [management, detail, performance, movementSheet].forEach((sheet) => { sheet.getRow(1).height = 24; sheet.getRow(1).alignment = { vertical: "middle" }; sheet.getRow(1).eachCell((cell) => { cell.border = { bottom: { style: "medium", color: { argb: `FF${orange}` } } }; }); });
+  movements.forEach((item) => movementSheet.addRow([item.date, item.property, item.guest, item.channel, item.type, item.method, item.currency, item.amount, item.receivedBy, item.note || null]));
+  styleDataSheet(movementSheet, [19, 26, 26, 14, 18, 17, 12, 16, 18, 34]); movementSheet.getColumn(1).numFmt = "yyyy-mm-dd hh:mm"; movementSheet.getColumn(8).numFmt = "#,##0.00";
   return workbook;
 }
 

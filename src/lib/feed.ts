@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { generateICal, type ICalEvent } from "@/lib/ical";
+import { groupClosedDateOverrides } from "@/lib/date-overrides";
 
 export { parseFeedFilename } from "@/lib/feed-utils";
 
@@ -57,10 +58,20 @@ export async function generateFeed(propertyId: number, forPlatform: string): Pro
     orderBy: { checkIn: "asc" },
   });
 
+  const closedOverrides = await prisma.dateOverride.findMany({
+    where: {
+      propertyId,
+      type: "closed",
+      date: { gte: currentOperationalDate().toISOString().slice(0, 10) },
+    },
+    orderBy: { date: "asc" },
+  });
+
   // Outbound feeds are intentionally one-way. Synced CalendarEvent rows are
   // observations imported from Airbnb/Booking/Vrbo and must never be echoed
-  // back to a channel. Date overrides and cleaning buffers are internal too.
-  // Only confirmed local reservations from another channel block inventory.
+  // back to a channel. Cleaning buffers remain internal. Confirmed local
+  // reservations from another channel and explicit manual closed overrides
+  // block inventory in every outbound feed.
   const outboundEvents: ICalEvent[] = allReservations
     .filter((reservation) => reservationChannel(reservation) !== forPlatform)
     .map((reservation) => ({
@@ -69,6 +80,15 @@ export async function generateFeed(propertyId: number, forPlatform: string): Pro
       startDate: new Date(reservation.checkIn).toISOString().substring(0, 10),
       endDate: new Date(reservation.checkOut).toISOString().substring(0, 10),
     }));
+
+  for (const range of groupClosedDateOverrides(closedOverrides)) {
+    outboundEvents.push({
+      uid: `deptosbo-block-${propertyId}-${range.startDate}-${range.endDate}`,
+      summary: "DeptosBO - Noches bloqueadas",
+      startDate: range.startDate,
+      endDate: range.endDate,
+    });
+  }
 
   const seen = new Set<string>();
   const finalEvents = outboundEvents.filter((event) => {
