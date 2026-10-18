@@ -28,6 +28,24 @@ describe("financial report workbook", () => {
     ]);
   });
 
+  it("keeps the income transfer gross and independent from Booking commissions", async () => {
+    process.env.DATABASE_URL ||= "file:./data/test.db";
+    const { personToPersonTransfers } = await import("./route");
+    expect(personToPersonTransfers(
+      { deysi: { BOB: 0, USD: 11387 }, milton: { BOB: 0, USD: 25748 } },
+      { deysi: { BOB: 0, USD: 7427 }, milton: { BOB: 0, USD: 29708 } },
+    )).toEqual([{ from: "deysi", to: "milton", currency: "USD", amountMinor: 3960 }]);
+  });
+
+  it("nets Booking commission reimbursements separately", async () => {
+    process.env.DATABASE_URL ||= "file:./data/test.db";
+    const { netCommissionReimbursements } = await import("./route");
+    expect(netCommissionReimbursements([
+      { from: "milton", to: "deysi", currency: "USD", amountMinor: 1122 },
+      { from: "deysi", to: "milton", currency: "USD", amountMinor: 500 },
+    ])).toEqual([{ from: "milton", to: "deysi", currency: "USD", amountMinor: 622 }]);
+  });
+
   it("assigns payments to the checkout month of a cross-month stay", async () => {
     process.env.DATABASE_URL ||= "file:./data/test.db";
     const { financialMovementPeriodWhere } = await import("./route");
@@ -45,7 +63,7 @@ describe("financial report workbook", () => {
     });
   });
 
-  it("creates a valid four-sheet Excel workbook with auditable detail", async () => {
+  it("creates a valid five-sheet Excel workbook with a separate Booking commission reconciliation", async () => {
     process.env.DATABASE_URL ||= "file:./data/test.db";
     const { buildFinancialWorkbook } = await import("./route");
     const data = {
@@ -57,9 +75,11 @@ describe("financial report workbook", () => {
       entitled: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 58000, USD: 0 } },
       commissions: { deysi: { BOB: 0, USD: 0 }, milton: { BOB: 8700, USD: 0 }, owner: { BOB: 0, USD: 0 } },
       ownerPayable: { BOB: 0, USD: 0 },
-      ownerSettlements: [{ propertyId: 99, property: "Luxe Suites 113", gross: { BOB: 100000, USD: 0 }, management: { BOB: 17000, USD: 0 }, payable: { BOB: 83000, USD: 0 }, bookingCommission: { BOB: 0, USD: 0 }, reservationsWithFixedFee: 1 }],
+      ownerSettlements: [{ propertyId: 99, property: "Luxe Suites 113", gross: { BOB: 100000, USD: 0 }, management: { BOB: 17000, USD: 0 }, payable: { BOB: 83000, USD: 0 }, reservationsWithFixedFee: 1 }],
       transfers: [],
-      reservations: [{ id: 1, property: "Sky Elite 331", guest: "Huésped prueba", channel: "booking", checkIn: "2026-08-20", checkOut: "2026-08-22", nights: 2, lodgingAmount: 580, lodgingCurrency: "BOB", parkingAmount: 0, parkingCurrency: "BOB", guaranteeAmount: 250, guaranteeCurrency: "BOB", receivedBOB: 58000, receivedUSD: 0, commissionBOB: 8700, commissionUSD: 0, commissionResponsible: "milton", note: "" }],
+      bookingCommissions: [{ reservationId: 1, reservationName: "Huésped prueba", checkIn: "2026-08-20", checkOut: "2026-08-22", originalProperty: "Sky Elite 528", physicalProperty: "Sky Elite 331", reassigned: true, physicalOperator: "milton" as const, commissionResponsible: "deysi" as const, reservationCurrency: "USD" as const, reservationAmountMinor: 8000, commissionCurrency: "USD" as const, commissionAmountMinor: 1200, receivedBOB: 150000, receivedUSD: 0 }],
+      commissionTransfers: [{ from: "milton" as const, to: "deysi" as const, currency: "USD" as const, amountMinor: 1200 }],
+      reservations: [{ id: 1, property: "Sky Elite 331", guest: "Huésped prueba", channel: "booking", checkIn: "2026-08-20", checkOut: "2026-08-22", nights: 2, lodgingAmount: 580, lodgingCurrency: "BOB", parkingAmount: 0, parkingCurrency: "BOB", guaranteeAmount: 250, guaranteeCurrency: "BOB", receivedBOB: 58000, receivedUSD: 0, note: "" }],
       blockedPeriods: [
         { propertyId: 1, property: "Sky Elite 331", checkIn: "2026-08-23", checkOut: "2026-08-25", nights: 2, reason: "Mantenimiento preventivo" },
       ],
@@ -77,18 +97,21 @@ describe("financial report workbook", () => {
     const buffer = await workbook.xlsx.writeBuffer();
     const loaded = new ExcelJS.Workbook();
     await loaded.xlsx.load(buffer);
-    expect(loaded.worksheets.map((sheet) => sheet.name)).toEqual(["Gerencial", "Reservas", "Rendimiento", "Movimientos"]);
+    expect(loaded.worksheets.map((sheet) => sheet.name)).toEqual(["Gerencial", "Reservas", "Rendimiento", "Movimientos", "Comisiones Booking"]);
     expect(loaded.getWorksheet("Reservas")?.getCell("B2").value).toBe("Sky Elite 331");
     expect(loaded.getWorksheet("Reservas")?.getCell("C2").value).toBe("Sin reserva / fechas no ocupadas");
-    expect(loaded.getWorksheet("Reservas")?.getCell("J1").value).toBe("Comisión Booking Bs");
-    expect(loaded.getWorksheet("Reservas")?.getCell("K1").value).toBe("Comisión Booking USD");
-    expect(loaded.getWorksheet("Reservas")?.getCell("M1").value).toBe("Motivo del bloqueo");
-    expect(loaded.getWorksheet("Reservas")?.getColumn(13).values).toContain("Mantenimiento preventivo");
+    expect(loaded.getWorksheet("Reservas")?.getCell("J1").value).toBe("Motivo del bloqueo");
+    expect(loaded.getWorksheet("Reservas")?.getColumn(10).values).toContain("Mantenimiento preventivo");
     expect(loaded.getWorksheet("Reservas")?.getRow(1).values).not.toContain("Nota");
     expect(loaded.getWorksheet("Reservas")?.getCell("A2").fill).not.toEqual(loaded.getWorksheet("Reservas")?.getCell("A3").fill);
     expect(loaded.getWorksheet("Gerencial")?.getCell("A4").value).toBe("MONTOS RECIBIDOS");
     expect(loaded.getWorksheet("Movimientos")?.getCell("H2").value).toBe(580);
     expect(loaded.getWorksheet("Movimientos")?.getCell("A2").fill).not.toEqual(loaded.getWorksheet("Movimientos")?.getCell("A3").fill);
+    expect(loaded.getWorksheet("Comisiones Booking")?.getCell("E11").value).toBe("Sky Elite 528");
+    expect(loaded.getWorksheet("Comisiones Booking")?.getCell("F11").value).toBe("Sky Elite 331");
+    expect(loaded.getWorksheet("Comisiones Booking")?.getCell("K11").value).toBe(80);
+    expect(loaded.getWorksheet("Comisiones Booking")?.getCell("L11").value).toBe(1500);
+    expect(loaded.getWorksheet("Comisiones Booking")?.getCell("O11").value).toBe(12);
   });
 
   it("creates the owner administration report with zebra rows, formulas and totals", async () => {

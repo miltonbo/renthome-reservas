@@ -121,19 +121,14 @@ export async function GET(request: NextRequest) {
     entitled[beneficiary][currency] += policy.managementFixedFeeMinor || 0;
   }
 
-  // Booking commission is reserved first. The remaining income follows the
-  // policy of the apartment physically occupied; the operator of the original
-  // Booking listing receives the provision used to pay Booking's invoice.
+  // Booking commissions are reported separately. They never reduce the gross
+  // income entitlement used in the Deysi/Milton reconciliation.
   const commissionReimbursements: Array<{ reservationId: number; reservationName: string; physicalProperty: string; originalProperty: string; from: Person; to: Person; currency: Currency; amountMinor: number }> = [];
   for (const commission of commissions) {
     const currency = commission.currency as Currency;
     const incomeOperator = commission.incomeOperator;
     const liable = commission.liablePerson as Person;
     if (!currencies.includes(currency)) continue;
-    for (const allocation of financialAllocations(commission.amountMinor, commission.reservation.property)) {
-      entitled[allocation.person][currency] -= allocation.amountMinor;
-    }
-    if (people.includes(liable)) entitled[liable][currency] += commission.amountMinor;
     if (!people.includes(incomeOperator) || !people.includes(liable) || incomeOperator === liable) continue;
     commissionReimbursements.push({
       reservationId: commission.reservationId,

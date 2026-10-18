@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 
 type Currency = "BOB" | "USD";
 type Person = "deysi" | "milton";
+type CommissionParty = Person | "owner";
 const currencies: Currency[] = ["BOB", "USD"];
 const people: Person[] = ["deysi", "milton"];
 
@@ -87,6 +88,21 @@ export function personToPersonTransfers(
       const transfer = Math.min(miltonBalance, -deysiBalance);
       transfers.push({ from: "milton", to: "deysi", currency, amountMinor: transfer });
     }
+  }
+  return transfers;
+}
+
+export function netCommissionReimbursements(
+  reimbursements: Array<{ from: CommissionParty; to: CommissionParty; currency: Currency; amountMinor: number }>,
+) {
+  const transfers: Array<{ from: CommissionParty; to: CommissionParty; currency: Currency; amountMinor: number }> = [];
+  for (const currency of currencies) {
+    const deysiToMilton = reimbursements.filter((item) => item.from === "deysi" && item.to === "milton" && item.currency === currency).reduce((sum, item) => sum + item.amountMinor, 0);
+    const miltonToDeysi = reimbursements.filter((item) => item.from === "milton" && item.to === "deysi" && item.currency === currency).reduce((sum, item) => sum + item.amountMinor, 0);
+    const net = deysiToMilton - miltonToDeysi;
+    if (net > 0) transfers.push({ from: "deysi", to: "milton", currency, amountMinor: net });
+    if (net < 0) transfers.push({ from: "milton", to: "deysi", currency, amountMinor: -net });
+    transfers.push(...reimbursements.filter((item) => item.currency === currency && (item.from === "owner" || item.to === "owner")));
   }
   return transfers;
 }
@@ -259,49 +275,56 @@ export async function GET(request: NextRequest) {
     entitled[beneficiary][asCurrency(policy.managementFixedFeeCurrency)] += policy.managementFixedFeeMinor || 0;
   }
 
-  const eligibleBookingSegments = [...new Map(
-    eligibleMovements
-      .filter((movement) => movement.reservation.platform === "booking")
-      .map((movement) => [movement.reservationId, movement]),
-  ).values()];
-  const commissionParts = eligibleBookingSegments
-    .filter((movement) => (movement.reservation.totalPrice || 0) > 0)
-    .map((movement) => {
-      const bookingProperty = movement.reservation.bookingOriginalProperty || movement.property;
+  // Booking commissions have their own reconciliation. They are calculated
+  // from the reservation price and never reduce or redistribute the actual
+  // income used in the Deysi/Milton reconciliation above.
+  const bookingCommissions = reportReservations
+    .filter((reservation) => reservation.platform === "booking" && (reservation.totalPrice || 0) > 0)
+    .map((reservation) => {
+      const physicalPolicy = properties.find((property) => property.id === reservation.propertyId);
+      const bookingProperty = reservation.bookingOriginalProperty || reservation.property;
+      const commissionResponsible = bookingCommissionLiability(bookingProperty) as CommissionParty;
+      const physicalOperator: CommissionParty = physicalPolicy?.financialModel === "owner_fee"
+        ? (physicalPolicy.bookingCommissionPayer === "owner" ? "owner" : (physicalPolicy.managementBeneficiary === "milton" ? "milton" : "deysi"))
+        : (physicalPolicy?.financialOperator === "deysi" ? "deysi" : "milton");
+      const received = blankCurrency();
+      const effective = reconciliableMovementAmounts(reservation);
+      for (const movement of reservation.moneyMovements) received[asCurrency(movement.currency)] += effective.get(movement.id) || 0;
+      const currency = asCurrency(reservation.priceCurrency);
+      const reservationAmountMinor = Math.round((reservation.totalPrice || 0) * 100);
       return {
-        reservationId: movement.reservationId,
-        reservationName: movement.reservation.name,
-        physicalPropertyId: movement.propertyId,
-        physicalProperty: movement.property.name,
-        physicalOperator: movement.property.financialOperator as Person,
-        originalPropertyId: bookingProperty.id,
+        reservationId: reservation.id,
+        reservationName: reservation.name,
+        checkIn: dateKey(reservation.checkIn),
+        checkOut: dateKey(reservation.checkOut),
         originalProperty: bookingProperty.name,
-        incomeOperator: movement.property.financialOperator as Person,
-        liablePerson: bookingCommissionLiability(bookingProperty),
-        currency: asCurrency(movement.reservation.priceCurrency),
-        amountMinor: bookingCommission(Math.round((movement.reservation.totalPrice || 0) * 100)),
+        physicalProperty: reservation.property.name,
+        reassigned: bookingProperty.id !== reservation.property.id,
+        physicalOperator,
+        commissionResponsible,
+        reservationCurrency: currency,
+        reservationAmountMinor,
+        commissionCurrency: currency,
+        commissionAmountMinor: bookingCommission(reservationAmountMinor),
+        receivedBOB: received.BOB,
+        receivedUSD: received.USD,
       };
     });
-  const commissions: Record<Person | "owner", Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency(), owner: blankCurrency() };
-  for (const commission of commissionParts) commissions[commission.liablePerson][commission.currency] += commission.amountMinor;
-  const commissionReimbursements: Array<{ reservationId: number; reservationName: string; physicalProperty: string; originalProperty: string; from: Person; to: Person; currency: Currency; amountMinor: number }> = [];
-  for (const commission of commissionParts) {
-    const from = commission.incomeOperator;
-    const to = commission.liablePerson as Person;
-    const physicalPolicy = properties.find((property) => property.id === commission.physicalPropertyId);
-    if (physicalPolicy) {
-      for (const allocation of financialAllocations(commission.amountMinor, physicalPolicy)) {
-        entitled[allocation.person][commission.currency] -= allocation.amountMinor;
-        if (physicalPolicy.financialModel !== "owner_fee") custodyEntitled[allocation.person][commission.currency] -= allocation.amountMinor;
-      }
-    }
-    if (people.includes(to)) {
-      entitled[to][commission.currency] += commission.amountMinor;
-      if (physicalPolicy?.financialModel !== "owner_fee") custodyEntitled[to][commission.currency] += commission.amountMinor;
-    }
-    if (!people.includes(from) || !people.includes(to) || from === to) continue;
-    commissionReimbursements.push({ reservationId: commission.reservationId, reservationName: commission.reservationName, physicalProperty: commission.physicalProperty, originalProperty: commission.originalProperty, from, to, currency: commission.currency, amountMinor: commission.amountMinor });
-  }
+  const commissions: Record<CommissionParty, Record<Currency, number>> = { deysi: blankCurrency(), milton: blankCurrency(), owner: blankCurrency() };
+  for (const row of bookingCommissions) commissions[row.commissionResponsible][row.commissionCurrency] += row.commissionAmountMinor;
+  const commissionReimbursements = bookingCommissions
+    .filter((row) => row.physicalOperator !== row.commissionResponsible)
+    .map((row) => ({
+      reservationId: row.reservationId,
+      reservationName: row.reservationName,
+      physicalProperty: row.physicalProperty,
+      originalProperty: row.originalProperty,
+      from: row.physicalOperator,
+      to: row.commissionResponsible,
+      currency: row.commissionCurrency,
+      amountMinor: row.commissionAmountMinor,
+    }));
+  const commissionTransfers = netCommissionReimbursements(commissionReimbursements);
   const ownerPayable = blankCurrency();
   for (const currency of currencies) ownerPayable[currency] = held.deysi[currency] + held.milton[currency] - entitled.deysi[currency] - entitled.milton[currency];
   const transfers = personToPersonTransfers(held, custodyEntitled);
@@ -332,9 +355,6 @@ export async function GET(request: NextRequest) {
       guaranteeCurrency: asCurrency(reservation.guaranteeCurrency),
       receivedBOB: received.BOB,
       receivedUSD: received.USD,
-      commissionBOB: commissionParts.filter((item) => item.reservationId === reservation.id && item.currency === "BOB").reduce((sum, item) => sum + item.amountMinor, 0),
-      commissionUSD: commissionParts.filter((item) => item.reservationId === reservation.id && item.currency === "USD").reduce((sum, item) => sum + item.amountMinor, 0),
-      commissionResponsible: commissionParts.find((item) => item.reservationId === reservation.id)?.liablePerson || null,
       reconciliationStatus,
       note: reservation.note || "",
     };
@@ -390,9 +410,7 @@ export async function GET(request: NextRequest) {
     }
     management[asCurrency(property.managementFixedFeeCurrency)] += reservationIds.size * (property.managementFixedFeeMinor || 0);
     for (const currency of currencies) payable[currency] = gross[currency] - management[currency];
-    const commission = blankCurrency();
-    for (const item of commissionParts.filter((part) => part.physicalPropertyId === property.id)) commission[item.currency] += item.amountMinor;
-    return { propertyId: property.id, property: property.name, gross, management, payable, bookingCommission: commission, reservationsWithFixedFee: reservationIds.size };
+    return { propertyId: property.id, property: property.name, gross, management, payable, reservationsWithFixedFee: reservationIds.size };
   });
   const propertyNames = new Map(properties.map((property) => [property.id, property.name]));
   const blockedPeriods: BlockedPeriod[] = groupClosedDateOverrides(dateOverrides).map((range) => ({
@@ -408,7 +426,7 @@ export async function GET(request: NextRequest) {
     ...blockedPeriods.map((period) => ({ propertyId: period.propertyId, checkIn: new Date(`${period.checkIn}T00:00:00.000Z`), checkOut: new Date(`${period.checkOut}T00:00:00.000Z`) })),
   ];
   const freePeriods = calculateFreePeriods(properties, occupiedRanges, period.from, period.toExclusive);
-  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, ownerFeeProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, received, held, entitled, commissions, commissionReimbursements, ownerPayable, ownerSettlements, transfers, observations, reservations: detailedReservations, blockedPeriods, freePeriods, performance, monthlyIncome: [...monthlyMap.values()] };
+  const data = { period: { from: period.fromKey, to: period.toKey }, policy: { operatedProperties, ownerFeeProperties, miltonShareBps: 8000, deysiAdministrationShareBps: 2000, deysiOwnShareBps: 10000, bookingCommissionBps: 1500 }, channelTotals, received, held, entitled, commissions, bookingCommissions, commissionReimbursements, commissionTransfers, ownerPayable, ownerSettlements, transfers, observations, reservations: detailedReservations, blockedPeriods, freePeriods, performance, monthlyIncome: [...monthlyMap.values()] };
   const format = request.nextUrl.searchParams.get("format");
   if (!format) return NextResponse.json(data);
 
@@ -438,6 +456,12 @@ export async function GET(request: NextRequest) {
     });
     const buffer = await workbook.xlsx.writeBuffer();
     return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="reporte-administracion-113-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
+  }
+
+  if (format === "booking-commissions") {
+    const workbook = buildBookingCommissionWorkbook(data);
+    const buffer = await workbook.xlsx.writeBuffer();
+    return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="comisiones-booking-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
   }
 
   if (format !== "xlsx") return NextResponse.json({ error: "Formato de reporte no reconocido" }, { status: 400 });
@@ -473,9 +497,26 @@ type FinancialWorkbookData = {
     gross: Record<Currency, number>;
     management: Record<Currency, number>;
     payable: Record<Currency, number>;
-    bookingCommission: Record<Currency, number>;
   }>;
   transfers: Array<{ from: string; to: string; currency: Currency; amountMinor: number }>;
+  bookingCommissions: Array<{
+    reservationId: number;
+    reservationName: string;
+    checkIn: string;
+    checkOut: string;
+    originalProperty: string;
+    physicalProperty: string;
+    reassigned: boolean;
+    physicalOperator: CommissionParty;
+    commissionResponsible: CommissionParty;
+    reservationCurrency: Currency;
+    reservationAmountMinor: number;
+    commissionCurrency: Currency;
+    commissionAmountMinor: number;
+    receivedBOB: number;
+    receivedUSD: number;
+  }>;
+  commissionTransfers: Array<{ from: CommissionParty; to: CommissionParty; currency: Currency; amountMinor: number }>;
   reservations: Array<{
     id: number;
     property: string;
@@ -486,9 +527,6 @@ type FinancialWorkbookData = {
     nights: number;
     receivedBOB: number;
     receivedUSD: number;
-    commissionBOB: number;
-    commissionUSD: number;
-    commissionResponsible: string | null;
   }>;
   blockedPeriods: BlockedPeriod[];
   freePeriods: FreePeriod[];
@@ -514,6 +552,95 @@ type FinancialMovementExport = {
   receivedBy: string;
   note: string | null;
 };
+
+function addBookingCommissionWorksheet(workbook: ExcelJS.Workbook, data: FinancialWorkbookData) {
+  const sheet = workbook.addWorksheet("Comisiones Booking");
+  const navy = "10252E", teal = "13B8A6", orange = "F28C28", pale = "F4F8F8", line = "D7E2E5";
+  const solid = (color: string): ExcelJS.Fill => ({ type: "pattern", pattern: "solid", fgColor: { argb: `FF${color}` } });
+  const party = (value: CommissionParty) => value === "deysi" ? "Deysi" : value === "milton" ? "Milton" : "Propietario";
+  sheet.views = [{ state: "frozen", ySplit: 10, showGridLines: false }];
+  sheet.getCell("A1").value = "CONCILIACIÓN DE COMISIONES BOOKING";
+  sheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FF172B34" } };
+  sheet.getCell("A2").value = `Período: ${data.period.from} al ${data.period.to}`;
+  sheet.getCell("A2").font = { italic: true, color: { argb: "FF60747D" } };
+  sheet.getCell("A3").value = "La comisión es 15% del monto de la reserva. Los ingresos recibidos son informativos y no modifican esta comisión.";
+  sheet.getCell("A3").font = { italic: true, color: { argb: "FF60747D" } };
+  sheet.mergeCells("A3:O3");
+  const bookingInBOB = data.bookingCommissions.filter((item) => item.reservationCurrency === "BOB").length;
+  if (bookingInBOB) {
+    sheet.getCell("A4").value = `${bookingInBOB} reserva(s) Booking está(n) registrada(s) en Bs. Se mantienen en Bs porque la reserva no tiene un tipo de cambio de comisión asociado.`;
+    sheet.getCell("A4").font = { italic: true, color: { argb: "FFB45309" } };
+    sheet.mergeCells("A4:O4");
+  }
+
+  sheet.getRow(5).values = ["Responsable", "Comisión Bs", "Comisión USD"];
+  const parties: CommissionParty[] = ["deysi", "milton", "owner"];
+  parties.forEach((item, index) => {
+    sheet.getRow(6 + index).values = [party(item), data.commissions[item].BOB / 100, data.commissions[item].USD / 100];
+  });
+  for (let column = 1; column <= 3; column += 1) {
+    const cell = sheet.getRow(5).getCell(column);
+    cell.fill = solid(navy); cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; cell.alignment = { horizontal: "center" };
+  }
+  sheet.getColumn(2).numFmt = '"Bs" #,##0.00';
+  sheet.getColumn(3).numFmt = '"USD" #,##0.00';
+
+  const headerRow = 10;
+  const headers = ["ID", "Huésped", "Ingreso", "Salida", "Departamento Booking", "Departamento físico", "Reasignada", "Operador físico", "Responsable comisión", "Moneda reserva", "Monto reserva", "Ingreso Bs", "Ingreso USD", "Moneda comisión", "Comisión 15%"];
+  sheet.getRow(headerRow).values = headers;
+  headers.forEach((_, index) => {
+    const cell = sheet.getRow(headerRow).getCell(index + 1);
+    cell.fill = solid(teal); cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    cell.border = { bottom: { style: "medium", color: { argb: `FF${orange}` } } };
+  });
+  sheet.getRow(headerRow).height = 32;
+  for (const item of data.bookingCommissions) {
+    sheet.addRow([
+      item.reservationId, item.reservationName, new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`),
+      item.originalProperty, item.physicalProperty, item.reassigned ? "Sí" : "No", party(item.physicalOperator), party(item.commissionResponsible),
+      item.reservationCurrency, item.reservationAmountMinor / 100, item.receivedBOB / 100, item.receivedUSD / 100,
+      item.commissionCurrency, item.commissionAmountMinor / 100,
+    ]);
+  }
+  const dataStart = headerRow + 1;
+  const dataEnd = Math.max(dataStart, sheet.rowCount);
+  if (!data.bookingCommissions.length) sheet.getRow(dataStart).values = [null, "Sin reservas Booking en el período"];
+  for (let rowNumber = dataStart; rowNumber <= sheet.rowCount; rowNumber += 1) {
+    const row = sheet.getRow(rowNumber);
+    if ((rowNumber - dataStart) % 2 === 1) for (let column = 1; column <= headers.length; column += 1) row.getCell(column).fill = solid(pale);
+    row.eachCell({ includeEmpty: true }, (cell, column) => {
+      if (column <= headers.length) { cell.alignment = { vertical: "middle" }; cell.border = { bottom: { style: "thin", color: { argb: `FF${line}` } } }; }
+    });
+  }
+  for (const column of [3, 4]) sheet.getColumn(column).numFmt = "yyyy-mm-dd";
+  sheet.getColumn(11).numFmt = "#,##0.00";
+  sheet.getColumn(12).numFmt = '"Bs" #,##0.00';
+  sheet.getColumn(13).numFmt = '"USD" #,##0.00';
+  sheet.getColumn(15).numFmt = "#,##0.00";
+  [10, 28, 14, 14, 25, 25, 13, 18, 22, 15, 17, 17, 17, 17, 17].forEach((width, index) => { sheet.getColumn(index + 1).width = width; });
+  sheet.autoFilter = { from: { row: headerRow, column: 1 }, to: { row: headerRow, column: headers.length } };
+
+  let summaryRow = Math.max(dataEnd + 3, 13);
+  sheet.getRow(summaryRow).values = ["CONCILIACIÓN RESULTANTE DE COMISIONES"];
+  for (let column = 1; column <= 5; column += 1) { const cell = sheet.getRow(summaryRow).getCell(column); cell.fill = solid(navy); cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; }
+  summaryRow += 1;
+  sheet.getRow(summaryRow).values = ["De", "Para", "Moneda", "Monto"];
+  for (let column = 1; column <= 4; column += 1) { const cell = sheet.getRow(summaryRow).getCell(column); cell.fill = solid(teal); cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; cell.alignment = { horizontal: "center" }; }
+  if (data.commissionTransfers.length) {
+    for (const transfer of data.commissionTransfers) sheet.addRow([party(transfer.from), party(transfer.to), transfer.currency, transfer.amountMinor / 100]);
+  } else sheet.addRow(["Sin transferencias pendientes", null, null, 0]);
+  sheet.getColumn(4).numFmt = "#,##0.00";
+  sheet.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 } };
+  return sheet;
+}
+
+export function buildBookingCommissionWorkbook(data: FinancialWorkbookData) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "DeptosBO";
+  workbook.created = new Date();
+  addBookingCommissionWorksheet(workbook, data);
+  return workbook;
+}
 
 export function buildFinancialWorkbook(data: FinancialWorkbookData, movements: FinancialMovementExport[]) {
   const workbook = new ExcelJS.Workbook();
@@ -631,7 +758,7 @@ export function buildFinancialWorkbook(data: FinancialWorkbookData, movements: F
   managementRow += 2;
   setSection(management, managementRow, "CONCILIACIÓN DEYSI Y MILTON", 10);
   managementRow += 1;
-  setHeader(management, managementRow, ["Responsable", "Departamentos operados", "Recibido Bs", "Le corresponde Bs", "Diferencia Bs", "Recibido USD", "Le corresponde USD", "Diferencia USD", "Comisión Booking Bs", "Comisión Booking USD"]);
+  setHeader(management, managementRow, ["Responsable", "Departamentos operados", "Recibido Bs", "Le corresponde Bs", "Diferencia Bs", "Recibido USD", "Le corresponde USD", "Diferencia USD"]);
   const reconciliationStart = managementRow + 1;
   for (const person of people) {
     const heldBOB = data.held[person].BOB / 100, entitledBOB = data.entitled[person].BOB / 100;
@@ -641,12 +768,11 @@ export function buildFinancialWorkbook(data: FinancialWorkbookData, movements: F
       data.policy.operatedProperties[person].join(", ") || "Ninguno en este alcance",
       heldBOB, entitledBOB, heldBOB - entitledBOB,
       heldUSD, entitledUSD, heldUSD - entitledUSD,
-      data.commissions[person].BOB / 100, data.commissions[person].USD / 100,
     ];
   }
-  stripeRows(management, reconciliationStart, managementRow, 10);
-  formatRange(management, reconciliationStart, managementRow, [3, 4, 5, 9], '"Bs" #,##0.00;[Red]("Bs" #,##0.00);-');
-  formatRange(management, reconciliationStart, managementRow, [6, 7, 8, 10], '"USD" #,##0.00;[Red]("USD" #,##0.00);-');
+  stripeRows(management, reconciliationStart, managementRow, 8);
+  formatRange(management, reconciliationStart, managementRow, [3, 4, 5], '"Bs" #,##0.00;[Red]("Bs" #,##0.00);-');
+  formatRange(management, reconciliationStart, managementRow, [6, 7, 8], '"USD" #,##0.00;[Red]("USD" #,##0.00);-');
 
   managementRow += 2;
   setSection(management, managementRow, "CONCILIACIÓN RESULTANTE ENTRE DEYSI Y MILTON", 10);
@@ -663,36 +789,35 @@ export function buildFinancialWorkbook(data: FinancialWorkbookData, movements: F
     managementRow += 2;
     setSection(management, managementRow, "CONTRATOS CON PROPIETARIO", 10);
     managementRow += 1;
-    setHeader(management, managementRow, ["Departamento", "Cobrado Bs", "Cobrado USD", "Administración Bs", "Administración USD", "Pago propietario Bs", "Pago propietario USD", "Comisión Booking Bs", "Comisión Booking USD"]);
+    setHeader(management, managementRow, ["Departamento", "Cobrado Bs", "Cobrado USD", "Administración Bs", "Administración USD", "Pago propietario Bs", "Pago propietario USD"]);
     const ownerStart = managementRow + 1;
     for (const settlement of data.ownerSettlements) management.getRow(++managementRow).values = [
       settlement.property,
       settlement.gross.BOB / 100, settlement.gross.USD / 100,
       settlement.management.BOB / 100, settlement.management.USD / 100,
       settlement.payable.BOB / 100, settlement.payable.USD / 100,
-      settlement.bookingCommission.BOB / 100, settlement.bookingCommission.USD / 100,
     ];
-    stripeRows(management, ownerStart, managementRow, 9);
-    formatRange(management, ownerStart, managementRow, [2, 4, 6, 8], '"Bs" #,##0.00');
-    formatRange(management, ownerStart, managementRow, [3, 5, 7, 9], '"USD" #,##0.00');
+    stripeRows(management, ownerStart, managementRow, 7);
+    formatRange(management, ownerStart, managementRow, [2, 4, 6], '"Bs" #,##0.00');
+    formatRange(management, ownerStart, managementRow, [3, 5, 7], '"USD" #,##0.00');
   }
   management.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 } };
   management.views = [{ state: "frozen", ySplit: 3, showGridLines: false }];
 
   const detail = workbook.addWorksheet("Reservas");
-  const detailHeaders = ["ID", "Departamento", "Huésped / estado", "Canal", "Ingreso", "Salida", "Noches", "Ingreso conciliable Bs", "Ingreso conciliable USD", "Comisión Booking Bs", "Comisión Booking USD", "Responsable comisión", "Motivo del bloqueo"];
+  const detailHeaders = ["ID", "Departamento", "Huésped / estado", "Canal", "Ingreso", "Salida", "Noches", "Ingreso conciliable Bs", "Ingreso conciliable USD", "Motivo del bloqueo"];
   detail.columns = detailHeaders.map((header) => ({ header, key: header }));
   const reservationRows = (data.reservations || []).map((item) => ({
     sortProperty: item.property, sortDate: item.checkIn, free: false, blocked: false,
-    values: [item.id, item.property, item.guest, channelLabels[item.channel] || item.channel, new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, item.receivedBOB / 100, item.receivedUSD / 100, (item.commissionBOB || 0) / 100, (item.commissionUSD || 0) / 100, item.commissionResponsible || null, null],
+    values: [item.id, item.property, item.guest, channelLabels[item.channel] || item.channel, new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, item.receivedBOB / 100, item.receivedUSD / 100, null],
   }));
   const freeRows = (data.freePeriods || []).map((item: FreePeriod) => ({
     sortProperty: item.property, sortDate: item.checkIn, free: true, blocked: false,
-    values: [null, item.property, "Sin reserva / fechas no ocupadas", "Libre", new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, 0, 0, 0, 0, null, null],
+    values: [null, item.property, "Sin reserva / fechas no ocupadas", "Libre", new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, 0, 0, null],
   }));
   const blockedRows = (data.blockedPeriods || []).map((item) => ({
     sortProperty: item.property, sortDate: item.checkIn, free: false, blocked: true,
-    values: [null, item.property, "Noches bloqueadas", "Bloqueo manual", new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, 0, 0, 0, 0, null, item.reason],
+    values: [null, item.property, "Noches bloqueadas", "Bloqueo manual", new Date(`${item.checkIn}T12:00:00Z`), new Date(`${item.checkOut}T12:00:00Z`), item.nights, 0, 0, item.reason],
   }));
   const detailRows = [...reservationRows, ...blockedRows, ...freeRows].sort((a, b) => a.sortProperty.localeCompare(b.sortProperty, "es") || a.sortDate.localeCompare(b.sortDate));
   for (const item of detailRows) {
@@ -704,13 +829,13 @@ export function buildFinancialWorkbook(data: FinancialWorkbookData, movements: F
     if (item.blocked) {
       row.getCell(3).font = { bold: true, color: { argb: "FFBE3653" } };
       row.getCell(4).font = { bold: true, color: { argb: "FFBE3653" } };
-      row.getCell(13).alignment = { vertical: "middle", wrapText: true };
+      row.getCell(10).alignment = { vertical: "middle", wrapText: true };
     }
   }
-  styleDataSheet(detail, [10, 25, 31, 18, 14, 14, 10, 22, 22, 22, 22, 23, 34]);
+  styleDataSheet(detail, [10, 25, 31, 18, 14, 14, 10, 22, 22, 34]);
   detail.getColumn(5).numFmt = "yyyy-mm-dd"; detail.getColumn(6).numFmt = "yyyy-mm-dd";
-  for (const column of [8, 10]) detail.getColumn(column).numFmt = '"Bs" #,##0.00';
-  for (const column of [9, 11]) detail.getColumn(column).numFmt = '"USD" #,##0.00';
+  detail.getColumn(8).numFmt = '"Bs" #,##0.00';
+  detail.getColumn(9).numFmt = '"USD" #,##0.00';
 
   const performance = workbook.addWorksheet("Rendimiento");
   performance.columns = ["Departamento", "Noches ocupadas", "Noches libres", "Ocupación", "Promedio noche Bs", "Promedio noche USD"].map((header) => ({ header, key: header }));
@@ -721,6 +846,7 @@ export function buildFinancialWorkbook(data: FinancialWorkbookData, movements: F
   movementSheet.columns = ["Fecha", "Departamento", "Huésped", "Canal", "Concepto", "Método", "Moneda", "Monto", "Recibido por", "Nota"].map((header) => ({ header, key: header }));
   movements.forEach((item) => movementSheet.addRow([item.date, item.property, item.guest, item.channel, item.type, item.method, item.currency, item.amount, item.receivedBy, item.note || null]));
   styleDataSheet(movementSheet, [19, 26, 26, 14, 18, 17, 12, 16, 18, 34]); movementSheet.getColumn(1).numFmt = "yyyy-mm-dd hh:mm"; movementSheet.getColumn(8).numFmt = "#,##0.00";
+  addBookingCommissionWorksheet(workbook, data);
   return workbook;
 }
 
