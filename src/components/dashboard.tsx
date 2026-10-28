@@ -2268,7 +2268,7 @@ export function Dashboard({
 
               <section className="col-span-2 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3" aria-labelledby="reservation-stay-heading">
                 <h3 id="reservation-stay-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-4)]">Estadía</h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                <div className="grid grid-cols-3 gap-x-2">
                   <div><div className="text-xs text-[var(--ink-4)]">Ingreso</div><div className="font-semibold text-[var(--ink)]">{new Date(`${reservationDateKey(inspectedContext.selected.checkIn)}T12:00:00`).toLocaleDateString("es-BO")}</div></div>
                   <div><div className="text-xs text-[var(--ink-4)]">Salida</div><div className="font-semibold text-[var(--ink)]">{new Date(`${reservationDateKey(inspectedContext.selected.checkOut)}T12:00:00`).toLocaleDateString("es-BO")}</div></div>
                   <div><div className="text-xs text-[var(--ink-4)]">Noches</div><div className="font-semibold text-[var(--ink)]">{Math.max(0, dayCount(inspectedContext.selected.checkIn, inspectedContext.selected.checkOut) - 1)}</div></div>
@@ -2277,7 +2277,7 @@ export function Dashboard({
 
               <section className="col-span-2 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3" aria-labelledby="reservation-amounts-heading">
                 <h3 id="reservation-amounts-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-4)]">Importes de la reserva</h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                <div className="grid grid-cols-3 gap-x-2">
                   <div><div className="text-xs text-[var(--ink-4)]">Hospedaje</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.totalPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.totalPrice}` : "Sin monto"}</div></div>
                   <div><div className="text-xs text-[var(--ink-4)]">Precio por noche</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.nightlyPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.nightlyPrice}` : "Sin monto"}</div></div>
                   <div><div className="text-xs text-[var(--ink-4)]">Garantía</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.extensionOfId ? "Se mantiene la garantía inicial" : `${inspectedContext.selected.guaranteeCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.guaranteeAmount ?? 0}`}</div></div>
