@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { PropertySwitcher } from "@/components/property-switcher";
 import { FinancialReportsPanel } from "@/components/financial-reports-panel";
+import { useOfficialExchangeRate } from "@/lib/use-official-exchange-rate";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property } from "@/lib/types";
@@ -349,6 +350,14 @@ interface ReportsPanelProps {
   property: Property | null;
   properties: Property[];
 }
+
+type CurrentMonthFinancialData = {
+  reservations: Array<{
+    propertyId: number;
+    receivedBOB: number;
+    receivedUSD: number;
+  }>;
+};
 
 export interface CalendarEventRow {
   id: number;
@@ -842,6 +851,10 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
   const [events, setEvents] = useState<CalendarEventRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [periodMonths, setPeriodMonths] = useState<PeriodChoice>(DEFAULT_PERIOD);
+  const [currentMonthFinancial, setCurrentMonthFinancial] = useState<CurrentMonthFinancialData | null>(null);
+  const [currentMonthFinancialLoading, setCurrentMonthFinancialLoading] = useState(true);
+  const [profitExchangeRate, setProfitExchangeRate] = useState("");
+  const { rate: officialRate } = useOfficialExchangeRate();
   const abortRef = useRef<AbortController | null>(null);
 
   const targetProperties = useMemo(
@@ -849,6 +862,18 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
     [property, properties],
   );
   const isMulti = !property;
+
+  const currentMonthPeriod = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const key = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    return {
+      from: key(new Date(year, month, 1)),
+      to: key(new Date(year, month + 1, 0)),
+      label: new Intl.DateTimeFormat("es-BO", { month: "long", year: "numeric" }).format(now),
+    };
+  }, []);
   const targetIdsKey = useMemo(
     () => targetProperties.map((p) => p.id).sort((a, b) => a - b).join(","),
     [targetProperties],
@@ -874,6 +899,53 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
       .finally(() => setLoading(false));
     return () => ac.abort();
   }, [property, targetIdsKey, targetProperties.length]);
+
+  useEffect(() => {
+    if (!isMulti || properties.length === 0) return;
+    const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a fresh request must replace the prior period's loading state
+    setCurrentMonthFinancialLoading(true);
+    fetch(`/api/reports/financial?from=${currentMonthPeriod.from}&to=${currentMonthPeriod.to}`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => setCurrentMonthFinancial(data))
+      .catch(() => {})
+      .finally(() => setCurrentMonthFinancialLoading(false));
+    return () => controller.abort();
+  }, [currentMonthPeriod.from, currentMonthPeriod.to, isMulti, properties.length]);
+
+  const propertyProfitability = useMemo(() => {
+    const automaticExchangeRate = profitExchangeRate || (officialRate ? String(officialRate.bobPerUsd) : "12");
+    const rate = Number(automaticExchangeRate.replace(",", "."));
+    const validRate = Number.isFinite(rate) && rate > 0 ? rate : 0;
+    const incomeByProperty = new Map<number, { BOB: number; USD: number }>();
+    for (const reservation of currentMonthFinancial?.reservations || []) {
+      const totals = incomeByProperty.get(reservation.propertyId) || { BOB: 0, USD: 0 };
+      totals.BOB += reservation.receivedBOB / 100;
+      totals.USD += reservation.receivedUSD / 100;
+      incomeByProperty.set(reservation.propertyId, totals);
+    }
+    return properties
+      .filter((item) => (item.monthlyRentMinor || 0) + (item.monthlyServicesMinor || 0) + (item.monthlyMaintenanceMinor || 0) > 0)
+      .map((item) => {
+        const income = incomeByProperty.get(item.id) || { BOB: 0, USD: 0 };
+        const grossBOB = income.BOB + income.USD * validRate;
+        const rent = (item.monthlyRentMinor || 0) / 100;
+        const services = (item.monthlyServicesMinor || 0) / 100;
+        const maintenance = (item.monthlyMaintenanceMinor || 0) / 100;
+        const administrationBps = item.financialModel === "operator_split" && item.financialOperator === "milton" ? 2000 : 0;
+        return {
+          property: item,
+          income,
+          grossBOB,
+          rent,
+          services,
+          maintenance,
+          administrationBps,
+          grossProfitBOB: grossBOB - rent - services - maintenance,
+        };
+      })
+      .sort((a, b) => a.property.name.localeCompare(b.property.name, "es"));
+  }, [currentMonthFinancial, officialRate, profitExchangeRate, properties]);
 
   const allStays: NormalizedStay[] = useMemo(() => {
     const out: NormalizedStay[] = [];
@@ -1223,70 +1295,81 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
                 )}
               </div>
 
-              {/* Per-property summary — only meaningful in multi-property
-                  mode. Sorted by past occupancy desc so the busiest
-                  property surfaces first; click-through scopes to that
-                  property's report. */}
-              {isMulti && propertyKpis.length > 0 && (
+              {/* Current-month profitability for the properties whose
+                  monthly operating costs are configured. */}
+              {isMulti && propertyProfitability.length > 0 && (currentMonthFinancialLoading || currentMonthFinancial) && (
                 <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] overflow-hidden">
-                  <div className="border-b border-[var(--line)] px-4 py-3">
-                    <h2 className="text-sm font-semibold text-[var(--ink)]">
-                      {c.byProperty}
-                    </h2>
-                    <p className="mt-0.5 text-[11px] text-[var(--ink-4)]">
-                      {c.byPropertyHint}
-                    </p>
+                  <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
+                    <div>
+                      <h2 className="text-sm font-semibold text-[var(--ink)]">Resultado por propiedad · {currentMonthPeriod.label}</h2>
+                      <p className="mt-0.5 text-[11px] text-[var(--ink-4)]">La utilidad bruta descuenta alquiler, servicios y mantenimiento. El porcentaje de administración se muestra como referencia y no se descuenta en esta fórmula.</p>
+                    </div>
+                    <label className="text-[10px] uppercase tracking-wide text-[var(--ink-4)]">
+                      TC estimado USD → Bs
+                      <input
+                        aria-label="Tipo de cambio estimado de dólares a bolivianos"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={profitExchangeRate || (officialRate ? String(officialRate.bobPerUsd) : "12")}
+                        onChange={(event) => setProfitExchangeRate(event.target.value)}
+                        className="mt-1 block h-8 w-28 rounded-lg border border-[var(--line-2)] bg-[var(--bg)] px-2 text-right text-xs font-semibold text-[var(--ink)]"
+                      />
+                      {officialRate && !profitExchangeRate && <span className="mt-1 block normal-case tracking-normal text-[9px] text-[var(--ink-4)]">BCB · {officialRate.effectiveDate}</span>}
+                    </label>
                   </div>
-                  {/* overflow-x-auto wrapper so the 6-column table can
-                      horizontally scroll on phones rather than being
-                      clipped by the rounded panel's overflow-hidden.
-                      Property + Past Occ % + Upcoming nights are
-                      enough to scan a property at a glance, and the
-                      remaining columns are reachable by swiping the
-                      table left. */}
                   <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="border-b border-[var(--line)] text-[10px] uppercase tracking-wider text-[var(--ink-4)]">
                       <tr>
-                        <th className="px-3 py-2 text-left font-medium sm:px-4">{c.colProperty}</th>
-                        <th className="px-3 py-2 text-right font-medium sm:px-4">{c.colPastOcc}</th>
-                        <th className="px-3 py-2 text-right font-medium sm:px-4">{c.colUpcoming}</th>
-                        <th className="px-3 py-2 text-right font-medium sm:px-4">{c.colBookings}</th>
-                        <th className="px-3 py-2 text-right font-medium sm:px-4">{c.colCleanings}</th>
-                        <th className="px-3 py-2 text-left font-medium hidden sm:table-cell sm:px-4">{c.colTopSource}</th>
+                        <th className="px-3 py-2 text-left font-medium sm:px-4">Propiedad</th>
+                        <th className="px-3 py-2 text-right font-medium sm:px-4">Alquiler</th>
+                        <th className="px-3 py-2 text-right font-medium sm:px-4">Servicios aprox.</th>
+                        <th className="px-3 py-2 text-right font-medium sm:px-4">Mantenimiento</th>
+                        <th className="px-3 py-2 text-right font-medium sm:px-4">Administración</th>
+                        <th className="px-3 py-2 text-right font-medium sm:px-4">Ingreso bruto</th>
+                        <th className="px-3 py-2 text-right font-medium sm:px-4">Utilidad bruta</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {[...propertyKpis]
-                        .sort((a, b) => b.pastOccupancy - a.pastOccupancy)
-                        .map((k) => (
-                          <tr key={k.property.id} className="border-b border-[var(--line)]/50 last:border-0 hover:bg-[var(--bg-3)]">
+                      {currentMonthFinancialLoading && !currentMonthFinancial ? (
+                        <tr>
+                          <td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--ink-4)]">
+                            Calculando los ingresos y la utilidad del mes…
+                          </td>
+                        </tr>
+                      ) : (
+                        <>
+                          {propertyProfitability.map((row, index) => (
+                          <tr key={row.property.id} className={`border-b border-[var(--line)]/50 last:border-0 hover:bg-[var(--bg-3)] ${index % 2 === 1 ? "bg-[var(--bg-3)]/35" : ""}`}>
                             <td className="px-3 py-2.5 text-[var(--ink)] font-medium sm:px-4">
-                              <Link href={`/dashboard?property=${k.property.id}&view=reports`} className="hover:underline">
-                                {k.property.name}
+                              <Link href={`/dashboard?property=${row.property.id}&view=reports`} className="hover:underline">
+                                {row.property.name}
                               </Link>
                             </td>
-                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">{k.pastOccupancy}%</td>
-                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">{k.upcomingNights}</td>
-                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">{k.totalBookings}</td>
-                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">{k.cleaningsUpcoming}</td>
-                            <td className="px-3 py-2.5 hidden sm:table-cell sm:px-4">
-                              {k.topPlatform ? (
-                                <span
-                                  className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold text-white"
-                                  style={{ backgroundColor: k.topPlatform.color }}
-                                >
-                                  {k.topPlatform.label}
-                                </span>
-                              ) : (
-                                <span className="text-[11px] text-[var(--ink-4)]">—</span>
-                              )}
-                            </td>
+                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">Bs {row.rent.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">Bs {row.services.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">Bs {row.maintenance.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">{row.administrationBps ? `${row.administrationBps / 100}%` : "—"}</td>
+                            <td className="px-3 py-2.5 text-right tabular-nums sm:px-4"><span className="font-semibold text-[var(--ink)]">Bs {row.grossBOB.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>{row.income.USD > 0 && <span className="block text-[10px] text-[var(--ink-4)]">incluye USD {row.income.USD.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span>}</td>
+                            <td className={`px-3 py-2.5 text-right font-bold tabular-nums sm:px-4 ${row.grossProfitBOB >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>Bs {row.grossProfitBOB.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           </tr>
-                        ))}
+                          ))}
+                          <tr className="border-t-2 border-[var(--line-2)] bg-[var(--bg-3)] font-bold text-[var(--ink)]">
+                            <td className="px-3 py-3 sm:px-4">Total</td>
+                            <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.rent, 0).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.services, 0).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.maintenance, 0).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-3 text-right sm:px-4">—</td>
+                            <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.grossBOB, 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.grossProfitBOB, 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          </tr>
+                        </>
+                      )}
                     </tbody>
                   </table>
                   </div>
+                  {currentMonthFinancialLoading && <div className="border-t border-[var(--line)] px-4 py-2 text-xs text-[var(--ink-4)]">Actualizando ingresos del mes…</div>}
                 </div>
               )}
             </>

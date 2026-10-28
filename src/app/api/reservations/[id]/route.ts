@@ -7,7 +7,8 @@ import { normalizePhone } from "@/lib/sanitize";
 import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
 import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
-import { amountToMinor, financialAllocations, isCurrency } from "@/lib/finance";
+import { amountToMinor, financialAllocations, isCurrency, usdReservationSettlementCheck } from "@/lib/finance";
+import { getOfficialExchangeRate } from "@/lib/bcb-exchange-rate";
 
 async function loadManageableReservation(
   reservationId: number,
@@ -20,6 +21,14 @@ async function loadManageableReservation(
       id: true,
       propertyId: true,
       platform: true,
+      priceCurrency: true,
+      totalPrice: true,
+      guaranteeAmount: true,
+      guaranteeCurrency: true,
+      settledManuallyAt: true,
+      moneyMovements: {
+        select: { type: true, amountMinor: true, currency: true },
+      },
       linkedEventUid: true,
       linkedEventPlatform: true,
       linkedEventRole: true,
@@ -120,6 +129,12 @@ export async function PATCH(
       }
       data[field] = body[field];
     }
+    const nextPlatform = String(body.platform ?? owned.platform).toLowerCase();
+    const pricingChanged = body.platform !== undefined || body.nightlyPrice !== undefined || body.totalPrice !== undefined || body.priceCurrency !== undefined;
+    const nextPriceCurrency = body.priceCurrency ?? owned.priceCurrency;
+    if (pricingChanged && (nextPlatform === "airbnb" || nextPlatform === "booking") && nextPriceCurrency !== "USD") {
+      return NextResponse.json({ error: `${nextPlatform === "booking" ? "Booking" : "Airbnb"} amounts must use USD` }, { status: 400 });
+    }
     if (body.guaranteeCurrency !== undefined) {
       if (body.guaranteeCurrency !== "BOB") return NextResponse.json({ error: "Guarantees must use BOB" }, { status: 400 });
       data.guaranteeCurrency = "BOB";
@@ -137,6 +152,30 @@ export async function PATCH(
     if (body.settledManually !== undefined) {
       if (typeof body.settledManually !== "boolean") {
         return NextResponse.json({ error: "Invalid settledManually" }, { status: 400 });
+      }
+      const settlementCurrency = body.priceCurrency ?? owned.priceCurrency;
+      if (body.settledManually && settlementCurrency === "USD") {
+        let rate;
+        try {
+          rate = await getOfficialExchangeRate();
+        } catch {
+          return NextResponse.json({ error: "No se pudo obtener el tipo de cambio oficial del BCB." }, { status: 503 });
+        }
+        const check = usdReservationSettlementCheck({
+          totalPrice: body.totalPrice ?? owned.totalPrice,
+          priceCurrency: settlementCurrency,
+          guaranteeAmount: body.guaranteeAmount ?? owned.guaranteeAmount,
+          guaranteeCurrency: body.guaranteeCurrency ?? owned.guaranteeCurrency,
+          settledManuallyAt: owned.settledManuallyAt,
+          moneyMovements: owned.moneyMovements,
+        }, rate.bobPerUsd);
+        if (!check.ok) {
+          return NextResponse.json({
+            error: "El monto recibido es menor al equivalente de la reserva en USD según el TC oficial del BCB.",
+            settlement: check,
+            exchangeRate: rate.bobPerUsd,
+          }, { status: 409 });
+        }
       }
       data.settledManuallyAt = body.settledManually ? new Date() : null;
     }

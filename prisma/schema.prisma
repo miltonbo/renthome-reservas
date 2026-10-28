@@ -120,6 +120,9 @@ model Property {
   managementFixedFeeCurrency String                  @default("BOB")
   managementBeneficiary      String                  @default("deysi")
   bookingCommissionPayer     String                  @default("operator") // operator | owner | deysi | milton
+  monthlyRentMinor           Int                     @default(0) // monthly rent in BOB minor units
+  monthlyServicesMinor       Int                     @default(0) // estimated monthly utilities in BOB minor units
+  monthlyMaintenanceMinor    Int                     @default(0) // estimated monthly building maintenance in BOB minor units
   feedToken                  String?                 @unique // optional opt-in token gating the public iCal feed; null = public
   feedSlug                   String?                 @unique // durable URL identifier for the iCal feed; minted at creation, never changes
   createdAt                  DateTime                @default(now())

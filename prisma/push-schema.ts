@@ -231,6 +231,9 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Property" ADD COLUMN "managementFixedFeeCurrency" TEXT NOT NULL DEFAULT 'BOB'`,
     `ALTER TABLE "Property" ADD COLUMN "managementBeneficiary" TEXT NOT NULL DEFAULT 'deysi'`,
     `ALTER TABLE "Property" ADD COLUMN "bookingCommissionPayer" TEXT NOT NULL DEFAULT 'operator'`,
+    `ALTER TABLE "Property" ADD COLUMN "monthlyRentMinor" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "Property" ADD COLUMN "monthlyServicesMinor" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "Property" ADD COLUMN "monthlyMaintenanceMinor" INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE "Reservation" ADD COLUMN "bookingOriginalPropertyId" INTEGER REFERENCES "Property"("id") ON DELETE SET NULL`,
     `CREATE INDEX IF NOT EXISTS "Reservation_bookingOriginalPropertyId_idx" ON "Reservation"("bookingOriginalPropertyId")`,
     // RT-25.12 — per-guest free-text notes. Empty default so existing
@@ -427,6 +430,38 @@ CREATE INDEX IF NOT EXISTS "Feedback_userId_idx" ON "Feedback"("userId");
       WHERE lower(p."name") = 'luxe suites 113'
     )
   `);
+  // Current monthly operating costs supplied by RentHome. Keeping these on
+  // Property makes the profitability table data-driven and lets a future
+  // settings screen edit them without changing report code.
+  const rentHomeCosts: Array<[string[], number, number, number]> = [
+    [["Sky Elite 540", "Sky 540"], 0, 720, 250],
+    [["Stanza 8B", "8B"], 0, 740, 300],
+    [["Sky Elite 331", "Sky 331"], 3400, 540, 250],
+    [["Sky Luxia 112", "Luxia 112"], 3750, 750, 250],
+    [["Sky Elite 523", "Sky 523"], 4000, 500, 250],
+    [["Luxe Suites 205", "Luxe 205"], 3100, 540, 250],
+    [["Luxe Suites 204", "Luxe 204"], 3400, 540, 250],
+    [["Luxe Suites 117", "Luxe 117"], 2800, 720, 250],
+    [["Luxe Suites 406", "Luxe 406"], 3100, 750, 250],
+    [["Sky Moon 706", "Moon 706"], 3700, 740, 250],
+    [["Sky Eclipse 1402", "Eclipse 1402"], 3800, 740, 250],
+    [["Luxe Suites 104", "Luxe 104"], 2700, 740, 250],
+    [["Sky Eclipse 1709", "Eclipse 1709"], 4000, 740, 250],
+    [["Sky Eclipse 1309", "Eclipse 1309"], 4000, 740, 250],
+    [["Sky Eclipse 1409", "Eclipse 1409"], 3600, 740, 250],
+    [["Sky Eclipse 1602", "Eclipse 1602"], 3800, 740, 250],
+    [["Luxe Suites 316", "Luxe 316"], 2950, 250, 250],
+  ];
+  for (const [aliases, rent, services, maintenance] of rentHomeCosts) {
+    const placeholders = aliases.map(() => "?").join(", ");
+    await prisma.$executeRawUnsafe(
+      `UPDATE "Property" SET "monthlyRentMinor" = ?, "monthlyServicesMinor" = ?, "monthlyMaintenanceMinor" = ? WHERE lower("name") IN (${placeholders}) AND "monthlyRentMinor" = 0 AND "monthlyServicesMinor" = 0 AND "monthlyMaintenanceMinor" = 0`,
+      rent * 100,
+      services * 100,
+      maintenance * 100,
+      ...aliases.map((alias) => alias.toLowerCase()),
+    );
+  }
 
   // Backfill the durable linked-event metadata introduced above. Older rows
   // overloaded Reservation.platform for both the booking channel and the

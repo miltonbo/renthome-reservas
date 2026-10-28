@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncAllCalendars } from "@/lib/calendar-sync";
 import { prisma } from "@/lib/prisma";
+import { boliviaPublicationWindow, refreshOfficialExchangeRate } from "@/lib/bcb-exchange-rate";
 
 /**
  * GET /api/calendar/cron?secret=xxx
@@ -24,6 +25,23 @@ export async function GET(request: NextRequest) {
       message: `Cron triggered by ${source.substring(0, 80)}`,
     },
   });
+
+  // The BCB publishes the next business day's official USD rate at 20:00
+  // Bolivia time. This endpoint already runs every ten minutes, so use a
+  // short post-publication window for automatic refreshes and retries. It is
+  // independent of calendar auto-sync and therefore runs before that toggle.
+  if (boliviaPublicationWindow()) {
+    try {
+      await refreshOfficialExchangeRate();
+    } catch (error) {
+      await prisma.syncLog.create({
+        data: {
+          level: "error",
+          message: `BCB exchange-rate refresh failed: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      });
+    }
+  }
 
   // Check if auto-sync is enabled
   const autoSetting = await prisma.appSettings.findUnique({

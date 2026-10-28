@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/alternates";
 import type { Property } from "@/lib/types";
+import { useOfficialExchangeRate } from "@/lib/use-official-exchange-rate";
 
 interface CopyShape {
   tabDashboard: string;
@@ -220,6 +221,7 @@ export function TopBar({
   const isSuperAdmin = userRole === "superadmin";
   const { t, locale, setLocale } = useI18n();
   const c = COPY[locale];
+  const { rate: officialRate, loading: officialRateLoading } = useOfficialExchangeRate();
   const [propDropdown, setPropDropdown] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
   // "Refresh all calendars" — syncs every property the current user can
@@ -778,6 +780,21 @@ export function TopBar({
             )}
           </div>
         </div>
+      </div>
+
+      <div className="flex min-h-8 items-center justify-end gap-2 border-t border-[var(--line)] bg-[var(--brand-teal)]/[0.04] px-3 py-1 text-[11px] text-[var(--ink-3)] sm:px-5" title="El BCB publica el TCO cada día hábil a las 20:00, con vigencia para el día siguiente.">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--ink-2)]">
+          <span className={`h-1.5 w-1.5 rounded-full ${!officialRate ? "bg-[var(--ink-4)]" : officialRate.stale ? "bg-amber-400" : "bg-emerald-500"}`} />
+          TC oficial BCB
+        </span>
+        {officialRate ? (
+          <>
+            <strong className="tabular-nums text-[var(--ink)]">1 USD = Bs {officialRate.bobPerUsd.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            <span className="hidden text-[var(--ink-4)] sm:inline">Vigente {new Date(`${officialRate.effectiveDate}T12:00:00`).toLocaleDateString("es-BO", { day: "2-digit", month: "short", year: "numeric" })}{officialRate.stale ? " · último dato disponible" : ""}</span>
+          </>
+        ) : (
+          <span className="text-[var(--ink-4)]">{officialRateLoading ? "Actualizando…" : "No disponible"}</span>
+        )}
       </div>
 
       {/* Mobile / medium tabs row — visible whenever the centered

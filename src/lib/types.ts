@@ -116,6 +116,9 @@ export interface Property {
   managementFixedFeeCurrency?: "BOB" | "USD";
   managementBeneficiary?: "deysi" | "milton";
   bookingCommissionPayer?: "operator" | "owner" | "deysi" | "milton";
+  monthlyRentMinor?: number;
+  monthlyServicesMinor?: number;
+  monthlyMaintenanceMinor?: number;
   feedToken: string | null; // optional token gating the public iCal feed
   createdAt: string;
   reservations: Reservation[];

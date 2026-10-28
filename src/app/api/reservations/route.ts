@@ -112,6 +112,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "checkOut must be after checkIn" }, { status: 400 });
     }
     const requestedPlatform = normalizePlatformSlug(platform || "airbnb");
+    if ((requestedPlatform === "airbnb" || requestedPlatform === "booking") &&
+        (nightlyPrice != null || totalPrice != null) && priceCurrency !== "USD") {
+      return NextResponse.json({ error: `${requestedPlatform === "booking" ? "Booking" : "Airbnb"} amounts must use USD` }, { status: 400 });
+    }
     if (requestedPlatform === "booking" && bookingOriginalPropertyId == null) {
       return NextResponse.json({ error: "Booking original property is required" }, { status: 400 });
     }
@@ -395,10 +399,6 @@ export async function POST(request: NextRequest) {
         propertyId,
       },
     });
-
-    if (reservationPlatform === "airbnb" && (nightlyPrice != null || totalPrice != null) && priceCurrency !== "USD") {
-      return NextResponse.json({ error: "Airbnb amounts must use USD" }, { status: 400 });
-    }
 
     // Clean up open / closed overrides that the new reservation just
     // made obsolete. The iCal feed already silently filters them

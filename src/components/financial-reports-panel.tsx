@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useOfficialExchangeRate } from "@/lib/use-official-exchange-rate";
 
 type CurrencyTotals = { BOB: number; USD: number };
 type ReportData = {
@@ -47,6 +48,8 @@ export function FinancialReportsPanel({ propertyId, properties }: { propertyId?:
   const [reportPropertyId, setReportPropertyId] = useState(propertyId ? String(propertyId) : "");
   const [administrationDialogOpen, setAdministrationDialogOpen] = useState(false);
   const [administrationExchangeRate, setAdministrationExchangeRate] = useState("");
+  const { rate: officialRate } = useOfficialExchangeRate();
+  const effectiveAdministrationExchangeRate = administrationExchangeRate || (officialRate ? String(officialRate.bobPerUsd) : "");
 
   const selectedPeriod = useMemo(
     () => periodMode === "month" ? monthRange(month) : { from, to },
@@ -83,7 +86,7 @@ export function FinancialReportsPanel({ propertyId, properties }: { propertyId?:
     : null;
   const exportAdministration = () => {
     if (!administrationProperty) return;
-    const exchangeRate = Number(administrationExchangeRate.replace(",", "."));
+    const exchangeRate = Number(effectiveAdministrationExchangeRate.replace(",", "."));
     if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) return;
     const params = new URLSearchParams(selectedPeriod);
     params.set("propertyId", String(administrationProperty.id));
@@ -92,7 +95,7 @@ export function FinancialReportsPanel({ propertyId, properties }: { propertyId?:
     setAdministrationDialogOpen(false);
     window.location.href = `/api/reports/financial?${params.toString()}`;
   };
-  const parsedAdministrationExchangeRate = Number(administrationExchangeRate.replace(",", "."));
+  const parsedAdministrationExchangeRate = Number(effectiveAdministrationExchangeRate.replace(",", "."));
   const validAdministrationExchangeRate = Number.isFinite(parsedAdministrationExchangeRate) && parsedAdministrationExchangeRate > 0;
   const channelRows = data ? Object.entries(data.channelTotals).map(([channel, values]) => ({ channel, label: channelNames[channel] || channel, color: channelColors[channel] || "#7b8794", ...values })) : [];
 
@@ -130,14 +133,15 @@ export function FinancialReportsPanel({ propertyId, properties }: { propertyId?:
     {administrationDialogOpen && administrationProperty && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setAdministrationDialogOpen(false); }}>
       <form onSubmit={(event) => { event.preventDefault(); exportAdministration(); }} role="dialog" aria-modal="true" aria-labelledby="administration-report-title" className="w-full max-w-md rounded-2xl border border-[var(--line-2)] bg-[var(--bg)] p-5 shadow-2xl">
         <h3 id="administration-report-title" className="text-base font-semibold text-[var(--ink)]">Reporte de administración</h3>
-        <p className="mt-1 text-xs leading-relaxed text-[var(--ink-3)]">Ingresa el tipo de cambio USD a Bs que se aplicará al reporte de {administrationProperty.name}. Todos los cálculos y totales se generarán en bolivianos.</p>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--ink-3)]">Se aplicará el tipo de cambio oficial del BCB al reporte de {administrationProperty.name}. Puedes editarlo si necesitas utilizar un TC operativo diferente.</p>
         <label className="mt-4 block text-xs font-semibold text-[var(--ink-2)]">Tipo de cambio USD/BOB
           <div className="mt-1 flex items-center rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] focus-within:border-[var(--brand-orange)]">
             <span className="px-3 text-xs text-[var(--ink-4)]">Bs</span>
-            <input autoFocus inputMode="decimal" type="text" value={administrationExchangeRate} onChange={(event) => setAdministrationExchangeRate(event.target.value)} placeholder="Ej. 6,96" className="h-10 min-w-0 flex-1 bg-transparent pr-3 text-sm text-[var(--ink)] outline-none" />
+            <input autoFocus inputMode="decimal" type="text" value={effectiveAdministrationExchangeRate} onChange={(event) => setAdministrationExchangeRate(event.target.value)} placeholder="Cargando TC oficial…" className="h-10 min-w-0 flex-1 bg-transparent pr-3 text-sm text-[var(--ink)] outline-none" />
           </div>
         </label>
-        {administrationExchangeRate && !validAdministrationExchangeRate && <p className="mt-2 text-xs text-red-500">Ingresa un tipo de cambio mayor a cero.</p>}
+        {officialRate && !administrationExchangeRate && <p className="mt-2 text-[11px] text-[var(--ink-4)]">TC oficial BCB vigente al {officialRate.effectiveDate}.</p>}
+        {effectiveAdministrationExchangeRate && !validAdministrationExchangeRate && <p className="mt-2 text-xs text-red-500">Ingresa un tipo de cambio mayor a cero.</p>}
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={() => setAdministrationDialogOpen(false)} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-xs font-semibold text-[var(--ink-2)]">Cancelar</button>
           <button type="submit" disabled={!validAdministrationExchangeRate} className="rounded-lg bg-[var(--brand-orange)] px-4 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Generar reporte</button>

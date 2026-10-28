@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   calendarEventFindFirst: vi.fn(),
   calendarEventDelete: vi.fn(),
   dateOverrideDeleteMany: vi.fn(),
+  getOfficialExchangeRate: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -25,6 +26,10 @@ vi.mock("@/lib/ownership", () => ({
 
 vi.mock("@/lib/audit", () => ({
   logAudit: mocks.logAudit,
+}));
+
+vi.mock("@/lib/bcb-exchange-rate", () => ({
+  getOfficialExchangeRate: mocks.getOfficialExchangeRate,
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -94,6 +99,7 @@ beforeEach(() => {
   mocks.calendarEventDelete.mockResolvedValue({ id: 41 });
   mocks.dateOverrideDeleteMany.mockResolvedValue({ count: 0 });
   mocks.logAudit.mockResolvedValue(undefined);
+  mocks.getOfficialExchangeRate.mockResolvedValue({ bobPerUsd: 12, effectiveDate: "2026-10-28", stale: false });
 });
 
 describe("PATCH /api/reservations/:id — date edits", () => {
@@ -619,6 +625,24 @@ describe("PATCH /api/reservations/:id — date edits", () => {
 });
 
 describe("PATCH /api/reservations/:id — commercial details", () => {
+  it("rejects changing a priced reservation to Booking while keeping BOB", async () => {
+    mocks.reservationFindUnique.mockResolvedValue({
+      ...original,
+      platform: "direct",
+      priceCurrency: "BOB",
+      linkedEventUid: null,
+    });
+
+    const response = await PATCH(
+      patchRequest({ platform: "booking", totalPrice: 160, priceCurrency: "BOB" }),
+      patchParams(),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Booking amounts must use USD" });
+    expect(mocks.reservationUpdate).not.toHaveBeenCalled();
+  });
+
   it("updates channel, lodging, guarantee and parking amounts", async () => {
     mocks.reservationFindUnique.mockResolvedValue({
       ...original,
@@ -675,6 +699,40 @@ describe("PATCH /api/reservations/:id — commercial details", () => {
     await PATCH(patchRequest({ settledManually: false }), patchParams());
     expect(mocks.reservationUpdate).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ settledManuallyAt: null }),
+    }));
+  });
+
+  it("rejects manual settlement when BOB payments are below the USD equivalent", async () => {
+    mocks.reservationFindUnique.mockResolvedValue({
+      ...original,
+      platform: "booking",
+      priceCurrency: "USD",
+      totalPrice: 100,
+      guaranteeAmount: 250,
+      guaranteeCurrency: "BOB",
+      settledManuallyAt: null,
+      moneyMovements: [{ type: "lodging", amountMinor: 140000, currency: "BOB" }],
+    });
+    const response = await PATCH(patchRequest({ settledManually: true }), patchParams());
+    expect(response.status).toBe(409);
+    expect(mocks.reservationUpdate).not.toHaveBeenCalled();
+  });
+
+  it("allows manual settlement when BOB payments cover the USD equivalent", async () => {
+    mocks.reservationFindUnique.mockResolvedValue({
+      ...original,
+      platform: "booking",
+      priceCurrency: "USD",
+      totalPrice: 100,
+      guaranteeAmount: 250,
+      guaranteeCurrency: "BOB",
+      settledManuallyAt: null,
+      moneyMovements: [{ type: "lodging", amountMinor: 145000, currency: "BOB" }],
+    });
+    const response = await PATCH(patchRequest({ settledManually: true }), patchParams());
+    expect(response.status).toBe(200);
+    expect(mocks.reservationUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ settledManuallyAt: expect.any(Date) }),
     }));
   });
 });

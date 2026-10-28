@@ -341,6 +341,7 @@ export async function GET(request: NextRequest) {
       : "outstanding";
     return {
       id: reservation.id,
+      propertyId: reservation.propertyId,
       property: reservation.property.name,
       guest: reservation.name,
       channel: reservation.platform,
@@ -519,6 +520,7 @@ type FinancialWorkbookData = {
   commissionTransfers: Array<{ from: CommissionParty; to: CommissionParty; currency: Currency; amountMinor: number }>;
   reservations: Array<{
     id: number;
+    propertyId?: number;
     property: string;
     guest: string;
     channel: string;

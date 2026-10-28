@@ -168,6 +168,20 @@ describe("POST /api/reservations — linked calendar source", () => {
     });
   });
 
+  it("rejects Booking lodging prices registered in bolivianos", async () => {
+    const response = await POST(postRequest({
+      platform: "booking",
+      bookingOriginalPropertyId: 21,
+      nightlyPrice: 40,
+      totalPrice: 160,
+      priceCurrency: "BOB",
+    }));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Booking amounts must use USD" });
+    expect(mocks.reservationCreate).not.toHaveBeenCalled();
+  });
+
   it("creates a separately priced extension at the family's current checkout", async () => {
     mocks.reservationFindFirst
       .mockResolvedValueOnce({ id: 44, extensionOfId: null, checkOut: new Date("2026-08-23T00:00:00.000Z") })

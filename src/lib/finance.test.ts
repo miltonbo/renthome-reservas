@@ -9,6 +9,8 @@ import {
   reconciliableMovementAmounts,
   segmentChargeStatus,
   segmentReconciliationStatus,
+  USD_SETTLEMENT_TOLERANCE_BOB,
+  usdReservationSettlementCheck,
 } from "./finance";
 
 describe("DeptosBO finance rules", () => {
@@ -135,5 +137,84 @@ describe("reconciliation money rules", () => {
     });
     expect(status.isSettled).toBe(true);
     expect(status.balance.BOB).toBe(0);
+  });
+
+  it("accepts a BOB payment equal to or above a USD reservation at the official rate", () => {
+    const exact = usdReservationSettlementCheck({
+      totalPrice: 100,
+      priceCurrency: "USD",
+      guaranteeAmount: 250,
+      guaranteeCurrency: "BOB",
+      moneyMovements: [{ type: "lodging", amountMinor: 145000, currency: "BOB" }],
+    }, 12);
+    expect(exact.ok).toBe(true);
+
+    const excess = usdReservationSettlementCheck({
+      totalPrice: 100,
+      priceCurrency: "USD",
+      guaranteeAmount: 250,
+      guaranteeCurrency: "BOB",
+      moneyMovements: [{ type: "lodging", amountMinor: 150000, currency: "BOB" }],
+    }, 12);
+    expect(excess.ok).toBe(true);
+  });
+
+  it("blocks manual settlement when the BOB equivalent is below the USD reservation", () => {
+    const result = usdReservationSettlementCheck({
+      totalPrice: 100,
+      priceCurrency: "USD",
+      guaranteeAmount: 250,
+      guaranteeCurrency: "BOB",
+      moneyMovements: [{ type: "lodging", amountMinor: 140000, currency: "BOB" }],
+    }, 12);
+    expect(result.ok).toBe(false);
+    expect(result.expectedLodgingBOB).toBe(1200);
+    expect(result.paidLodgingBOB).toBe(1150);
+    expect(result.lodgingShortfallBOB).toBe(50);
+  });
+
+  it("accepts up to Bs 10 below the official USD equivalent, but not more", () => {
+    const reservation = {
+      totalPrice: 75,
+      priceCurrency: "USD",
+      guaranteeAmount: 0,
+      guaranteeCurrency: "BOB",
+    };
+    const roundedPayment = usdReservationSettlementCheck({
+      ...reservation,
+      moneyMovements: [{ type: "lodging", amountMinor: 90000, currency: "BOB" }],
+    }, 12.02);
+    expect(roundedPayment.expectedLodgingBOB).toBe(901.5);
+    expect(roundedPayment.lodgingShortfallBOB).toBe(1.5);
+    expect(roundedPayment.ok).toBe(true);
+
+    const boundary = usdReservationSettlementCheck({
+      ...reservation,
+      moneyMovements: [{ type: "lodging", amountMinor: 89150, currency: "BOB" }],
+    }, 12.02);
+    expect(boundary.lodgingShortfallBOB).toBe(USD_SETTLEMENT_TOLERANCE_BOB);
+    expect(boundary.ok).toBe(true);
+
+    const tooLow = usdReservationSettlementCheck({
+      ...reservation,
+      moneyMovements: [{ type: "lodging", amountMinor: 89149, currency: "BOB" }],
+    }, 12.02);
+    expect(tooLow.lodgingShortfallBOB).toBe(10.01);
+    expect(tooLow.ok).toBe(false);
+  });
+
+  it("keeps the BOB guarantee mandatory before applying BOB to USD lodging", () => {
+    const result = usdReservationSettlementCheck({
+      totalPrice: 100,
+      priceCurrency: "USD",
+      guaranteeAmount: 250,
+      guaranteeCurrency: "BOB",
+      moneyMovements: [
+        { type: "lodging", amountMinor: 10000, currency: "BOB" },
+        { type: "lodging", amountMinor: 10000, currency: "USD" },
+      ],
+    }, 12);
+    expect(result.ok).toBe(false);
+    expect(result.guaranteeShortfallBOB).toBe(150);
   });
 });

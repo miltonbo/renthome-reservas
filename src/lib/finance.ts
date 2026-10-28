@@ -159,6 +159,55 @@ export function segmentReconciliationStatus(segment: SegmentChargeLike) {
   return calculateSegmentStatus(segment, false);
 }
 
+export const USD_SETTLEMENT_TOLERANCE_BOB = 10;
+
+/** Validates the mixed-currency manual settlement used when a USD-priced
+ * reservation is collected partly or entirely in bolivianos. The refundable
+ * BOB guarantee is covered first; only the remaining BOB amount pays lodging.
+ * Overpayments are accepted, as is a lodging shortfall of up to Bs 10 caused
+ * by practical exchange-rate rounding. The guarantee has no tolerance. */
+export function usdReservationSettlementCheck(segment: SegmentChargeLike, bobPerUsd: number) {
+  if (segment.priceCurrency !== "USD") {
+    return {
+      applicable: false,
+      ok: true,
+      guaranteeShortfallBOB: 0,
+      lodgingShortfallBOB: 0,
+      expectedLodgingBOB: 0,
+      paidLodgingBOB: 0,
+    };
+  }
+  if (!Number.isFinite(bobPerUsd) || bobPerUsd <= 0) {
+    return {
+      applicable: true,
+      ok: false,
+      guaranteeShortfallBOB: 0,
+      lodgingShortfallBOB: 0,
+      expectedLodgingBOB: 0,
+      paidLodgingBOB: 0,
+      invalidRate: true,
+    };
+  }
+
+  const status = calculateSegmentStatus({ ...segment, settledManuallyAt: null }, true);
+  const guaranteeExpectedBOB = status.expected.BOB;
+  const paidBOB = status.paid.BOB;
+  const guaranteeShortfallBOB = Math.max(0, guaranteeExpectedBOB - paidBOB);
+  const bobAvailableForLodging = Math.max(0, paidBOB - guaranteeExpectedBOB);
+  const expectedLodgingBOB = status.expected.USD * bobPerUsd;
+  const paidLodgingBOB = status.paid.USD * bobPerUsd + bobAvailableForLodging;
+  const lodgingShortfallBOB = Math.max(0, expectedLodgingBOB - paidLodgingBOB);
+  const round = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+  return {
+    applicable: true,
+    ok: guaranteeShortfallBOB < 0.005 && lodgingShortfallBOB <= USD_SETTLEMENT_TOLERANCE_BOB + 0.005,
+    guaranteeShortfallBOB: round(guaranteeShortfallBOB),
+    lodgingShortfallBOB: round(lodgingShortfallBOB),
+    expectedLodgingBOB: round(expectedLodgingBOB),
+    paidLodgingBOB: round(paidLodgingBOB),
+  };
+}
+
 /** Returns the portion of every movement that participates in reconciliation.
  * Old explicit parking/guarantee rows remain auditable but contribute zero.
  * When a BOB lodging payment bundled the refundable guarantee, the guarantee

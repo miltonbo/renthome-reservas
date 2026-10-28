@@ -10,10 +10,11 @@ import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, Reservation, CalendarLink, DateOverride } from "@/lib/types";
 import { isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
-import { segmentChargeStatus } from "@/lib/finance";
+import { segmentChargeStatus, USD_SETTLEMENT_TOLERANCE_BOB, usdReservationSettlementCheck } from "@/lib/finance";
 import { downloadReservationReceipt } from "@/lib/reservation-receipt";
 import { PaymentReceiptButton } from "@/components/payment-receipt-button";
 import { groupClosedDateOverrides } from "@/lib/date-overrides";
+import { useOfficialExchangeRate } from "@/lib/use-official-exchange-rate";
 
 interface CopyShape {
   dateLocale: string;
@@ -684,6 +685,7 @@ export function Dashboard({
 }: DashboardProps) {
   const { t, locale } = useI18n();
   const c = COPY[locale];
+  const { rate: officialRate } = useOfficialExchangeRate();
   const [showForm, setShowForm] = useState(false);
   const [formName, setFormName] = useState("");
   const [formPropertyId, setFormPropertyId] = useState<number | "">(
@@ -718,6 +720,7 @@ export function Dashboard({
   const [deletingMovementId, setDeletingMovementId] = useState<number | null>(null);
   const [movementError, setMovementError] = useState("");
   const [savingSettlement, setSavingSettlement] = useState(false);
+  const [settlementWarning, setSettlementWarning] = useState("");
   const [airbnbGuestName, setAirbnbGuestName] = useState("");
   const [airbnbAmount, setAirbnbAmount] = useState("");
   const [savingAirbnbDetails, setSavingAirbnbDetails] = useState(false);
@@ -1347,7 +1350,7 @@ export function Dashboard({
     setFormCheckOut(reservationDateKey(reservation.checkOut));
     setFormNightlyPrice(reservation.nightlyPrice == null ? "" : formatMoneyInput(reservation.nightlyPrice));
     setFormTotalPrice(reservation.totalPrice == null ? "" : formatMoneyInput(reservation.totalPrice));
-    setFormPriceCurrency(reservation.priceCurrency || "BOB");
+    setFormPriceCurrency(reservation.platform === "airbnb" || reservation.platform === "booking" ? "USD" : reservation.priceCurrency || "BOB");
     setFormGuarantee(reservation.guaranteeAmount == null ? "" : formatMoneyInput(reservation.guaranteeAmount));
     setFormGuaranteeCurrency("BOB");
     setFormHasParking(Boolean(reservation.hasParking));
@@ -1425,8 +1428,29 @@ export function Dashboard({
 
   const toggleManualSettlement = async () => {
     if (!inspectedContext || !onUpdateReservation || savingSettlement) return;
+    setSettlementWarning("");
+    const isMarkingAsSettled = !inspectedContext.selectedFinancials.manuallySettled;
+    if (isMarkingAsSettled && inspectedContext.selected.priceCurrency === "USD") {
+      if (!officialRate) {
+        setSettlementWarning("No se pudo obtener el tipo de cambio oficial del BCB. Intenta nuevamente antes de marcar el tramo como saldado.");
+        return;
+      }
+      const check = usdReservationSettlementCheck(inspectedContext.selected, officialRate.bobPerUsd);
+      if (!check.ok) {
+        const formatBOB = (value: number) => value.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const reasons: string[] = [];
+        if (check.lodgingShortfallBOB > 0) {
+          reasons.push(`El ingreso aplicable al hospedaje equivale a Bs ${formatBOB(check.paidLodgingBOB)}, pero se requieren Bs ${formatBOB(check.expectedLodgingBOB)} con el TC BCB ${formatBOB(officialRate.bobPerUsd)}. Faltan Bs ${formatBOB(check.lodgingShortfallBOB)}, superando el margen permitido de Bs ${formatBOB(USD_SETTLEMENT_TOLERANCE_BOB)}.`);
+        }
+        if (check.guaranteeShortfallBOB > 0) {
+          reasons.push(`Además, faltan Bs ${formatBOB(check.guaranteeShortfallBOB)} de garantía.`);
+        }
+        setSettlementWarning(`${reasons.join(" ")} Revisa el cobro antes de marcar este tramo como saldado.`);
+        return;
+      }
+    }
     setSavingSettlement(true); setMovementError("");
-    const result = await onUpdateReservation(inspectedContext.selected.id, { settledManually: !inspectedContext.selectedFinancials.manuallySettled });
+    const result = await onUpdateReservation(inspectedContext.selected.id, { settledManually: isMarkingAsSettled });
     setSavingSettlement(false);
     if (!result.ok) setMovementError(result.error || "No se pudo actualizar el estado de pago.");
   };
@@ -1845,7 +1869,7 @@ export function Dashboard({
           properties={masterCalendarProperties}
           loading={loadingCalendarData}
           onOpenProperty={onSelectProperty}
-          onOpenReservation={(_propertyId, reservationId) => setInspectedReservationId(reservationId)}
+          onOpenReservation={(_propertyId, reservationId) => { setSettlementWarning(""); setInspectedReservationId(reservationId); }}
           onOpenImportedStay={(propertyId, stay) => {
             setAirbnbGuestName(""); setAirbnbAmount(""); setMovementError("");
             setInspectedImportedStay({ propertyId, stay });
@@ -2238,19 +2262,35 @@ export function Dashboard({
               <div><h2 className="text-lg font-semibold text-[var(--ink)]">{inspectedContext.root.name}</h2><p className="text-xs text-[var(--ink-4)]">{inspectedContext.property.name}</p></div>
               <button type="button" onClick={() => setInspectedReservationId(null)} className="rounded-lg border border-[var(--line-2)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] hover:bg-[var(--bg-3)] hover:text-[var(--ink)]">Cerrar</button>
             </div>
-            <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-              <div><dt className="text-xs text-[var(--ink-4)]">Canal</dt><dd className="font-medium">{platformDisplayName(inspectedContext.selected.platform)}</dd></div>
-              {inspectedContext.selected.platform === "booking" && <div><dt className="text-xs text-[var(--ink-4)]">Departamento que recibió la reserva</dt><dd className="font-medium">{properties.find((property) => property.id === inspectedContext.selected.bookingOriginalPropertyId)?.name || inspectedContext.selected.bookingOriginalProperty?.name || inspectedContext.property.name}</dd></div>}
-              <div><dt className="text-xs text-[var(--ink-4)]">Estado</dt><dd className="font-medium">Reserva confirmada</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Ingreso</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkIn)}T12:00:00`).toLocaleDateString("es-BO")} · 14:00</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Salida</dt><dd className="font-medium">{new Date(`${reservationDateKey(inspectedContext.selected.checkOut)}T12:00:00`).toLocaleDateString("es-BO")} · 11:00</dd></div>
-              <div><dt className="text-xs text-[var(--ink-4)]">Hospedaje</dt><dd className="font-medium">{inspectedContext.selected.totalPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.totalPrice}` : "Sin monto"}</dd></div>
-              <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Garantía</dt><dd className="font-medium">{inspectedContext.selected.extensionOfId ? "Se mantiene la garantía de la reserva inicial; no se cobra en esta extensión" : `${inspectedContext.selected.guaranteeCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.guaranteeAmount ?? 0}`}</dd></div>
-              {inspectedContext.selected.note && <div className="col-span-2"><dt className="text-xs text-[var(--ink-4)]">Nota</dt><dd className="mt-1 whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-2.5 font-medium">{inspectedContext.selected.note}</dd></div>}
-            </dl>
+            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <div><div className="text-xs text-[var(--ink-4)]">Canal</div><div className="font-medium">{platformDisplayName(inspectedContext.selected.platform)}</div></div>
+              {inspectedContext.selected.platform === "booking" && <div><div className="text-xs text-[var(--ink-4)]">Departamento que recibió la reserva</div><div className="font-medium">{properties.find((property) => property.id === inspectedContext.selected.bookingOriginalPropertyId)?.name || inspectedContext.selected.bookingOriginalProperty?.name || inspectedContext.property.name}</div></div>}
+
+              <section className="col-span-2 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3" aria-labelledby="reservation-stay-heading">
+                <h3 id="reservation-stay-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-4)]">Estadía</h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                  <div><div className="text-xs text-[var(--ink-4)]">Ingreso</div><div className="font-semibold text-[var(--ink)]">{new Date(`${reservationDateKey(inspectedContext.selected.checkIn)}T12:00:00`).toLocaleDateString("es-BO")}</div></div>
+                  <div><div className="text-xs text-[var(--ink-4)]">Salida</div><div className="font-semibold text-[var(--ink)]">{new Date(`${reservationDateKey(inspectedContext.selected.checkOut)}T12:00:00`).toLocaleDateString("es-BO")}</div></div>
+                  <div><div className="text-xs text-[var(--ink-4)]">Noches</div><div className="font-semibold text-[var(--ink)]">{Math.max(0, dayCount(inspectedContext.selected.checkIn, inspectedContext.selected.checkOut) - 1)}</div></div>
+                </div>
+              </section>
+
+              <section className="col-span-2 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3" aria-labelledby="reservation-amounts-heading">
+                <h3 id="reservation-amounts-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-4)]">Importes de la reserva</h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+                  <div><div className="text-xs text-[var(--ink-4)]">Hospedaje</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.totalPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.totalPrice}` : "Sin monto"}</div></div>
+                  <div><div className="text-xs text-[var(--ink-4)]">Precio por noche</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.nightlyPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.nightlyPrice}` : "Sin monto"}</div></div>
+                  <div><div className="text-xs text-[var(--ink-4)]">Garantía</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.extensionOfId ? "Se mantiene la garantía inicial" : `${inspectedContext.selected.guaranteeCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.guaranteeAmount ?? 0}`}</div></div>
+                </div>
+                {inspectedContext.selected.extensionOfId && <p className="mt-2 text-[11px] text-[var(--ink-4)]">La garantía no se cobra nuevamente en esta extensión.</p>}
+              </section>
+
+              {inspectedContext.selected.note && <div className="col-span-2"><div className="text-xs text-[var(--ink-4)]">Nota</div><div className="mt-1 whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--bg-2)] p-2.5 font-medium">{inspectedContext.selected.note}</div></div>}
+            </div>
             <div className={`mt-4 rounded-xl border p-3 ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "border-amber-400/40 bg-amber-400/10" : "border-emerald-500/30 bg-emerald-500/10"}`}>
               <div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold">Cobro de {inspectedContext.selected.extensionOfId ? "esta extensión" : "esta reserva"}</span><span className={`text-xs font-bold ${inspectedContext.selectedFinancials.hasOutstandingBalance ? "text-amber-400" : "text-emerald-500"}`}>{inspectedContext.selectedFinancials.manuallySettled ? "Saldado manualmente" : inspectedContext.selectedFinancials.hasOutstandingBalance ? "Pendiente" : inspectedContext.selectedFinancials.balance.BOB > 0.005 || inspectedContext.selectedFinancials.balance.USD > 0.005 ? "Excedente" : "Saldado"}</span></div>
               <div className="mt-2 grid grid-cols-3 gap-2 text-xs"><div><span className="block text-[var(--ink-4)]">A cobrar</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.expected[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.expected[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Pagado</span>{(["BOB", "USD"] as const).map(c => inspectedContext.selectedFinancials.paid[c] > 0 && <span key={c} className="block font-semibold">{c === "BOB" ? "Bs" : "USD"} {inspectedContext.selectedFinancials.paid[c]}</span>)}</div><div><span className="block text-[var(--ink-4)]">Adeudado</span>{(["BOB", "USD"] as const).map(c => Math.abs(inspectedContext.selectedFinancials.balance[c]) > 0.005 && <span key={c} className={`block font-bold ${inspectedContext.selectedFinancials.balance[c] > 0 ? "text-emerald-500" : "text-amber-400"}`}>{inspectedContext.selectedFinancials.balance[c] > 0 ? "+" : "-"} {c === "BOB" ? "Bs" : "USD"} {Math.abs(inspectedContext.selectedFinancials.balance[c]).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span>)}{Math.abs(inspectedContext.selectedFinancials.balance.BOB) <= 0.005 && Math.abs(inspectedContext.selectedFinancials.balance.USD) <= 0.005 && <span className="font-semibold text-emerald-500">0</span>}</div></div>
+              {settlementWarning && <div role="alert" className="mt-3 rounded-lg border border-amber-400/50 bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:text-amber-300">{settlementWarning}</div>}
               {inspectedContext.selected.platform !== "airbnb" && <button type="button" disabled={savingSettlement} onClick={toggleManualSettlement} className="mt-3 w-full rounded-lg border border-emerald-500/40 px-3 py-2 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50">{savingSettlement ? "Guardando…" : inspectedContext.selectedFinancials.manuallySettled ? "Quitar marca de saldado" : "Marcar este tramo como saldado"}</button>}
             </div>
             {(inspectedContext.selected.moneyMovements?.some((movement) => movement.type !== "parking") || false) && <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-3">
@@ -2383,7 +2423,7 @@ export function Dashboard({
               </label>
               <label>
                 <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Canal</span>
-                <select value={formPlatform} onChange={(e) => { const platform = e.target.value; setFormPlatform(platform); if (platform === "airbnb") setFormPriceCurrency("USD"); if (platform !== "booking") setFormBookingOriginalPropertyId(""); }} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
+                <select value={formPlatform} onChange={(e) => { const platform = e.target.value; setFormPlatform(platform); if (platform === "airbnb" || platform === "booking") setFormPriceCurrency("USD"); if (platform !== "booking") setFormBookingOriginalPropertyId(""); }} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)]">
                   {formPlatformOptions.map((platform) => (
                     <option key={platform} value={platform}>
                       {locale === "es" && platform === "direct" ? "Directo" : platformDisplayName(platform)}
@@ -2412,7 +2452,7 @@ export function Dashboard({
                 ) : <DateSlider checkIn={formCheckIn} checkOut={formCheckOut} onChangeCheckIn={setFormCheckIn} onChangeCheckOut={setFormCheckOut} bookedDates={bookedDates} compact />}
               </div>
               <label>
-                <span className="mb-1.5 flex items-center justify-between text-xs font-medium text-[var(--ink-3)]">Precio por noche <select aria-label="Moneda del hospedaje" value={formPriceCurrency} onChange={(e) => setFormPriceCurrency(e.target.value as "BOB" | "USD")} className="rounded border border-[var(--line-2)] bg-[var(--bg)] px-1.5 py-0.5 text-[10px]"><option value="BOB">Bs</option><option value="USD">USD</option></select></span>
+                <span className="mb-1.5 flex items-center justify-between text-xs font-medium text-[var(--ink-3)]">Precio por noche <select aria-label="Moneda del hospedaje" disabled={formPlatform === "airbnb" || formPlatform === "booking"} value={formPriceCurrency} onChange={(e) => setFormPriceCurrency(e.target.value as "BOB" | "USD")} className="rounded border border-[var(--line-2)] bg-[var(--bg)] px-1.5 py-0.5 text-[10px] disabled:cursor-not-allowed disabled:opacity-70"><option value="BOB">Bs</option><option value="USD">USD</option></select></span>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--ink-4)]">{formPriceCurrency === "USD" ? "$" : "Bs"}</span>
                   <input
