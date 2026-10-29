@@ -107,16 +107,16 @@ const baseFeatures = [
 
 const proFeatures = [
   "Control de cobros y saldos",
-  "Comprobante de reserva",
   "Recibo de pago",
   "Reporte detallado",
+  "Gestión de limpiezas",
 ];
 
 const expertFeatures = [
+  "Comprobante de reserva",
   "Reporte de rendimiento",
   "Varios usuarios y gestión de equipo",
   "Registro y seguimiento de incidencias",
-  "Gestión de limpiezas",
 ];
 
 export default async function HomePage() {
@@ -182,7 +182,7 @@ export default async function HomePage() {
             <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#0f9f91]">Tu operación en un vistazo</p>
             <h2 className="mt-4 text-3xl font-black tracking-[-.03em] text-[#0b2b36] sm:text-5xl dark:text-white">Empieza el día sabiendo qué requiere atención.</h2>
             <p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-300">Llegadas, salidas, huéspedes alojados y limpiezas se resumen en un panel claro para que el equipo actúe sin revisar varias herramientas.</p>
-            <p className="mt-6 inline-flex rounded-full bg-[#0b2b36] px-4 py-2 text-sm font-bold text-white dark:bg-[#14b8a6]">Gestión de limpiezas disponible en el plan Experto</p>
+            <p className="mt-6 inline-flex rounded-full bg-[#0b2b36] px-4 py-2 text-sm font-bold text-white dark:bg-[#14b8a6]">Gestión de limpiezas disponible desde el plan Intermedio</p>
           </div>
           <DashboardOverviewMock />
         </div>
@@ -226,7 +226,7 @@ export default async function HomePage() {
                 <li key={item} className="flex items-center gap-3"><span className="grid size-6 place-items-center rounded-full bg-[#14b8a6] text-xs font-black">✓</span>{item}</li>
               ))}
             </ul>
-            <p className="mt-7 inline-flex rounded-full bg-[#14b8a6] px-4 py-2 text-sm font-bold text-white">Incluido en el plan Experto</p>
+            <p className="mt-7 inline-flex rounded-full bg-[#14b8a6] px-4 py-2 text-sm font-bold text-white">Incluido desde el plan Intermedio</p>
           </div>
           <CleaningScheduleMock />
         </div>
