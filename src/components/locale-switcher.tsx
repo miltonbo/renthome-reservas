@@ -85,6 +85,14 @@ const OPTIONS: LocaleOption[] = [
   { code: "es", short: "ES", label: "Español" },
 ];
 
+const LANGUAGE_LABELS: Record<Locale, string> = {
+  en: "Language",
+  ru: "Язык",
+  de: "Sprache",
+  fr: "Langue",
+  es: "Idioma",
+};
+
 interface LocaleSwitcherProps {
   variant?: "dropdown" | "inline";
   className?: string;
@@ -144,13 +152,14 @@ export function LocaleSwitcher({
       window.location.assign(target);
     }
   };
+  const languageLabel = LANGUAGE_LABELS[locale];
 
   if (variant === "inline") {
     return (
       <div
         className={`flex items-center rounded-md border border-[var(--line-2)] overflow-hidden ${className}`}
         role="group"
-        aria-label="Language"
+        aria-label={languageLabel}
       >
         {OPTIONS.map((opt) => (
           <button
@@ -180,7 +189,7 @@ export function LocaleSwitcher({
         onClick={() => setOpen(!open)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Change language"
+        aria-label={languageLabel}
         className="flex items-center gap-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-2.5 py-1.5 text-xs text-[var(--ink-2)] hover:border-[var(--ink)]/40 hover:text-[var(--ink)] transition-colors"
       >
         <FlagFor code={current.code} className="h-3 w-[18px] rounded-[1px] border border-[var(--line-2)]" />
@@ -200,7 +209,7 @@ export function LocaleSwitcher({
       {open && (
         <ul
           role="listbox"
-          aria-label="Language"
+          aria-label={languageLabel}
           className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] p-1 shadow-xl shadow-black/40"
         >
           {OPTIONS.map((opt) => (

@@ -24,11 +24,11 @@ const LOGIN_URL = "https://panel.deptosbo.com/ingresar";
 const REGISTER_URL = "https://panel.deptosbo.com/registro";
 
 const NAV_LABELS = {
-  en: { signIn: "Sign in", trial: "Try free", dashboard: "Dashboard" },
-  ru: { signIn: "Войти", trial: "Попробовать", dashboard: "Панель" },
-  de: { signIn: "Anmelden", trial: "Kostenlos testen", dashboard: "Dashboard" },
-  fr: { signIn: "Se connecter", trial: "Essai gratuit", dashboard: "Tableau de bord" },
-  es: { signIn: "Ingresar", trial: "Prueba gratis", dashboard: "Panel" },
+  en: { signIn: "Sign in", trial: "Try free", dashboard: "Dashboard", home: "DeptosBO home" },
+  ru: { signIn: "Войти", trial: "Попробовать", dashboard: "Панель", home: "Главная DeptosBO" },
+  de: { signIn: "Anmelden", trial: "Kostenlos testen", dashboard: "Dashboard", home: "DeptosBO Startseite" },
+  fr: { signIn: "Se connecter", trial: "Essai gratuit", dashboard: "Tableau de bord", home: "Accueil DeptosBO" },
+  es: { signIn: "Ingresar", trial: "Prueba gratis", dashboard: "Panel", home: "Inicio de DeptosBO" },
 };
 
 /**
@@ -73,7 +73,7 @@ export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: Ma
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
         <Link
           href={localized("/")}
-          aria-label="Inicio de DeptosBO"
+          aria-label={t.home}
           className="group flex shrink-0 items-center gap-2 min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--m-accent)]/50"
         >
           <Image src="/brand/deptosbo-logo-sin-descriptor-light.svg" alt="DeptosBO" width={158} height={36} className="h-8 w-auto dark:hidden" priority />
