@@ -72,8 +72,8 @@ const softwareData: Record<string, unknown> = {
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "USD",
-    lowPrice: "2",
-    highPrice: "5",
+    lowPrice: "5",
+    highPrice: "15",
     offerCount: "3",
   },
   featureList: [
@@ -89,7 +89,7 @@ const softwareData: Record<string, unknown> = {
 const features = [
   { icon: "calendar", title: "Calendario maestro", body: "Visualiza todas tus propiedades y reservas en una línea de tiempo clara, sin saltar entre calendarios." },
   { icon: "sync", title: "Calendarios sincronizados", body: "Conecta calendarios externos y reduce el riesgo de cruces o reservas duplicadas." },
-  { icon: "door", title: "Operación diaria", body: "Check-ins, check-outs, cambios de huésped y limpiezas reunidos por día y departamento." },
+  { icon: "door", title: "Operación diaria", body: "Check-ins, check-outs y cambios de huésped reunidos por día y departamento." },
   { icon: "payment", title: "Control de cobros", body: "Registra lo recibido, identifica saldos pendientes y mantén cada reserva bajo control." },
   { icon: "currency", title: "Manejo multimoneda", body: "Trabaja con dólares estadounidenses como moneda predeterminada y registra operaciones en otras monedas." },
   { icon: "chart", title: "Reportes útiles", body: "Revisa ingresos, detalle de reservas y rendimiento por propiedad o período." },
@@ -100,27 +100,23 @@ const features = [
 const baseFeatures = [
   "Sincronización de calendarios",
   "Registro y control de reservas",
-  "Calendario por propiedad",
   "Panel de check-ins y check-outs",
   "Reporte gerencial",
   "Manejo multimoneda (USD predeterminado)",
 ];
 
 const proFeatures = [
-  ...baseFeatures,
   "Control de cobros y saldos",
   "Comprobante de reserva",
   "Recibo de pago",
   "Reporte detallado",
-  "Reporte de rendimiento",
 ];
 
 const expertFeatures = [
-  ...proFeatures,
+  "Reporte de rendimiento",
   "Varios usuarios y gestión de equipo",
   "Registro y seguimiento de incidencias",
-  "Propietarios y liquidaciones",
-  "Descuento especial por volumen",
+  "Gestión de limpiezas",
 ];
 
 export default async function HomePage() {
@@ -154,7 +150,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href={REGISTER_URL} className="rounded-xl bg-[#11aa9b] px-7 py-3.5 text-center font-bold text-white shadow-lg shadow-teal-500/25 transition hover:-translate-y-0.5 hover:bg-[#0d9589]">
-                Probar gratis 14 días
+                Probar Intermedio gratis 14 días
               </a>
               <a href="#planes" className="rounded-xl border border-white/35 bg-white/10 px-7 py-3.5 text-center font-bold text-white backdrop-blur-sm transition hover:-translate-y-0.5 hover:bg-white/15">
                 Ver planes
@@ -186,6 +182,7 @@ export default async function HomePage() {
             <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#0f9f91]">Tu operación en un vistazo</p>
             <h2 className="mt-4 text-3xl font-black tracking-[-.03em] text-[#0b2b36] sm:text-5xl dark:text-white">Empieza el día sabiendo qué requiere atención.</h2>
             <p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-300">Llegadas, salidas, huéspedes alojados y limpiezas se resumen en un panel claro para que el equipo actúe sin revisar varias herramientas.</p>
+            <p className="mt-6 inline-flex rounded-full bg-[#0b2b36] px-4 py-2 text-sm font-bold text-white dark:bg-[#14b8a6]">Gestión de limpiezas disponible en el plan Experto</p>
           </div>
           <DashboardOverviewMock />
         </div>
@@ -229,6 +226,7 @@ export default async function HomePage() {
                 <li key={item} className="flex items-center gap-3"><span className="grid size-6 place-items-center rounded-full bg-[#14b8a6] text-xs font-black">✓</span>{item}</li>
               ))}
             </ul>
+            <p className="mt-7 inline-flex rounded-full bg-[#14b8a6] px-4 py-2 text-sm font-bold text-white">Incluido en el plan Experto</p>
           </div>
           <CleaningScheduleMock />
         </div>
@@ -236,13 +234,12 @@ export default async function HomePage() {
 
       <section id="planes" className="bg-[#f5f9fa] py-20 dark:bg-[#0a2027] lg:py-28">
         <div className="mx-auto max-w-[1080px] px-5 lg:px-6">
-          <SectionHeading centered eyebrow="Planes simples" title="Paga por las propiedades que administras." body="Prueba cualquiera de nuestros planes durante dos semanas sin costo y elige el nivel adecuado para tu operación." />
-          <div className="mx-auto mt-6 w-fit rounded-full border border-[#14b8a6]/30 bg-[#14b8a6]/10 px-4 py-2 text-sm font-extrabold text-[#0d8f83] dark:text-[#65dfd2]">14 días de prueba gratuita en cualquier plan</div>
-          <div className="mx-auto mt-4 max-w-2xl rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-center text-sm text-amber-950 shadow-sm dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100"><span className="font-black">Precio fundador:</span> disponible únicamente para las primeras 10 cuentas que completen su registro. El beneficio queda asignado automáticamente a su cuenta.</div>
+          <SectionHeading centered eyebrow="Planes simples" title="Paga por las propiedades que administras." body="Toda cuenta nueva comienza con 14 días de prueba gratuita del plan Intermedio. Después puedes elegir el nivel adecuado para tu operación." />
+          <div className="mx-auto mt-6 w-fit rounded-full border border-[#14b8a6]/30 bg-[#14b8a6]/10 px-4 py-2 text-sm font-extrabold text-[#0d8f83] dark:text-[#65dfd2]">14 días de prueba gratuita del plan Intermedio</div>
           <div className="mx-auto mt-10 grid max-w-6xl gap-6 md:grid-cols-3">
-            <PriceCard name="Inicial" regularPrice="5" price="2" description="Lo esencial para centralizar calendarios y el trabajo diario." features={baseFeatures} ctaHref={REGISTER_URL} />
-            <PriceCard featured name="Intermedio" regularPrice="9" price="3" description="Más análisis, documentos y colaboración para una operación en crecimiento." features={proFeatures} ctaHref={REGISTER_URL} />
-            <PriceCard name="Experto" regularPrice="15" price="5" description="Para operaciones con 20 propiedades o más, con todas las funcionalidades y condiciones preferenciales." features={expertFeatures} ctaHref={REGISTER_URL} />
+            <PriceCard name="Inicial" price="5" description="Lo esencial para centralizar calendarios y el trabajo diario." features={baseFeatures} ctaHref={REGISTER_URL} />
+            <PriceCard featured name="Intermedio" price="9" description="Más análisis, documentos y colaboración para una operación en crecimiento." inheritanceLabel="Todo lo del plan Inicial, más:" trialLabel="14 días de prueba gratuita" features={proFeatures} ctaHref={REGISTER_URL} />
+            <PriceCard name="Experto" price="15" description="Para equipos que necesitan mayor control operativo, coordinación y análisis." inheritanceLabel="Todo lo de los planes Inicial e Intermedio, más:" features={expertFeatures} ctaHref={REGISTER_URL} />
           </div>
         </div>
       </section>
@@ -252,7 +249,7 @@ export default async function HomePage() {
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#62ded0]">Conversemos</p>
             <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Una operación más clara empieza aquí.</h2>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">Empieza hoy con 14 días de prueba gratuita. Si prefieres orientación, cuéntanos cómo trabajas y te ayudaremos a identificar el plan adecuado para tu portafolio.</p>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">Empieza hoy con 14 días de prueba gratuita del plan Intermedio. Si prefieres orientación, cuéntanos cómo trabajas y te ayudaremos a identificar el plan adecuado para tu portafolio.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href={REGISTER_URL} className="inline-flex justify-center rounded-xl bg-[#14b8a6] px-6 py-3.5 font-bold text-white transition hover:bg-[#10a494]">Crear cuenta y probar gratis</a>
               <a href={contactHref} className="inline-flex justify-center rounded-xl border border-white/20 px-6 py-3.5 font-bold text-white transition hover:bg-white/10">Contactarnos</a>
@@ -335,8 +332,8 @@ function PaymentLine({ label, value, strong = false }: { label: string; value: s
   return <div className="flex items-center justify-between gap-4"><span className={strong ? "font-bold text-[#173743] dark:text-white" : "text-slate-600 dark:text-slate-300"}>{label}</span><span className={strong ? "font-black text-[#173743] dark:text-white" : "font-semibold"}>{value}</span></div>;
 }
 
-function PriceCard({ name, price, regularPrice, description, features: items, ctaHref, featured = false }: { name: string; price: string; regularPrice: string; description: string; features: string[]; ctaHref: string; featured?: boolean }) {
-  return <article className={`relative flex flex-col rounded-3xl border p-7 ${featured ? "border-[#14b8a6] bg-[#0b2b36] text-white shadow-xl shadow-teal-900/15" : "border-slate-200 bg-white dark:border-white/10 dark:bg-white/5"}`}>{featured && <span className="absolute right-5 top-5 rounded-full bg-[#14b8a6] px-3 py-1 text-xs font-bold text-white">Más completo</span>}<h3 className="text-xl font-black">{name}</h3><p className={`mt-2 min-h-12 text-sm leading-6 ${featured ? "text-slate-300" : "text-slate-600 dark:text-slate-300"}`}>{description}</p><div className="mt-5"><p className={`text-sm ${featured ? "text-slate-400" : "text-slate-500 dark:text-slate-400"}`}>Precio regular <span className="line-through">US$ {regularPrice},00</span></p><div className="mt-1 flex flex-wrap items-end gap-x-2 gap-y-1"><span className={`text-4xl font-black tracking-tight ${featured ? "text-[#65dfd2]" : "text-[#0d8f83] dark:text-[#65dfd2]"}`}>US$ {price},00</span><span className={`pb-1 text-sm ${featured ? "text-slate-300" : "text-slate-500 dark:text-slate-300"}`}>por propiedad al mes</span></div><p className={`mt-1 text-xs font-bold ${featured ? "text-[#65dfd2]" : "text-[#0d8f83] dark:text-[#65dfd2]"}`}>Precio fundador · limitado a las primeras 10 cuentas</p></div><p className={`mt-5 w-fit rounded-full px-3 py-1 text-xs font-bold ${featured ? "bg-white/10 text-[#65dfd2]" : "bg-[#14b8a6]/10 text-[#0d8f83]"}`}>2 semanas de prueba gratuita</p><ul className="mt-6 flex-1 space-y-3">{items.map((item) => <li key={item} className="flex gap-3 text-sm"><span className="font-black text-[#14b8a6]">✓</span>{item}</li>)}</ul><a href={ctaHref} className={`mt-8 block rounded-xl px-5 py-3 text-center font-bold ${featured ? "bg-[#14b8a6] text-white" : "bg-[#0b2b36] text-white dark:bg-[#14b8a6]"}`}>Iniciar prueba gratuita</a></article>;
+function PriceCard({ name, price, description, features: items, ctaHref, inheritanceLabel, trialLabel, featured = false }: { name: string; price: string; description: string; features: string[]; ctaHref: string; inheritanceLabel?: string; trialLabel?: string; featured?: boolean }) {
+  return <article className={`relative flex flex-col rounded-3xl border p-7 ${featured ? "border-[#14b8a6] bg-[#0b2b36] text-white shadow-xl shadow-teal-900/15" : "border-slate-200 bg-white dark:border-white/10 dark:bg-white/5"}`}>{featured && <span className="absolute right-5 top-5 rounded-full bg-[#14b8a6] px-3 py-1 text-xs font-bold text-white">Más completo</span>}<h3 className="text-xl font-black">{name}</h3><p className={`mt-2 min-h-12 text-sm leading-6 ${featured ? "text-slate-300" : "text-slate-600 dark:text-slate-300"}`}>{description}</p><div className="mt-5"><div className="flex flex-wrap items-end gap-x-2 gap-y-1"><span className={`text-4xl font-black tracking-tight ${featured ? "text-[#65dfd2]" : "text-[#0d8f83] dark:text-[#65dfd2]"}`}>US$ {price},00</span><span className={`pb-1 text-sm ${featured ? "text-slate-300" : "text-slate-500 dark:text-slate-300"}`}>por propiedad al mes</span></div></div>{trialLabel && <p className={`mt-5 w-fit rounded-full px-3 py-1 text-xs font-bold ${featured ? "bg-white/10 text-[#65dfd2]" : "bg-[#14b8a6]/10 text-[#0d8f83]"}`}>{trialLabel}</p>}{inheritanceLabel && <p className={`mt-6 text-sm font-extrabold ${featured ? "text-white" : "text-[#173743] dark:text-white"}`}>{inheritanceLabel}</p>}<ul className={`${inheritanceLabel ? "mt-3" : "mt-6"} flex-1 space-y-3`}>{items.map((item) => <li key={item} className="flex gap-3 text-sm"><span className="font-black text-[#14b8a6]">✓</span>{item}</li>)}</ul><a href={ctaHref} className={`mt-8 block rounded-xl px-5 py-3 text-center font-bold ${featured ? "bg-[#14b8a6] text-white" : "bg-[#0b2b36] text-white dark:bg-[#14b8a6]"}`}>Iniciar prueba gratuita</a></article>;
 }
 
 function ProductCalendarMock() {
