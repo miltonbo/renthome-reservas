@@ -205,6 +205,9 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     // Existing rows default to 1 (has a password). New Google-sign-in
     // accounts are inserted with 0 by findOrCreateUserForGoogle.
     `ALTER TABLE "User" ADD COLUMN "hasPassword" INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE "User" ADD COLUMN "founderNumber" INTEGER`,
+    `ALTER TABLE "User" ADD COLUMN "founderPricingGrantedAt" DATETIME`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "User_founderNumber_key" ON "User"("founderNumber")`,
     // Durable URL slug for the public iCal feed. Minted at property
     // creation (or onboarding-draft creation) and never changes — Airbnb /
     // Booking import URLs the user pasted somewhere stay valid even

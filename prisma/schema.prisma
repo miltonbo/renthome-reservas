@@ -23,6 +23,10 @@ model User {
   lastLoginAt               DateTime?
   suspendedAt               DateTime?
   alertsDismissedAt         DateTime?
+  // Permanent early-adopter benefit. Public email/Google registrations
+  // claim slots 1-10 atomically; admin-created users do not consume a slot.
+  founderNumber             Int?                    @unique
+  founderPricingGrantedAt   DateTime?
   properties                Property[]
   cleanerAssignments        CleanerAssignment[]     @relation("CleanerAssignments")
   cleanerProfiles           Cleaner[]               @relation("CleanerProfiles")

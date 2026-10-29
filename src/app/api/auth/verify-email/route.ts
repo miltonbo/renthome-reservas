@@ -4,6 +4,7 @@ import { createSession } from "@/lib/auth";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { claimOnboardingDraft } from "@/lib/onboarding";
 import { consumeEmailCode, normalizeEmail, verifyEmailCode } from "@/lib/email-code";
+import { createPublicSignupUser } from "@/lib/founder-pricing";
 
 // POST /api/auth/verify-email — step 2 of email-verified registration.
 //
@@ -55,15 +56,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.create({
-      data: {
-        username: email,
-        email,
-        password: result.passwordHash,
-        role: "user",
-      },
-      select: { id: true, username: true, role: true },
+    const createdUser = await createPublicSignupUser({
+      username: email,
+      email,
+      password: result.passwordHash,
+      role: "user",
     });
+    const user = { id: createdUser.id, username: createdUser.username, role: createdUser.role };
     await consumeEmailCode(result.id);
 
     await createSession(user.id, user.username, user.role);

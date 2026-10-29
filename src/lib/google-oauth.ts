@@ -10,6 +10,7 @@
 
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { prisma } from "@/lib/prisma";
+import { createPublicSignupUser } from "@/lib/founder-pricing";
 import { hashPassword } from "@/lib/auth";
 
 const GOOGLE_AUTHZ_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -222,18 +223,16 @@ export async function findOrCreateUserForGoogle(profile: GoogleProfile) {
   // (or a random fallback) and try suffixes until we find one free.
   const username = await generateUniqueUsername(profile);
 
-  return prisma.user.create({
-    data: {
-      username,
-      // Random unguessable placeholder — hasPassword:false marks that
-      // it isn't a real password, so the profile offers "Set a
-      // password" (no current-password prompt) for a non-Google login.
-      password: await randomPasswordPlaceholder(),
-      hasPassword: false,
-      role: "user",
-      email,
-      googleId: profile.id,
-    },
+  return createPublicSignupUser({
+    username,
+    // Random unguessable placeholder — hasPassword:false marks that
+    // it isn't a real password, so the profile offers "Set a
+    // password" (no current-password prompt) for a non-Google login.
+    password: await randomPasswordPlaceholder(),
+    hasPassword: false,
+    role: "user",
+    email,
+    googleId: profile.id,
   });
 }
 

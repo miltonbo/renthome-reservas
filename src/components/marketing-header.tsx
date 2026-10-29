@@ -20,12 +20,15 @@ interface MarketingHeaderProps {
   softLocaleSwitch?: boolean;
 }
 
+const LOGIN_URL = "https://panel.deptosbo.com/ingresar";
+const REGISTER_URL = "https://panel.deptosbo.com/registro";
+
 const NAV_LABELS = {
-  en: { signIn: "Sign in", contact: "Contact us", dashboard: "Dashboard" },
-  ru: { signIn: "Войти", contact: "Связаться", dashboard: "Панель" },
-  de: { signIn: "Anmelden", contact: "Kontakt", dashboard: "Dashboard" },
-  fr: { signIn: "Se connecter", contact: "Nous contacter", dashboard: "Tableau de bord" },
-  es: { signIn: "Iniciar sesión", contact: "Contáctanos", dashboard: "Panel" },
+  en: { signIn: "Sign in", trial: "Try free", dashboard: "Dashboard" },
+  ru: { signIn: "Войти", trial: "Попробовать", dashboard: "Панель" },
+  de: { signIn: "Anmelden", trial: "Kostenlos testen", dashboard: "Dashboard" },
+  fr: { signIn: "Se connecter", trial: "Essai gratuit", dashboard: "Tableau de bord" },
+  es: { signIn: "Ingresar", trial: "Prueba gratis", dashboard: "Panel" },
 };
 
 /**
@@ -95,18 +98,18 @@ export function MarketingHeader({ sticky = false, softLocaleSwitch = false }: Ma
             </Link>
           ) : (
             <>
-              <Link
-                href={localized("/login")}
+              <a
+                href={LOGIN_URL}
                 className="whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] text-[var(--ink-3)] transition-colors hover:bg-[var(--bg-2)] hover:text-[var(--ink)] sm:px-3"
               >
                 {t.signIn}
-              </Link>
-              <Link
-                href={localized("/#contacto")}
+              </a>
+              <a
+                href={REGISTER_URL}
                 className="hidden whitespace-nowrap rounded-md bg-[var(--ink)] px-3 py-1.5 text-[13px] font-medium text-[var(--bg)] transition-colors hover:bg-[var(--ink-2)] sm:inline-flex"
               >
-                {t.contact}
-              </Link>
+                {t.trial}
+              </a>
             </>
           )}
           {/* Divider hidden on mobile — every pixel matters and the
