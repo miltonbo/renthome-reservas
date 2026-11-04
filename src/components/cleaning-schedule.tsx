@@ -232,6 +232,7 @@ export interface CleaningDay {
   // on the row means formatReason can be a pure function.
   prevEndDate?: string;     // checkout date of prev booking
   nextStartDate?: string;   // checkin date of next booking
+  nextEndDate?: string;     // checkout date of next booking (for copied stay length)
   gapStartDate?: string;    // first day of bookable gap (gap-potential only)
   gapEndDate?: string;      // last day of bookable gap (gap-potential only)
   // RT-25.10 tick 2 — name of the priority-0 cleaner assigned to the
@@ -256,25 +257,39 @@ export function formatDailyCleaningHeader(scheduleHeader: string, dateLocale: st
 
 /** Compact, privacy-conscious wording used by the Today/Tomorrow WhatsApp copy. */
 export function formatDailyCleaningMovement(
-  day: Pick<CleaningDay, "kind" | "prevPlatform" | "nextPlatform" | "manualNote">
+  day: Pick<CleaningDay, "kind" | "nextPlatform" | "nextStartDate" | "nextEndDate" | "manualNote">
 ): string {
   if (day.kind === "manual") return day.manualNote?.trim() || "Limpieza manual";
 
-  const previousIsAirbnb = isAirbnbPlatform(day.prevPlatform);
   const nextIsAirbnb = isAirbnbPlatform(day.nextPlatform);
+  const start = day.nextStartDate ? Date.parse(`${day.nextStartDate}T12:00:00Z`) : Number.NaN;
+  const end = day.nextEndDate ? Date.parse(`${day.nextEndDate}T12:00:00Z`) : Number.NaN;
+  const nextNights = Number.isFinite(start) && Number.isFinite(end) && end > start
+    ? Math.round((end - start) / (1000 * 60 * 60 * 24))
+    : 0;
+  const nextStay = `${nextIsAirbnb ? " por Airbnb" : ""}${nextNights > 0 ? ` por ${nextNights} ${nextNights === 1 ? "noche" : "noches"}` : ""}`;
 
   if (day.kind === "turnover") {
-    if (previousIsAirbnb === nextIsAirbnb) {
-      return `Cambio de huésped: sale e ingresa huésped${previousIsAirbnb ? " Airbnb" : ""}`;
-    }
-    return `Cambio de huésped: sale huésped${previousIsAirbnb ? " Airbnb" : ""} e ingresa huésped${nextIsAirbnb ? " Airbnb" : ""}`;
+    return `Sale huésped ingresa huésped${nextStay}`;
   }
 
   if (day.kind === "before" || day.kind === "gap-potential") {
-    return `Ingresa huésped${nextIsAirbnb ? " Airbnb" : ""}`;
+    return `Ingresa huésped${nextStay}`;
   }
 
-  return `Sale huésped${previousIsAirbnb ? " Airbnb" : ""}`;
+  return "Sale huésped y sin huésped posterior por ahora";
+}
+
+export function formatDailyCleaningScheduleLine(index: number, day: Pick<CleaningDay, "property" | "kind" | "nextPlatform" | "nextStartDate" | "nextEndDate" | "manualNote">): string {
+  return `${index}. *${day.property}* : ${formatDailyCleaningMovement(day)}`;
+}
+
+export function formatDailyCleaningSchedule(scheduleHeader: string, dateLocale: string, date: string, days: Array<Pick<CleaningDay, "property" | "kind" | "nextPlatform" | "nextStartDate" | "nextEndDate" | "manualNote">>): string[] {
+  return [
+    formatDailyCleaningHeader(scheduleHeader, dateLocale, date),
+    "",
+    ...days.flatMap((day, index) => [formatDailyCleaningScheduleLine(index + 1, day), ""]),
+  ];
 }
 
 interface CleaningScheduleProps {
@@ -677,6 +692,7 @@ export function computeCleaningDays(
         nextReservationId: next.reservationId,
         nextPlatform: next.platform,
         nextStartDate: next.start,
+        nextEndDate: next.end,
         hoursAvailable: availableMinutes > 0 && availableMinutes < 24 * 60
           ? availableMinutes / 60
           : undefined,
@@ -699,6 +715,7 @@ export function computeCleaningDays(
               nextReservationId: b.reservationId,
               nextPlatform: b.platform,
               nextStartDate: b.start,
+              nextEndDate: b.end,
             });
           }
         }
@@ -728,6 +745,7 @@ export function computeCleaningDays(
               nextReservationId: b.reservationId,
               nextPlatform: b.platform,
               nextStartDate: b.start,
+              nextEndDate: b.end,
               gapStartDate: gapHasBooking ? undefined : gapBookableStart,
               gapEndDate: gapHasBooking ? undefined : gapBookableEnd,
             });
@@ -810,6 +828,7 @@ export function computeCleaningDays(
         nextReservationId: next?.reservationId,
         nextPlatform: next?.platform,
         nextStartDate,
+        nextEndDate: next?.end,
         hoursAvailable,
       });
 
@@ -837,6 +856,7 @@ export function computeCleaningDays(
               nextReservationId: next.reservationId,
               nextPlatform: next.platform,
               nextStartDate: next.start,
+              nextEndDate: next.end,
               gapStartDate: gapStart,
               gapEndDate: addDaysStr(next.start, -1),
               hoursAvailable: hours > 0 && hours < 24 ? hours : undefined,
@@ -1154,16 +1174,16 @@ export const CleaningSchedule = forwardRef<CleaningScheduleHandle, CleaningSched
     const manualLabel = c.manualLabel;
     const potentialPrefix = c.potentialPrefix;
 
+    if (dateFilter) {
+      const dailyRows = visibleDays.filter((day) => day.date === dateFilter && (!cleanerKey || day.cleanerKey === cleanerKey));
+      return formatDailyCleaningSchedule(c.scheduleHeader, c.dateLocale, dateFilter, dailyRows);
+    }
+
     const lines: string[] = [];
-    lines.push(dateFilter ? formatDailyCleaningHeader(c.scheduleHeader, c.dateLocale, dateFilter) : c.scheduleHeader + headerSuffix);
+    lines.push(c.scheduleHeader + headerSuffix);
     lines.push("");
     for (const day of visibleDays) {
       if (cleanerKey && day.cleanerKey !== cleanerKey) continue;
-      if (dateFilter && day.date !== dateFilter) continue;
-      if (dateFilter) {
-        lines.push(`${day.property} — ${formatDailyCleaningMovement(day)}`);
-        continue;
-      }
       const dateStr = formatDate(day.date);
       const propLabel = mode === "dashboard" ? ` — ${day.property}` : "";
       const prop = propertyById.get(day.propertyId);

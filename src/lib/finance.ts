@@ -159,12 +159,12 @@ export function segmentReconciliationStatus(segment: SegmentChargeLike) {
   return calculateSegmentStatus(segment, false);
 }
 
-export const USD_SETTLEMENT_TOLERANCE_BOB = 10;
+export const USD_SETTLEMENT_TOLERANCE_BOB = 30;
 
 /** Validates the mixed-currency manual settlement used when a USD-priced
  * reservation is collected partly or entirely in bolivianos. The refundable
  * BOB guarantee is covered first; only the remaining BOB amount pays lodging.
- * Overpayments are accepted, as is a lodging shortfall of up to Bs 10 caused
+ * Overpayments are accepted, as is a lodging shortfall of up to Bs 30 caused
  * by practical exchange-rate rounding. The guarantee has no tolerance. */
 export function usdReservationSettlementCheck(segment: SegmentChargeLike, bobPerUsd: number) {
   if (segment.priceCurrency !== "USD") {

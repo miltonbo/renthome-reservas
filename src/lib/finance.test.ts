@@ -173,7 +173,7 @@ describe("reconciliation money rules", () => {
     expect(result.lodgingShortfallBOB).toBe(50);
   });
 
-  it("accepts up to Bs 10 below the official USD equivalent, but not more", () => {
+  it("accepts up to Bs 30 below the official USD equivalent, but not more", () => {
     const reservation = {
       totalPrice: 75,
       priceCurrency: "USD",
@@ -190,16 +190,16 @@ describe("reconciliation money rules", () => {
 
     const boundary = usdReservationSettlementCheck({
       ...reservation,
-      moneyMovements: [{ type: "lodging", amountMinor: 89150, currency: "BOB" }],
+      moneyMovements: [{ type: "lodging", amountMinor: 87150, currency: "BOB" }],
     }, 12.02);
     expect(boundary.lodgingShortfallBOB).toBe(USD_SETTLEMENT_TOLERANCE_BOB);
     expect(boundary.ok).toBe(true);
 
     const tooLow = usdReservationSettlementCheck({
       ...reservation,
-      moneyMovements: [{ type: "lodging", amountMinor: 89149, currency: "BOB" }],
+      moneyMovements: [{ type: "lodging", amountMinor: 87149, currency: "BOB" }],
     }, 12.02);
-    expect(tooLow.lodgingShortfallBOB).toBe(10.01);
+    expect(tooLow.lodgingShortfallBOB).toBe(30.01);
     expect(tooLow.ok).toBe(false);
   });
 
