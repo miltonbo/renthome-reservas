@@ -8,6 +8,8 @@ import {
   writeLocaleCookieToDocument,
 } from "./cookie";
 
+const VISITOR_DEFAULT_LOCALE: Locale = "es";
+
 interface I18nContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -15,9 +17,9 @@ interface I18nContextType {
 }
 
 const I18nContext = createContext<I18nContextType>({
-  locale: "en",
+  locale: VISITOR_DEFAULT_LOCALE,
   setLocale: () => {},
-  t: (key) => translations[key]?.en || key,
+  t: (key) => translations[key]?.es || key,
 });
 
 const LEGACY_LOCALSTORAGE_KEY = "rent-tool-locale";
@@ -32,12 +34,12 @@ export function I18nProvider({
   initialLocale,
 }: {
   children: React.ReactNode;
-  // Server-resolved locale (URL prefix → header → cookie → "en"). Passing
+  // Server-resolved locale (URL prefix → header → cookie → Spanish). Passing
   // it in means the first client paint already matches what the server
   // rendered, no hydration flash from a default locale.
   initialLocale?: Locale;
 }) {
-  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? "en");
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? VISITOR_DEFAULT_LOCALE);
 
   useEffect(() => {
     // The server already passed in the URL-resolved locale via

@@ -28,6 +28,10 @@ const IS_DEFAULT_SECRET = JWT_SECRET_RAW === "fallback-secret-change-me";
 //   3. Done — no new route files, no middleware changes.
 const SUPPORTED_LOCALES = ["en", "ru", "de", "fr", "es"] as const;
 const DEFAULT_LOCALE = "en";
+// Spanish is the product's initial language. Keep English as the
+// unprefixed SEO locale so existing public URLs remain stable, but send
+// visitors without a saved preference to the Spanish-prefixed surface.
+const VISITOR_DEFAULT_LOCALE = "es";
 const LOCALE_PREFIXES = SUPPORTED_LOCALES.filter((l) => l !== DEFAULT_LOCALE); // ['ru'] today
 
 // Only public marketing surfaces are localised. Dashboard / admin /
@@ -201,18 +205,13 @@ export async function middleware(request: NextRequest) {
   // refresh report: "URL doesn't change but I see the wrong language."
   // The redirect makes the URL match what the user expects.
   //
-  // Crawl impact: Googlebot has no cookie, so cookieLocale is undefined,
-  // resolvedLocale is DEFAULT_LOCALE, and the redirect is skipped — Google
-  // continues to crawl /blog as the EN canonical it has always been.
-  // Direct deep-link visits (someone pasting /blog in their browser) also
-  // skip the redirect because their cookie is empty until they choose a
-  // language. Only post-locale-switch navigations are redirected, and
-  // only the first time per locale (after that, internal links are
-  // already locale-prefixed by the locale-aware Link helper).
+  // Visitors without a saved preference start in Spanish. English remains
+  // the unprefixed SEO locale so existing canonical URLs do not change;
+  // choosing English stores `rt-locale=en` and keeps those URLs unprefixed.
   const cookieLocale = request.cookies.get("rt-locale")?.value;
   const resolvedLocale = SUPPORTED_LOCALES.includes(cookieLocale as typeof SUPPORTED_LOCALES[number])
     ? (cookieLocale as string)
-    : DEFAULT_LOCALE;
+    : VISITOR_DEFAULT_LOCALE;
   if (
     resolvedLocale !== DEFAULT_LOCALE &&
     isLocalizable(pathname) &&
