@@ -145,6 +145,8 @@ export interface CalendarEvent {
   summary: string;
   startDate: string;
   endDate: string;
+  bookingReviewStatus?: "pending" | "resolved";
+  bookingReviewedAt?: string | null;
   createdAt: string;
 }
 

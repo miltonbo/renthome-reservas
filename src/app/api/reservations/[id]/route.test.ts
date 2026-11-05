@@ -198,6 +198,7 @@ describe("PATCH /api/reservations/:id — date edits", () => {
     expect(mocks.calendarEventFindFirst).toHaveBeenNthCalledWith(2, {
       where: {
         propertyId,
+        platform: { not: "booking" },
         startDate: { lt: "2026-08-23" },
         endDate: { gt: "2026-08-18" },
         NOT: {

@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
       include: { allocations: true, property: { select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true } }, reservation: { select: { id: true, name: true, platform: true, checkOut: true, totalPrice: true, priceCurrency: true, guaranteeAmount: true, settledManuallyAt: true, moneyMovements: { select: { id: true, type: true, amountMinor: true, currency: true, occurredAt: true } }, bookingOriginalProperty: { select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true } } } } },
       orderBy: { occurredAt: "asc" },
     }),
-    prisma.calendarEvent.findMany({ where: { propertyId: { in: propertyIds }, startDate: { lt: period.toKey }, endDate: { gt: period.fromKey } } }),
+    prisma.calendarEvent.findMany({ where: { propertyId: { in: propertyIds }, platform: { not: "booking" }, startDate: { lt: period.toKey }, endDate: { gt: period.fromKey } } }),
     prisma.dateOverride.findMany({
       where: { propertyId: { in: propertyIds }, type: "closed", date: { gte: period.fromKey, lt: dateKey(period.toExclusive) } },
       orderBy: [{ propertyId: "asc" }, { date: "asc" }],

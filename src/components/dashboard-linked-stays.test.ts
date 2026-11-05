@@ -108,7 +108,7 @@ describe("buildUnifiedStays linked source roles", () => {
     expect(localDate(stays[0].end)).toBe("2026-08-26");
   });
 
-  it("lets an explicit claim replace only the exact platform+UID source", () => {
+  it("keeps Booking iCal events out of confirmed inventory", () => {
     const claim = reservation({
       id: 41,
       name: "Named Airbnb guest",
@@ -131,13 +131,6 @@ describe("buildUnifiedStays linked source roles", () => {
         name: "Named Airbnb guest",
         platform: "airbnb",
         reservationId: 41,
-      },
-      {
-        start: "2026-08-25",
-        end: "2026-08-28",
-        name: "Independent Booking guest",
-        platform: "booking",
-        reservationId: undefined,
       },
     ]);
   });

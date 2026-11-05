@@ -6,10 +6,11 @@ import { DateSlider } from "@/components/date-slider";
 import { CleaningSchedule, type CleanerAssignmentInfo } from "@/components/cleaning-schedule";
 import { DashboardOnboarding } from "@/components/dashboard-onboarding";
 import { MasterCalendar, type MasterCalendarStay } from "@/components/master-calendar";
+import { BookingAlertsPanel, type BookingAlert } from "@/components/booking-alerts-panel";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, Reservation, CalendarLink, DateOverride } from "@/lib/types";
-import { isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
+import { isAdvisoryBookingEvent, isAvailabilityBlockEvent } from "@/lib/calendar-event-kind";
 import { segmentChargeStatus, USD_SETTLEMENT_TOLERANCE_BOB, usdReservationSettlementCheck } from "@/lib/finance";
 import { downloadReservationReceipt } from "@/lib/reservation-receipt";
 import { PaymentReceiptButton } from "@/components/payment-receipt-button";
@@ -487,6 +488,7 @@ export function buildUnifiedStays(p: Property, events: CalendarEvent[]): Unified
     });
   }
   for (const ev of events) {
+    if (isAdvisoryBookingEvent(ev)) continue;
     if (ev.uid && claimedSources.has(linkedSourceKey(ev.platform, ev.uid))) continue;
     // Host-blocks are NEVER real guest reservations — they're dates
     // the host blocked manually in the platform's own calendar. Each
@@ -559,7 +561,7 @@ export function buildMasterCalendarStays(
   overrides: DateOverride[] = [],
 ): UnifiedStay[] {
   const stays = buildUnifiedStays(property, events);
-  for (const event of events.filter(isAvailabilityBlock)) {
+  for (const event of events.filter((event) => !isAdvisoryBookingEvent(event) && isAvailabilityBlock(event))) {
     stays.push({
       start: reservationLocalDate(event.startDate),
       end: reservationLocalDate(event.endDate),
@@ -610,6 +612,7 @@ function detectDoubleBookings(stays: UnifiedStay[], today: Date): Array<{
 
 interface DashboardProps {
   properties: Property[];
+  mode?: "dashboard" | "booking";
   /**
    * True while the parent is fetching the properties list. Used to
    * suppress the zero-property onboarding wizard during the loading
@@ -672,6 +675,7 @@ interface DashboardProps {
 
 export function Dashboard({
   properties,
+  mode = "dashboard",
   loadingProperties = false,
   selectedProperty,
   onSelectProperty,
@@ -693,6 +697,9 @@ export function Dashboard({
   );
   const [formPlatform, setFormPlatform] = useState("direct");
   const [formBookingOriginalPropertyId, setFormBookingOriginalPropertyId] = useState<number | "">("");
+  const [activeBookingAlertId, setActiveBookingAlertId] = useState<number | null>(null);
+  const [bookingAlertRefreshKey, setBookingAlertRefreshKey] = useState(0);
+  const [todayBookingPendingCount, setTodayBookingPendingCount] = useState(0);
   const [formCheckIn, setFormCheckIn] = useState("");
   const [formCheckOut, setFormCheckOut] = useState("");
   const [formNightlyPrice, setFormNightlyPrice] = useState("");
@@ -768,7 +775,7 @@ export function Dashboard({
   // units (and twice that under React Strict Mode), which could exhaust the
   // development server and leave the master calendar partially populated.
   const fetchAllCalendarData = useCallback(async () => {
-    if (selectedProperty || properties.length === 0) return;
+    if (mode !== "dashboard" || selectedProperty || properties.length === 0) return;
     try {
       const [syncRes, linksRes, overridesRes] = await Promise.all([
         fetch("/api/calendar/sync?limit=200"),
@@ -802,11 +809,41 @@ export function Dashboard({
     } finally {
       setLoadingCalendarData(false);
     }
-  }, [properties, selectedProperty]);
+  }, [mode, properties, selectedProperty]);
 
   useEffect(() => {
     fetchAllCalendarData();
   }, [fetchAllCalendarData]);
+
+  useEffect(() => {
+    if (mode !== "dashboard" || selectedProperty || properties.length === 0) {
+      setTodayBookingPendingCount(0);
+      return;
+    }
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    let cancelled = false;
+    const loadPendingCount = () => {
+      fetch(`/api/booking-alerts?date=${today}`, { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : { alerts: [] })
+        .then((body) => {
+          if (cancelled) return;
+          const alerts = Array.isArray(body.alerts) ? body.alerts : [];
+          setTodayBookingPendingCount(alerts.filter((alert: BookingAlert) => alert.status === "pending").length);
+        })
+        .catch(() => {
+          if (!cancelled) setTodayBookingPendingCount(0);
+        });
+    };
+    loadPendingCount();
+    const intervalId = window.setInterval(loadPendingCount, 60_000);
+    window.addEventListener("focus", loadPendingCount);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", loadPendingCount);
+    };
+  }, [mode, properties.length, selectedProperty]);
 
   // RT-25.6 tick 2 — fetch the user's full link inventory once on mount
   // (single call, no per-property fan-out) so the platform pills are
@@ -1246,6 +1283,14 @@ export function Dashboard({
       setReservationSaveError(result.error || "No se pudo guardar la reserva.");
       return;
     }
+    if (activeBookingAlertId) {
+      await fetch("/api/booking-alerts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: activeBookingAlertId, status: "resolved" }),
+      }).catch(() => null);
+      setBookingAlertRefreshKey((value) => value + 1);
+    }
     setFormName("");
     setFormCheckIn("");
     setFormCheckOut("");
@@ -1253,6 +1298,7 @@ export function Dashboard({
     setFormTotalPrice("");
     setFormPriceCurrency("BOB");
     setFormBookingOriginalPropertyId("");
+    setActiveBookingAlertId(null);
     setFormGuarantee("");
     setFormGuaranteeCurrency("BOB");
     setFormHasParking(false);
@@ -1312,6 +1358,7 @@ export function Dashboard({
     setFormPlatform("direct");
     setFormExtensionOfId(inspectedContext.rootId);
     setFormEditingId(null);
+    setActiveBookingAlertId(null);
     setReservationSaveError("");
     setInspectedReservationId(null);
     setShowForm(true);
@@ -1364,6 +1411,7 @@ export function Dashboard({
     setParkingPriceSource("nightly");
     setFormExtensionOfId(null);
     setFormEditingId(reservation.id);
+    setActiveBookingAlertId(null);
     setReservationSaveError("");
     setInspectedReservationId(null);
     setShowForm(true);
@@ -1526,8 +1574,35 @@ export function Dashboard({
     setParkingPriceSource("nightly");
     setFormPlatform("direct");
     setFormBookingOriginalPropertyId("");
+    setActiveBookingAlertId(null);
     setFormExtensionOfId(null);
     setFormEditingId(null);
+    setReservationSaveError("");
+    setShowForm(true);
+  };
+
+  const openReservationFormForBookingAlert = (alert: BookingAlert) => {
+    setFormPropertyId(alert.propertyId);
+    setFormName("");
+    setFormCheckIn(alert.checkIn);
+    setFormCheckOut(alert.checkOut);
+    setFormNightlyPrice("");
+    setFormTotalPrice("");
+    setFormPriceCurrency("USD");
+    setFormGuarantee("");
+    setFormGuaranteeCurrency("BOB");
+    setFormHasParking(false);
+    setFormParkingNightlyPrice("");
+    setFormParkingTotalPrice("");
+    setFormParkingCurrency("BOB");
+    setFormNote("");
+    setPriceSource("nightly");
+    setParkingPriceSource("nightly");
+    setFormPlatform("booking");
+    setFormBookingOriginalPropertyId(alert.propertyId);
+    setFormExtensionOfId(null);
+    setFormEditingId(null);
+    setActiveBookingAlertId(alert.id);
     setReservationSaveError("");
     setShowForm(true);
   };
@@ -1541,9 +1616,11 @@ export function Dashboard({
     return Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  const title = selectedProperty ? selectedProperty.name : t("dashboard.title");
+  const title = mode === "booking" ? "Booking" : selectedProperty ? selectedProperty.name : t("dashboard.title");
   const resCount = displayReservations.length;
-  const subtitle = selectedProperty
+  const subtitle = mode === "booking"
+    ? "Reservas detectadas mediante los calendarios de Booking.com"
+    : selectedProperty
     ? c.reservationsCount(resCount)
     : c.reservationsAcross(resCount, properties.length);
 
@@ -1559,7 +1636,7 @@ export function Dashboard({
   // creates a duplicate "My first property" alongside their real
   // properties.
   const isZeroProperties =
-    !loadingProperties && !selectedProperty && properties.length === 0;
+    mode === "dashboard" && !loadingProperties && !selectedProperty && properties.length === 0;
 
   const handleSaveName = async () => {
     if (!selectedProperty || !onUpdateProperty) return;
@@ -1597,7 +1674,7 @@ export function Dashboard({
     <div className={`-mx-3 sm:-mx-6 lg:-mx-8 ${selectedProperty ? "" : "h-full min-h-0"}`}>
     <div className={`mx-auto max-w-none px-2 sm:px-4 ${selectedProperty ? "space-y-6" : "flex h-full min-h-0 flex-col gap-3 sm:gap-4"}`}>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className={`items-start justify-between ${mode === "dashboard" && !selectedProperty ? "hidden sm:flex" : "flex"}`}>
         <div>
           {selectedProperty && editingName ? (
             <div className="flex items-center gap-1.5">
@@ -1864,7 +1941,14 @@ export function Dashboard({
         </div>
       )}
 
-      {!selectedProperty && properties.length > 0 && (
+      {mode === "booking" && !selectedProperty && properties.length > 0 && (
+        <BookingAlertsPanel
+          onCreateReservation={openReservationFormForBookingAlert}
+          refreshKey={bookingAlertRefreshKey}
+        />
+      )}
+
+      {mode === "dashboard" && !selectedProperty && properties.length > 0 && (
         <MasterCalendar
           properties={masterCalendarProperties}
           loading={loadingCalendarData}
@@ -1875,6 +1959,7 @@ export function Dashboard({
             setInspectedImportedStay({ propertyId, stay });
           }}
           onCreateReservation={openReservationFormForProperty}
+          bookingPendingCount={todayBookingPendingCount}
         />
       )}
 

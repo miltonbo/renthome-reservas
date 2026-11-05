@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
           select: { checkIn: true, checkOut: true },
         },
         calendarEvents: {
+          where: { platform: { not: "booking" } },
           select: {
             startDate: true,
             endDate: true,

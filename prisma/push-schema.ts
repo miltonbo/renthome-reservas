@@ -135,11 +135,14 @@ CREATE TABLE IF NOT EXISTS "CalendarEvent" (
     "summary" TEXT NOT NULL DEFAULT '',
     "startDate" TEXT NOT NULL,
     "endDate" TEXT NOT NULL,
+    "bookingReviewStatus" TEXT NOT NULL DEFAULT 'pending',
+    "bookingReviewedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "CalendarEvent_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "CalendarEvent_propertyId_platform_uid_key" ON "CalendarEvent"("propertyId", "platform", "uid");
+CREATE INDEX IF NOT EXISTS "CalendarEvent_platform_startDate_idx" ON "CalendarEvent"("platform", "startDate");
 
 CREATE TABLE IF NOT EXISTS "SyncLog" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -194,6 +197,9 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Property" ADD COLUMN "userId" INTEGER NOT NULL DEFAULT 1`,
     `CREATE INDEX IF NOT EXISTS "Property_userId_idx" ON "Property"("userId")`,
     `ALTER TABLE "CalendarLink" ADD COLUMN "failureCount" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "CalendarEvent" ADD COLUMN "bookingReviewStatus" TEXT NOT NULL DEFAULT 'pending'`,
+    `ALTER TABLE "CalendarEvent" ADD COLUMN "bookingReviewedAt" DATETIME`,
+    `CREATE INDEX IF NOT EXISTS "CalendarEvent_platform_startDate_idx" ON "CalendarEvent"("platform", "startDate")`,
     `ALTER TABLE "User" ADD COLUMN "alertsDismissedAt" DATETIME`,
     `ALTER TABLE "User" ADD COLUMN "lastLoginAt" DATETIME`,
     `ALTER TABLE "User" ADD COLUMN "suspendedAt" DATETIME`,

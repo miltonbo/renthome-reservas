@@ -271,17 +271,20 @@ model CalendarLink {
 }
 
 model CalendarEvent {
-  id         Int      @id @default(autoincrement())
-  propertyId Int
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  platform   String // source platform
-  uid        String // iCal event UID
-  summary    String   @default("")
-  startDate  String // YYYY-MM-DD
-  endDate    String // YYYY-MM-DD
-  createdAt  DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  propertyId          Int
+  property            Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  platform            String // source platform
+  uid                 String // iCal event UID
+  summary             String   @default("")
+  startDate           String // YYYY-MM-DD
+  endDate             String // YYYY-MM-DD
+  bookingReviewStatus String   @default("pending") // pending | resolved; operational only for Booking iCal alerts
+  bookingReviewedAt   DateTime?
+  createdAt           DateTime @default(now())
 
   @@unique([propertyId, platform, uid])
+  @@index([platform, startDate])
 }
 
 model SyncLog {

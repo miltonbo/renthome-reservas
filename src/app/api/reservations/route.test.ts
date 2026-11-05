@@ -240,6 +240,7 @@ describe("POST /api/reservations — linked calendar source", () => {
     expect(mocks.calendarEventFindFirst).toHaveBeenNthCalledWith(2, {
       where: {
         propertyId,
+        platform: { not: "booking" },
         startDate: { lt: "2026-08-23" },
         endDate: { gt: "2026-08-19" },
         NOT: {

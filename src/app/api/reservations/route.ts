@@ -325,6 +325,7 @@ export async function POST(request: NextRequest) {
     const overlapExclusions = [...claimedSourceExclusions, ...sourceExclusions];
     const syncedOverlapWhere = {
         propertyId,
+        platform: { not: "booking" },
         startDate: { lt: endDateStr },
         endDate: { gt: startDateStr },
         ...(claimedSourceExclusions.length > 0

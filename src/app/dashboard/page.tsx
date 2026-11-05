@@ -339,7 +339,7 @@ function AppContent({
     if (id === null) {
       navigate({ property: null, reservation: null, view: "dashboard" });
     } else {
-      navigate({ property: id, reservation: null, view: activeView === "dashboard" ? "calendar" : activeView });
+      navigate({ property: id, reservation: null, view: activeView === "dashboard" || activeView === "booking" ? "calendar" : activeView });
     }
   };
 
@@ -392,6 +392,24 @@ function AppContent({
       // property selected, the panel shows a meaningful aggregate
       // across every property in `properties`.
       return <ReportsPanel property={selectedProperty?.isPaused ? null : selectedProperty ?? null} properties={operationalProperties} />;
+    }
+
+    if (activeView === "booking") {
+      return (
+        <Dashboard
+          mode="booking"
+          properties={operationalProperties}
+          loadingProperties={loadingProperties}
+          selectedProperty={null}
+          onSelectProperty={handleSelectProperty}
+          onSelectReservation={handleSelectReservation}
+          onAddReservation={handleAddReservation}
+          onUpdateReservation={handleUpdateReservation}
+          onCancelReservation={handleCancelReservation}
+          onUpdateProperty={handleUpdateProperty}
+          onRefresh={fetchProperties}
+        />
+      );
     }
 
     // Cleaning is dual-mode like Reports: cross-property when no

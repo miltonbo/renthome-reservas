@@ -409,6 +409,7 @@ export async function PATCH(
         const overlapExclusions = [...claimedSourceExclusions, ...sourceExclusions];
         const syncedOverlapWhere = {
             propertyId: targetPropertyId,
+            platform: { not: "booking" },
             startDate: { lt: newEndStr },
             endDate: { gt: newStartStr },
             // A claimed iCal booking has a local Reservation row for

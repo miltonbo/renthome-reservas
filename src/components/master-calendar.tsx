@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 export interface MasterCalendarStay {
   start: Date;
@@ -31,6 +32,7 @@ interface MasterCalendarProps {
   onOpenReservation: (propertyId: number, reservationId: number) => void;
   onOpenImportedStay: (propertyId: number, stay: MasterCalendarStay) => void;
   onCreateReservation: (propertyId: number) => void;
+  bookingPendingCount?: number;
 }
 
 // Compact enough that a booking four weeks out is genuinely visible on a
@@ -128,6 +130,7 @@ export function MasterCalendar({
   onOpenReservation,
   onOpenImportedStay,
   onCreateReservation,
+  bookingPendingCount = 0,
 }: MasterCalendarProps) {
   const today = useMemo(() => startOfLocalDay(), []);
   const [windowStart, setWindowStart] = useState(() => addDays(today, -2));
@@ -161,6 +164,17 @@ export function MasterCalendar({
             <span className="rounded-full bg-[var(--brand-orange-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--brand-orange)] sm:px-2 sm:text-[11px]">
               <span className="sm:hidden">{properties.length}</span><span className="hidden sm:inline">{properties.length} departamentos</span>
             </span>
+            {bookingPendingCount > 0 && (
+              <Link
+                href="/dashboard?view=booking"
+                className="relative flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-[11px] font-black text-white shadow-sm ring-2 ring-amber-500/20 transition-transform hover:scale-105"
+                title={`${bookingPendingCount} ${bookingPendingCount === 1 ? "reserva de Booking pendiente" : "reservas de Booking pendientes"}`}
+                aria-label={`Abrir Booking: ${bookingPendingCount} ${bookingPendingCount === 1 ? "reserva pendiente" : "reservas pendientes"}`}
+              >
+                !
+                <span className="sr-only">Abrir alertas de Booking</span>
+              </Link>
+            )}
           </div>
           <p className="mt-0.5 hidden text-xs text-[var(--ink-4)] sm:block">
             Reservas confirmadas, ingresos y salidas en una sola vista
@@ -328,7 +342,7 @@ export function MasterCalendar({
                             stay.extensionOfId
                               ? "rounded-l-sm rounded-r-lg border-l-2 border-dashed border-white/75 pl-1.5 pr-2"
                               : isAvailabilityBlock ? "" : "rounded-lg px-2"
-                          } ${(stay.hasOutstandingBalance || stay.hasMissingAirbnbDetails) && !isAvailabilityBlock ? "ring-1 ring-inset ring-amber-300/80" : ""}`}
+                          } ${(stay.hasOutstandingBalance || stay.hasMissingAirbnbDetails) && !isAvailabilityBlock ? "ring-2 ring-inset ring-amber-300/90" : ""}`}
                           style={{ left, width, backgroundColor: isAvailabilityBlock ? undefined : color.background, color: isAvailabilityBlock ? undefined : color.foreground }}
                           title={`${stay.extensionOfId ? "Extensión de estadía · " : ""}${stay.name} · ${formatRange(stay.start, stay.end)} · ${platformLabel(stay.platform)}${stay.blockReason ? ` · Motivo: ${stay.blockReason}` : ""}${stay.totalPrice != null ? ` · ${stay.currency === "USD" ? `USD ${stay.totalPrice}` : formatBolivianos(stay.totalPrice)}` : ""}`}
                         >

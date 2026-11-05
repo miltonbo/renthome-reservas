@@ -121,7 +121,7 @@ export async function auditProperty(propertyId: number): Promise<PropertyAuditRe
       orderBy: { checkIn: "asc" },
     }),
     prisma.calendarEvent.findMany({
-      where: { propertyId },
+      where: { propertyId, platform: { not: "booking" } },
       orderBy: { startDate: "asc" },
     }),
     prisma.dateOverride.findMany({

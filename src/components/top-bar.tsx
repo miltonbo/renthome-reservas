@@ -12,6 +12,7 @@ import { useOfficialExchangeRate } from "@/lib/use-official-exchange-rate";
 
 interface CopyShape {
   tabDashboard: string;
+  tabBooking: string;
   tabCalendar: string;
   tabCleaning: string;
   tabReports: string;
@@ -40,6 +41,7 @@ interface CopyShape {
 const COPY: Record<Locale, CopyShape> = {
   en: {
     tabDashboard: "Dashboard",
+    tabBooking: "Booking",
     tabCalendar: "Calendar",
     tabCleaning: "Cleaning",
     tabReports: "Reports",
@@ -67,6 +69,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   ru: {
     tabDashboard: "Обзор",
+    tabBooking: "Booking",
     tabCalendar: "Календарь",
     tabCleaning: "Уборки",
     tabReports: "Отчёты",
@@ -93,6 +96,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   de: {
     tabDashboard: "Übersicht",
+    tabBooking: "Booking",
     tabCalendar: "Kalender",
     tabCleaning: "Reinigung",
     tabReports: "Berichte",
@@ -120,6 +124,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   fr: {
     tabDashboard: "Tableau de bord",
+    tabBooking: "Booking",
     tabCalendar: "Calendrier",
     tabCleaning: "Ménage",
     tabReports: "Rapports",
@@ -147,6 +152,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   es: {
     tabDashboard: "Panel",
+    tabBooking: "Booking",
     tabCalendar: "Calendario",
     tabCleaning: "Check-ins / Check-outs",
     tabReports: "Informes",
@@ -174,7 +180,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
 };
 
-export type AppView = "dashboard" | "calendar" | "cleaning" | "sync" | "guest-form" | "guests" | "settings" | "tasks" | "reports" | "profile";
+export type AppView = "dashboard" | "booking" | "calendar" | "cleaning" | "sync" | "guest-form" | "guests" | "settings" | "tasks" | "reports" | "profile";
 
 interface GuestSearchResult {
   guestId: number;
@@ -316,6 +322,10 @@ export function TopBar({
       onNavigate({ property: null, reservation: null, view: "dashboard" });
       return;
     }
+    if (view === "booking") {
+      onNavigate({ property: null, reservation: null, view: "booking" });
+      return;
+    }
     if (view === "cleaning") {
       onNavigate({ property: null, reservation: null, view: "cleaning" });
       return;
@@ -349,7 +359,7 @@ export function TopBar({
     }
   };
 
-  // All five tabs render at every scope so the header stays put.
+  // All primary tabs render at every scope so the header stays put.
   // Property-required tabs (Calendar, Property) auto-pick the first
   // property when clicked without a selection — see goToTab above.
   // The property selector to the left of the strip is the
@@ -358,6 +368,7 @@ export function TopBar({
   // Stripe / Linear / GitHub all use the same stable-header pattern.
   const tabs: { key: AppView; label: string; show: boolean }[] = [
     { key: "dashboard", label: c.tabDashboard, show: true },
+    { key: "booking", label: c.tabBooking, show: true },
     { key: "calendar", label: c.tabCalendar, show: true },
     { key: "cleaning", label: c.tabCleaning, show: true },
     { key: "reports", label: c.tabReports, show: true },
@@ -449,7 +460,7 @@ export function TopBar({
                           onNavigate({
                             property: p.id,
                             reservation: null,
-                            view: activeView === "dashboard" ? "calendar" : activeView,
+                            view: activeView === "dashboard" || activeView === "booking" ? "calendar" : activeView,
                           });
                           setPropDropdown(false);
                         }}

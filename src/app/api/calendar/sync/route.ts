@@ -98,7 +98,10 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
       prisma.calendarEvent.findMany({
-        where: propertyFilter,
+        // Booking iCal rows are operational alerts, not confirmed inventory.
+        // They have their own /api/booking-alerts inbox and must not flow into
+        // availability, cleaning or the master calendar as blocking stays.
+        where: { ...propertyFilter, platform: { not: "booking" } },
         orderBy: { startDate: "asc" },
       }),
     ]);
