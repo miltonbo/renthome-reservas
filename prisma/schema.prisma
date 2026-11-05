@@ -268,12 +268,15 @@ model CalendarLink {
   lastError     String?
   failureCount  Int       @default(0)
   createdAt     DateTime  @default(now())
+  events         CalendarEvent[]
 }
 
 model CalendarEvent {
   id                  Int      @id @default(autoincrement())
   propertyId          Int
   property            Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  calendarLinkId      Int?
+  calendarLink        CalendarLink? @relation(fields: [calendarLinkId], references: [id], onDelete: Cascade)
   platform            String // source platform
   uid                 String // iCal event UID
   summary             String   @default("")
@@ -283,7 +286,8 @@ model CalendarEvent {
   bookingReviewedAt   DateTime?
   createdAt           DateTime @default(now())
 
-  @@unique([propertyId, platform, uid])
+  @@unique([calendarLinkId, uid])
+  @@index([propertyId, platform])
   @@index([platform, startDate])
 }
 

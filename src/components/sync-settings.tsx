@@ -21,6 +21,9 @@ interface CopyShape {
   remove: string;
   draftImportHint: string;
   addAnother: string;
+  addBookingFeed: string;
+  additionalBookingHint: string;
+  additionalBookingLabel: (number: number) => string;
   daysShort: (n: number) => string;
   nightsShort: (n: number) => string;
   monthsShort: string;
@@ -52,6 +55,9 @@ const COPY: Record<Locale, CopyShape> = {
     remove: "Remove",
     draftImportHint: "Name the platform first to get its import URL.",
     addAnother: "Add another platform",
+    addBookingFeed: "Add another Booking iCal",
+    additionalBookingHint: "Use this when the same apartment has more than one Booking.com listing.",
+    additionalBookingLabel: (number) => `Booking.com iCal ${number}`,
     daysShort: (n) => (n !== 1 ? "days" : "day"),
     nightsShort: (n) => (n !== 1 ? "nights" : "night"),
     monthsShort: "mo",
@@ -87,6 +93,9 @@ const COPY: Record<Locale, CopyShape> = {
     remove: "Удалить",
     draftImportHint: "Назовите платформу, чтобы получить ссылку для обратного импорта.",
     addAnother: "Добавить другую платформу",
+    addBookingFeed: "Добавить ещё один iCal Booking",
+    additionalBookingHint: "Используйте, если у одного объекта несколько объявлений Booking.com.",
+    additionalBookingLabel: (number) => `Booking.com iCal ${number}`,
     daysShort: () => "дн.",
     nightsShort: () => "ноч.",
     monthsShort: "мес.",
@@ -122,6 +131,9 @@ const COPY: Record<Locale, CopyShape> = {
     remove: "Entfernen",
     draftImportHint: "Benennen Sie zuerst die Plattform, um die Import-URL zu erhalten.",
     addAnother: "Weitere Plattform hinzufügen",
+    addBookingFeed: "Weiteren Booking-iCal hinzufügen",
+    additionalBookingHint: "Für Unterkünfte mit mehreren Booking.com-Inseraten.",
+    additionalBookingLabel: (number) => `Booking.com iCal ${number}`,
     daysShort: () => "Tage",
     nightsShort: (n) => (n !== 1 ? "Nächte" : "Nacht"),
     monthsShort: "Mon.",
@@ -157,6 +169,9 @@ const COPY: Record<Locale, CopyShape> = {
     remove: "Retirer",
     draftImportHint: "Nommez d’abord la plateforme pour obtenir son URL d’import.",
     addAnother: "Ajouter une autre plateforme",
+    addBookingFeed: "Ajouter un autre iCal Booking",
+    additionalBookingHint: "À utiliser si le même logement possède plusieurs annonces Booking.com.",
+    additionalBookingLabel: (number) => `Booking.com iCal ${number}`,
     daysShort: () => "j",
     nightsShort: (n) => (n !== 1 ? "nuits" : "nuit"),
     monthsShort: "mois",
@@ -192,6 +207,9 @@ const COPY: Record<Locale, CopyShape> = {
     remove: "Quitar",
     draftImportHint: "Nombre primero la plataforma para obtener su URL de importación.",
     addAnother: "Añadir otra plataforma",
+    addBookingFeed: "Añadir otro iCal de Booking",
+    additionalBookingHint: "Úselo cuando el mismo departamento tenga más de un anuncio en Booking.com.",
+    additionalBookingLabel: (number) => `Booking.com iCal ${number}`,
     daysShort: (n) => (n !== 1 ? "días" : "día"),
     nightsShort: (n) => (n !== 1 ? "noches" : "noche"),
     monthsShort: "meses",
@@ -273,6 +291,10 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
   // Hydrated from `links` on every fetchData.
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({});
   const [editingPlatform, setEditingPlatform] = useState<string | null>(null);
+  const [showAdditionalBookingForm, setShowAdditionalBookingForm] = useState(false);
+  const [additionalBookingUrl, setAdditionalBookingUrl] = useState("");
+  const [savingAdditionalBooking, setSavingAdditionalBooking] = useState(false);
+  const [additionalBookingError, setAdditionalBookingError] = useState("");
 
   // Custom platform rows the user has added but not yet saved. Stored as
   // a draft list (same shape as the onboarding wizard) so the user can
@@ -324,9 +346,13 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
       // Populate URL inputs from EVERY existing link, not just airbnb/booking.
       // The user might have a Vrbo or custom-platform link from the
       // onboarding wizard that wouldn't otherwise hydrate.
-      setUrlInputs((prev) => {
-        const next = { ...prev };
-        for (const l of data) next[l.platform] = l.icalExportUrl;
+      setUrlInputs(() => {
+        const next: Record<string, string> = {};
+        // The regular platform card represents the oldest (primary) feed.
+        // Additional Booking feeds are rendered in their own list below.
+        for (const l of data) {
+          if (!(l.platform in next)) next[l.platform] = l.icalExportUrl;
+        }
         return next;
       });
     }
@@ -405,6 +431,48 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
       return next;
     });
     await fetchData();
+  };
+
+  const handleDeleteLink = async (linkId: number) => {
+    await fetch(`/api/calendar/links/${linkId}`, { method: "DELETE" });
+    await fetchData();
+  };
+
+  const handleSaveAdditionalBooking = async () => {
+    if (!additionalBookingUrl.trim() || savingAdditionalBooking) return;
+    setSavingAdditionalBooking(true);
+    setAdditionalBookingError("");
+    try {
+      const primary = getLink("booking");
+      const response = await fetch("/api/calendar/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId,
+          platform: "booking",
+          icalExportUrl: additionalBookingUrl.trim(),
+          bufferBefore: primary?.bufferBefore ?? 0,
+          bufferAfter: primary?.bufferAfter ?? 0,
+          allowMultiple: true,
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error || "No se pudo guardar el iCal adicional.");
+      }
+      await fetch("/api/calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId }),
+      });
+      setAdditionalBookingUrl("");
+      setShowAdditionalBookingForm(false);
+      await fetchData();
+    } catch (error) {
+      setAdditionalBookingError(error instanceof Error ? error.message : "No se pudo guardar el iCal adicional.");
+    } finally {
+      setSavingAdditionalBooking(false);
+    }
   };
 
   const handleTest = async (platform: string, url: string) => {
@@ -495,6 +563,8 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
   };
   const presetSlugs = new Set(PRESETS.map((p) => p.platform));
   const customLinks = links.filter((l) => !presetSlugs.has(l.platform));
+  const bookingLinks = links.filter((link) => link.platform === "booking");
+  const additionalBookingLinks = bookingLinks.slice(1);
   const platformRows: PlatformRow[] = [
     ...PRESETS.map((p) => ({
       rowId: `preset:${p.platform}`,
@@ -941,6 +1011,57 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
           );
         })}
       </div>
+
+      {(bookingLinks.length > 0 || showAdditionalBookingForm) && (
+        <div className="space-y-2 rounded-lg border border-[#003580]/25 bg-[#003580]/[0.04] p-4">
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--ink)]">{c.addBookingFeed}</h3>
+            <p className="mt-0.5 text-xs text-[var(--ink-4)]">{c.additionalBookingHint}</p>
+          </div>
+
+          {additionalBookingLinks.map((link, index) => (
+            <div key={link.id} className="flex flex-wrap items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--bg-2)] px-3 py-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#003580]" />
+              <span className="text-xs font-semibold text-[var(--ink)]">{c.additionalBookingLabel(index + 2)}</span>
+              <code className="min-w-0 flex-1 truncate text-[11px] text-[var(--ink-4)]">{link.icalExportUrl}</code>
+              <span className={`text-[11px] font-medium ${link.lastError ? "text-rose-500" : "text-emerald-500"}`}>
+                {link.lastError ? t("sync.feedError") : t("sync.connected")}
+              </span>
+              <button type="button" onClick={() => handleDeleteLink(link.id)} className="rounded-md px-2 py-1 text-xs text-rose-500 hover:bg-rose-500/10">
+                {c.remove}
+              </button>
+            </div>
+          ))}
+
+          {showAdditionalBookingForm ? (
+            <div className="space-y-2 rounded-md border border-dashed border-[#003580]/35 bg-[var(--bg-2)] p-3">
+              <label className="text-xs font-medium text-[var(--ink-3)]">{c.additionalBookingLabel(bookingLinks.length + 1)}</label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  autoFocus
+                  value={additionalBookingUrl}
+                  onChange={(event) => setAdditionalBookingUrl(event.target.value)}
+                  placeholder="https://admin.booking.com/…/ical.html?…"
+                  className="h-9 min-w-0 flex-1 rounded-md border border-[var(--line-2)] bg-[var(--bg)] px-3 text-xs text-[var(--ink)] outline-none focus:border-[#003580]"
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => { setShowAdditionalBookingForm(false); setAdditionalBookingUrl(""); setAdditionalBookingError(""); }} className="rounded-md px-3 py-1.5 text-xs text-[var(--ink-3)] hover:bg-[var(--bg-3)]">
+                    {c.cancel}
+                  </button>
+                  <button type="button" onClick={handleSaveAdditionalBooking} disabled={!additionalBookingUrl.trim() || savingAdditionalBooking} className="rounded-md bg-[#003580] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#00285f] disabled:opacity-40">
+                    {savingAdditionalBooking ? "…" : c.save}
+                  </button>
+                </div>
+              </div>
+              {additionalBookingError && <p role="alert" className="text-xs text-rose-500">{additionalBookingError}</p>}
+            </div>
+          ) : (
+            <button type="button" onClick={() => setShowAdditionalBookingForm(true)} className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[#003580]/40 px-3 py-2 text-xs font-medium text-[#003580] hover:bg-[#003580]/10 dark:text-blue-300">
+              <span className="text-base leading-none">+</span> {c.addBookingFeed}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Add custom platform — matches the onboarding wizard CTA so a
           host who originally added a Hostaway or Plum Guide row in

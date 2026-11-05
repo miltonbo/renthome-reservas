@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   calendarEventFindMany: vi.fn(),
   calendarEventUpsert: vi.fn(),
   calendarEventDeleteMany: vi.fn(),
+  calendarEventUpdateMany: vi.fn(),
   reservationFindMany: vi.fn(),
   reservationUpdateMany: vi.fn(),
   syncLogCreate: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("@/lib/prisma", () => ({
       findMany: mocks.calendarEventFindMany,
       upsert: mocks.calendarEventUpsert,
       deleteMany: mocks.calendarEventDeleteMany,
+      updateMany: mocks.calendarEventUpdateMany,
     },
     reservation: {
       findMany: mocks.reservationFindMany,
@@ -86,6 +88,45 @@ beforeEach(() => {
 });
 
 describe("calendar sync — durable linked reservation metadata", () => {
+  it("keeps multiple Booking feeds for the same property isolated by link id", async () => {
+    const secondLink = {
+      ...link,
+      id: 4,
+      platform: "booking",
+      icalExportUrl: "https://example.test/booking-2.ics",
+    };
+    const firstBookingLink = {
+      ...link,
+      platform: "booking",
+      icalExportUrl: "https://example.test/booking-1.ics",
+    };
+    mocks.calendarLinkFindMany.mockResolvedValue([firstBookingLink, secondLink]);
+    mocks.calendarEventFindMany.mockResolvedValue([]);
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+      const suffix = url.includes("booking-2") ? "two" : "one";
+      return Promise.resolve(new Response(
+        ical([{ uid: `booking-${suffix}`, start: "2099-09-10", end: "2099-09-12" }]),
+        { status: 200 },
+      ));
+    }));
+
+    const result = await syncAllCalendars({ propertyIds: [propertyId] });
+
+    expect(result).toMatchObject({ propertiesSynced: 1, newEvents: 2, errors: 0 });
+    expect(mocks.calendarEventFindMany).toHaveBeenNthCalledWith(1, {
+      where: { calendarLinkId: firstBookingLink.id },
+    });
+    expect(mocks.calendarEventFindMany).toHaveBeenNthCalledWith(2, {
+      where: { calendarLinkId: secondLink.id },
+    });
+    expect(mocks.calendarEventUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { calendarLinkId_uid: { calendarLinkId: firstBookingLink.id, uid: "booking-one" } },
+    }));
+    expect(mocks.calendarEventUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { calendarLinkId_uid: { calendarLinkId: secondLink.id, uid: "booking-two" } },
+    }));
+  });
+
   it.each(["2099-08-25", "2099-08-21"])("updates an unchanged claim when source checkout becomes %s, protecting local overrides and extensions", async (end) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(
       ical([{ uid: oldEvent.uid, start: oldEvent.startDate, end }]), { status: 200 },
@@ -128,14 +169,14 @@ describe("calendar sync — durable linked reservation metadata", () => {
     });
     expect(mocks.calendarEventUpsert).toHaveBeenCalledWith({
       where: {
-        propertyId_platform_uid: {
-          propertyId,
-          platform: "airbnb",
+        calendarLinkId_uid: {
+          calendarLinkId: link.id,
           uid: "old-uid",
         },
       },
       create: {
         propertyId,
+        calendarLinkId: link.id,
         platform: "airbnb",
         uid: "old-uid",
         summary: "Reserved",

@@ -163,9 +163,11 @@ export async function syncAllCalendars(opts?: {
           return true;
         });
 
-        // Get existing events for this property+platform
+        // Scope imported rows to this exact feed. Multiple Booking listings
+        // can legitimately point at the same physical apartment; pruning one
+        // feed must never delete events imported by another.
         const existing = await prisma.calendarEvent.findMany({
-          where: { propertyId, platform: link.platform },
+          where: { calendarLinkId: link.id },
         });
         const existingUIDs = new Set(existing.map((e) => e.uid));
         const fetchedUIDs = new Set(futureEvents.map((e) => e.uid));
@@ -214,14 +216,14 @@ export async function syncAllCalendars(opts?: {
           }
           await prisma.calendarEvent.upsert({
             where: {
-              propertyId_platform_uid: {
-                propertyId,
-                platform: link.platform,
+              calendarLinkId_uid: {
+                calendarLinkId: link.id,
                 uid: event.uid,
               },
             },
             create: {
               propertyId,
+              calendarLinkId: link.id,
               platform: link.platform,
               uid: event.uid,
               summary: event.summary,
@@ -267,9 +269,8 @@ export async function syncAllCalendars(opts?: {
           for (const ev of removedEvents) {
             const deleted = await prisma.calendarEvent.deleteMany({
               where: {
-                propertyId,
-                platform: link.platform,
-                uid: ev.uid,
+                id: ev.id,
+                calendarLinkId: link.id,
                 endDate: { gte: todayIso },
               },
             });
@@ -289,6 +290,15 @@ export async function syncAllCalendars(opts?: {
               );
 
               if (candidateReissue) {
+                if (link.platform === "booking" && ev.bookingReviewStatus === "resolved") {
+                  await prisma.calendarEvent.updateMany({
+                    where: { calendarLinkId: link.id, uid: candidateReissue.uid },
+                    data: {
+                      bookingReviewStatus: "resolved",
+                      bookingReviewedAt: ev.bookingReviewedAt,
+                    },
+                  });
+                }
                 const migrated = await prisma.reservation.updateMany({
                   where: {
                     propertyId,

@@ -1284,11 +1284,8 @@ export function Dashboard({
       return;
     }
     if (activeBookingAlertId) {
-      await fetch("/api/booking-alerts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: activeBookingAlertId, status: "resolved" }),
-      }).catch(() => null);
+      // Creating the local reservation only records where the guest was
+      // assigned. Operational review remains a separate, explicit check.
       setBookingAlertRefreshKey((value) => value + 1);
     }
     setFormName("");
@@ -1944,6 +1941,10 @@ export function Dashboard({
       {mode === "booking" && !selectedProperty && properties.length > 0 && (
         <BookingAlertsPanel
           onCreateReservation={openReservationFormForBookingAlert}
+          onOpenReservation={(reservationId) => {
+            setSettlementWarning("");
+            setInspectedReservationId(reservationId);
+          }}
           refreshKey={bookingAlertRefreshKey}
         />
       )}

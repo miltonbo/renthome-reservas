@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const links = await prisma.calendarLink.findMany({
       where,
       include: { property: { select: { id: true, name: true } } },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     });
 
     return NextResponse.json(links);
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { propertyId, platform, icalExportUrl, bufferBefore, bufferAfter } = body;
+    const { propertyId, platform, icalExportUrl, bufferBefore, bufferAfter, allowMultiple } = body;
 
     if (!propertyId) {
       return NextResponse.json({ error: "propertyId is required" }, { status: 400 });
@@ -78,12 +78,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Check if link already exists for this property+platform
+    // Existing clients still get the original one-feed-per-platform behavior.
+    // The property settings screen opts into multiple feeds explicitly when
+    // the host clicks “Add another Booking iCal”.
     const existing = await prisma.calendarLink.findFirst({
       where: { propertyId: Number(propertyId), platform: platformSlug },
+      orderBy: { createdAt: "asc" },
     });
 
-    if (existing) {
+    const duplicateUrl = await prisma.calendarLink.findFirst({
+      where: {
+        propertyId: Number(propertyId),
+        platform: platformSlug,
+        icalExportUrl: normalizedUrl,
+      },
+    });
+    if (duplicateUrl && (allowMultiple === true || duplicateUrl.id !== existing?.id)) {
+      return NextResponse.json({ error: "This iCal link is already connected" }, { status: 409 });
+    }
+
+    if (existing && allowMultiple !== true) {
       // Update existing
       const updated = await prisma.calendarLink.update({
         where: { id: existing.id },

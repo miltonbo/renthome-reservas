@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS "CalendarLink" (
 CREATE TABLE IF NOT EXISTS "CalendarEvent" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "propertyId" INTEGER NOT NULL,
+    "calendarLinkId" INTEGER,
     "platform" TEXT NOT NULL,
     "uid" TEXT NOT NULL,
     "summary" TEXT NOT NULL DEFAULT '',
@@ -138,10 +139,12 @@ CREATE TABLE IF NOT EXISTS "CalendarEvent" (
     "bookingReviewStatus" TEXT NOT NULL DEFAULT 'pending',
     "bookingReviewedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "CalendarEvent_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "CalendarEvent_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "CalendarEvent_calendarLinkId_fkey" FOREIGN KEY ("calendarLinkId") REFERENCES "CalendarLink" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS "CalendarEvent_propertyId_platform_uid_key" ON "CalendarEvent"("propertyId", "platform", "uid");
+CREATE UNIQUE INDEX IF NOT EXISTS "CalendarEvent_calendarLinkId_uid_key" ON "CalendarEvent"("calendarLinkId", "uid");
+CREATE INDEX IF NOT EXISTS "CalendarEvent_propertyId_platform_idx" ON "CalendarEvent"("propertyId", "platform");
 CREATE INDEX IF NOT EXISTS "CalendarEvent_platform_startDate_idx" ON "CalendarEvent"("platform", "startDate");
 
 CREATE TABLE IF NOT EXISTS "SyncLog" (
@@ -197,6 +200,20 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     `ALTER TABLE "Property" ADD COLUMN "userId" INTEGER NOT NULL DEFAULT 1`,
     `CREATE INDEX IF NOT EXISTS "Property_userId_idx" ON "Property"("userId")`,
     `ALTER TABLE "CalendarLink" ADD COLUMN "failureCount" INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE "CalendarEvent" ADD COLUMN "calendarLinkId" INTEGER`,
+    `UPDATE "CalendarEvent"
+     SET "calendarLinkId" = (
+       SELECT "CalendarLink"."id"
+       FROM "CalendarLink"
+       WHERE "CalendarLink"."propertyId" = "CalendarEvent"."propertyId"
+         AND "CalendarLink"."platform" = "CalendarEvent"."platform"
+       ORDER BY "CalendarLink"."createdAt" ASC, "CalendarLink"."id" ASC
+       LIMIT 1
+     )
+     WHERE "calendarLinkId" IS NULL`,
+    `DROP INDEX IF EXISTS "CalendarEvent_propertyId_platform_uid_key"`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "CalendarEvent_calendarLinkId_uid_key" ON "CalendarEvent"("calendarLinkId", "uid")`,
+    `CREATE INDEX IF NOT EXISTS "CalendarEvent_propertyId_platform_idx" ON "CalendarEvent"("propertyId", "platform")`,
     `ALTER TABLE "CalendarEvent" ADD COLUMN "bookingReviewStatus" TEXT NOT NULL DEFAULT 'pending'`,
     `ALTER TABLE "CalendarEvent" ADD COLUMN "bookingReviewedAt" DATETIME`,
     `CREATE INDEX IF NOT EXISTS "CalendarEvent_platform_startDate_idx" ON "CalendarEvent"("platform", "startDate")`,

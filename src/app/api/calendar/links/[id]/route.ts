@@ -88,12 +88,12 @@ export async function DELETE(
     const owned = await loadManageableLink(numId, session.userId, session.role);
     if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    // Remove events from this platform for this property
-    await prisma.calendarEvent.deleteMany({
-      where: { propertyId: owned.propertyId, platform: owned.platform },
-    });
-
-    await prisma.calendarLink.delete({ where: { id: numId } });
+    // Events belong to an individual feed. Removing Booking feed #2 must not
+    // wipe alerts imported by Booking feed #1 for the same apartment.
+    await prisma.$transaction([
+      prisma.calendarEvent.deleteMany({ where: { calendarLinkId: numId } }),
+      prisma.calendarLink.delete({ where: { id: numId } }),
+    ]);
     await logAudit(session.userId, "delete", "calendarLink", numId, {
       platform: owned.platform,
       propertyId: owned.propertyId,

@@ -13,11 +13,15 @@ export interface BookingAlert {
   status: "pending" | "resolved";
   resolution: "reservation" | "manual" | null;
   reservationId: number | null;
+  reservationName: string | null;
+  assignedPropertyId: number | null;
+  assignedPropertyName: string | null;
   reviewedAt: string | null;
 }
 
 interface BookingAlertsPanelProps {
   onCreateReservation: (alert: BookingAlert) => void;
+  onOpenReservation: (reservationId: number) => void;
   refreshKey?: number;
 }
 
@@ -44,7 +48,7 @@ function formatShortDate(date: string): string {
     .format(new Date(`${date}T12:00:00`));
 }
 
-export function BookingAlertsPanel({ onCreateReservation, refreshKey = 0 }: BookingAlertsPanelProps) {
+export function BookingAlertsPanel({ onCreateReservation, onOpenReservation, refreshKey = 0 }: BookingAlertsPanelProps) {
   const today = useMemo(() => localDateKey(), []);
   const [selectedDate, setSelectedDate] = useState(today);
   const [alerts, setAlerts] = useState<BookingAlert[]>([]);
@@ -140,7 +144,7 @@ export function BookingAlertsPanel({ onCreateReservation, refreshKey = 0 }: Book
                 <article key={alert.id} className={`flex min-w-0 items-center gap-3 rounded-lg border px-3 py-2.5 ${isResolved ? "border-[var(--line)] bg-[var(--bg-2)] opacity-60" : "border-amber-400/35 bg-[var(--bg)]"}`}>
                   <button
                     type="button"
-                    disabled={updatingId === alert.id || alert.resolution === "reservation"}
+                    disabled={updatingId === alert.id}
                     onClick={() => updateStatus(alert, isResolved ? "pending" : "resolved")}
                     aria-label={isResolved ? "Reabrir alerta" : "Marcar alerta como resuelta"}
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-colors ${isResolved ? "border-emerald-500 bg-emerald-500 text-white" : "border-amber-500/60 text-transparent hover:bg-amber-500/10"} disabled:cursor-default`}
@@ -148,10 +152,19 @@ export function BookingAlertsPanel({ onCreateReservation, refreshKey = 0 }: Book
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[var(--ink)]">{alert.propertyName}</p>
                     <p className="mt-0.5 text-[11px] text-[var(--ink-4)]">{formatShortDate(alert.checkIn)} → {formatShortDate(alert.checkOut)} · {nights} {nights === 1 ? "noche" : "noches"}</p>
-                    {alert.resolution === "reservation" && <p className="mt-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-300">Reserva registrada</p>}
+                    {alert.reservationId && (
+                      <p className="mt-0.5 truncate text-[10px] font-medium text-emerald-600 dark:text-emerald-300">
+                        Asignada a {alert.assignedPropertyName || "un alojamiento"}{alert.reservationName ? ` · ${alert.reservationName}` : ""}
+                      </p>
+                    )}
                   </div>
-                  {!isResolved && (
+                  {!isResolved && !alert.reservationId && (
                     <button type="button" onClick={() => onCreateReservation(alert)} className="shrink-0 rounded-md bg-[#003580] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#00285f]">Asignar</button>
+                  )}
+                  {alert.reservationId && (
+                    <button type="button" onClick={() => onOpenReservation(alert.reservationId!)} className="shrink-0 rounded-md border border-[#003580]/35 bg-[#003580]/10 px-2.5 py-1.5 text-[11px] font-semibold text-[#003580] hover:bg-[#003580]/15 dark:text-blue-300">
+                      Ver reserva
+                    </button>
                   )}
                 </article>
               );

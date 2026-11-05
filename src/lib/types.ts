@@ -140,6 +140,7 @@ export interface CalendarLink {
 export interface CalendarEvent {
   id: number;
   propertyId: number;
+  calendarLinkId?: number | null;
   platform: string;
   uid: string;
   summary: string;

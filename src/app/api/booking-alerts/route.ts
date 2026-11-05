@@ -45,20 +45,28 @@ export async function GET(request: NextRequest) {
             checkOut: new Date(`${event.endDate}T00:00:00.000Z`),
           })),
         },
-        select: { id: true, bookingOriginalPropertyId: true, checkIn: true, checkOut: true },
+        select: {
+          id: true,
+          name: true,
+          propertyId: true,
+          property: { select: { name: true } },
+          bookingOriginalPropertyId: true,
+          checkIn: true,
+          checkOut: true,
+        },
       });
 
   const matchByRange = new Map(
     possibleMatches.map((reservation) => [
       `${reservation.bookingOriginalPropertyId}:${dateKey(reservation.checkIn)}:${dateKey(reservation.checkOut)}`,
-      reservation.id,
+      reservation,
     ]),
   );
 
   return NextResponse.json({
     date,
     alerts: events.map((event) => {
-      const reservationId = matchByRange.get(
+      const matchedReservation = matchByRange.get(
         `${event.propertyId}:${event.startDate}:${event.endDate}`,
       ) ?? null;
       const manuallyResolved = event.bookingReviewStatus === "resolved";
@@ -70,9 +78,15 @@ export async function GET(request: NextRequest) {
         propertyName: event.property.name,
         checkIn: event.startDate,
         checkOut: event.endDate,
-        status: reservationId || manuallyResolved ? "resolved" : "pending",
-        resolution: reservationId ? "reservation" : manuallyResolved ? "manual" : null,
-        reservationId,
+        // Assignment and review are deliberately independent. An alert stays
+        // pending until a person explicitly checks it off, even after a local
+        // reservation has been created for the guest.
+        status: manuallyResolved ? "resolved" : "pending",
+        resolution: matchedReservation ? "reservation" : manuallyResolved ? "manual" : null,
+        reservationId: matchedReservation?.id ?? null,
+        reservationName: matchedReservation?.name ?? null,
+        assignedPropertyId: matchedReservation?.propertyId ?? null,
+        assignedPropertyName: matchedReservation?.property.name ?? null,
         reviewedAt: event.bookingReviewedAt,
       };
     }),
