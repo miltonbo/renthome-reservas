@@ -436,21 +436,40 @@ export async function GET(request: NextRequest) {
     if (!property) return NextResponse.json({ error: "El reporte de administración solo está disponible para propiedades con contrato de administración." }, { status: 400 });
     const exchangeRate = Number(request.nextUrl.searchParams.get("exchangeRate"));
     if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) return NextResponse.json({ error: "Debe ingresar un tipo de cambio válido mayor a cero." }, { status: 400 });
-    const rows = detailedReservations
+    const reservationRows = detailedReservations
       .filter((reservation) => reservation.property === property.name && reservation.reconciliationStatus === "included")
       .map((reservation) => ({
         id: reservation.id,
         checkIn: reservation.checkIn,
         checkOut: reservation.checkOut,
         guest: reservation.guest,
+        channel: reservation.channel,
         nights: reservation.nights,
         receivedBOB: reservation.receivedBOB / 100,
         receivedUSD: reservation.receivedUSD / 100,
+        reason: "",
+        blocked: false,
       }));
+    const blockedRows = blockedPeriods
+      .filter((period) => period.propertyId === property.id)
+      .map((period, index) => ({
+        id: -(index + 1),
+        checkIn: period.checkIn,
+        checkOut: period.checkOut,
+        guest: "Noches bloqueadas",
+        channel: "manual_block",
+        nights: period.nights,
+        receivedBOB: 0,
+        receivedUSD: 0,
+        reason: period.reason,
+        blocked: true,
+      }));
+    const rows = [...reservationRows, ...blockedRows].sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.checkOut.localeCompare(b.checkOut));
     const workbook = buildAdministrationWorkbook({
       period: data.period,
       property: property.name,
       feeBps: property.managementFeeBps,
+      bookingCommissionBps: data.policy.bookingCommissionBps,
       cleaningFeeBOB: property.managementFixedFeeCurrency === "BOB" ? property.managementFixedFeeMinor / 100 : 0,
       exchangeRate,
       rows,
@@ -856,6 +875,7 @@ type AdministrationWorkbookData = {
   period: { from: string; to: string };
   property: string;
   feeBps: number;
+  bookingCommissionBps: number;
   cleaningFeeBOB: number;
   exchangeRate: number;
   rows: Array<{
@@ -863,9 +883,12 @@ type AdministrationWorkbookData = {
     checkIn: string;
     checkOut: string;
     guest: string;
+    channel: string;
     nights: number;
     receivedBOB: number;
     receivedUSD: number;
+    reason?: string;
+    blocked?: boolean;
   }>;
 };
 
@@ -883,13 +906,16 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
   sheet.columns = [
     { key: "dates", width: 21 },
     { key: "guest", width: 28 },
-    { key: "nights", width: 10 },
-    { key: "priceUSD", width: 15 },
-    { key: "priceBOB", width: 18 },
-    { key: "commissionBOB", width: 17 },
-    { key: "afterCommissionBOB", width: 18 },
-    { key: "cleaningBOB", width: 15 },
-    { key: "ownerBOB", width: 20 },
+    { key: "channel", width: 14 },
+    { key: "nights", width: 9 },
+    { key: "paymentUSD", width: 14 },
+    { key: "paymentBOB", width: 17 },
+    { key: "bookingCommissionBOB", width: 18 },
+    { key: "netBookingIncomeBOB", width: 18 },
+    { key: "managementCommissionBOB", width: 19 },
+    { key: "cleaningBOB", width: 14 },
+    { key: "ownerBOB", width: 19 },
+    { key: "reason", width: 31 },
     { key: "sourceBOB", width: 2, hidden: true },
   ];
 
@@ -900,12 +926,12 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
   const line = "CBD9DC";
   const dark = "172B34";
   const title = `REPORTE DE ADMINISTRACIÓN · ${data.property.toUpperCase()}`;
-  sheet.mergeCells("A2:I2");
+  sheet.mergeCells("A2:L2");
   sheet.getCell("A2").value = title;
   sheet.getCell("A2").font = { name: "Arial", size: 15, bold: true, color: { argb: `FF${navy}` } };
   sheet.getCell("A2").alignment = { vertical: "middle", horizontal: "left" };
   sheet.getRow(2).height = 26;
-  sheet.mergeCells("A3:I3");
+  sheet.mergeCells("A3:L3");
   sheet.getCell("A3").value = `Período: ${data.period.from} al ${data.period.to}`;
   sheet.getCell("A3").font = { name: "Arial", size: 10, italic: true, color: { argb: "FF647780" } };
   sheet.getCell("A4").value = "Tipo de cambio USD/BOB";
@@ -914,19 +940,23 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
   sheet.getCell("D4").value = "Comisión de administración";
   sheet.getCell("E4").value = data.feeBps / 10000;
   sheet.getCell("E4").numFmt = "0.0%";
-  sheet.getCell("G4").value = "Limpieza por reserva";
-  sheet.getCell("H4").value = data.cleaningFeeBOB;
-  sheet.getCell("H4").numFmt = '"Bs" #,##0.00';
-  for (let column = 1; column <= 8; column += 1) sheet.getRow(4).getCell(column).font = { name: "Arial", size: 10, color: { argb: `FF${dark}` } };
+  sheet.getCell("G4").value = "Comisión Booking";
+  sheet.getCell("H4").value = data.bookingCommissionBps / 10000;
+  sheet.getCell("H4").numFmt = "0.0%";
+  sheet.getCell("J4").value = "Limpieza por reserva";
+  sheet.getCell("K4").value = data.cleaningFeeBOB;
+  sheet.getCell("K4").numFmt = '"Bs" #,##0.00';
+  for (let column = 1; column <= 11; column += 1) sheet.getRow(4).getCell(column).font = { name: "Arial", size: 10, color: { argb: `FF${dark}` } };
   sheet.getCell("A4").font = { name: "Arial", size: 10, bold: true, color: { argb: `FF${dark}` } };
   sheet.getCell("D4").font = { name: "Arial", size: 10, bold: true, color: { argb: `FF${dark}` } };
   sheet.getCell("G4").font = { name: "Arial", size: 10, bold: true, color: { argb: `FF${dark}` } };
-  sheet.mergeCells("A5:I5");
-  sheet.getCell("A5").value = "Los cobros en USD se convierten al tipo de cambio indicado. Comisión, limpieza y pago al propietario se expresan íntegramente en bolivianos.";
+  sheet.getCell("J4").font = { name: "Arial", size: 10, bold: true, color: { argb: `FF${dark}` } };
+  sheet.mergeCells("A5:L5");
+  sheet.getCell("A5").value = "Los cobros en USD se convierten al tipo de cambio indicado. En Booking se descuenta primero el 15% del pago recibido; la comisión de administración se calcula sobre ese ingreso neto.";
   sheet.getCell("A5").font = { name: "Arial", size: 9, italic: true, color: { argb: "FF647780" } };
   sheet.getCell("A5").alignment = { vertical: "middle", horizontal: "left" };
 
-  const headers = ["Fechas", "Huésped", "Noches", "Precio USD", "Precio total Bs", "Comisión Bs", "Total después de comisión Bs", "Limpieza Bs", "Pago propietario Bs"];
+  const headers = ["Fechas", "Huésped / estado", "Canal", "Noches", "Pago USD", "Pago total Bs", "Comisión Booking Bs", "Ingreso neto Booking Bs", "Comisión administración Bs", "Limpieza Bs", "Pago propietario Bs", "Motivo del bloqueo"];
   sheet.getRow(6).values = headers;
   sheet.getRow(6).height = 34;
   sheet.getRow(6).eachCell((cell) => {
@@ -937,13 +967,17 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
   });
 
   const firstDataRow = 7;
-  const roundMoney = (value: number) => Math.round(value * 100) / 100;
+  // Keep cached formula results aligned with Excel's ROUND. Binary floating
+  // point represents values such as 88.395 a fraction below the half-cent,
+  // which would otherwise display 88.39 until Excel recalculates the file.
+  const roundMoney = (value: number) => Math.round((value + 1e-9) * 100) / 100;
   for (const [index, item] of data.rows.entries()) {
     const rowNumber = firstDataRow + index;
     const row = sheet.getRow(rowNumber);
     row.values = [
       `${item.checkIn.slice(8, 10)}/${item.checkIn.slice(5, 7)} al ${item.checkOut.slice(8, 10)}/${item.checkOut.slice(5, 7)}`,
       item.guest,
+      item.channel === "booking" ? "Booking.com" : item.channel === "direct" ? "Directo" : item.channel === "manual_block" ? "Bloqueo manual" : item.channel,
       item.nights,
       item.receivedUSD || null,
       null,
@@ -951,38 +985,50 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
       null,
       null,
       null,
+      null,
+      item.reason || null,
       item.receivedBOB || null,
     ];
     const totalBOB = roundMoney(item.receivedBOB + item.receivedUSD * data.exchangeRate);
-    const commissionBOB = roundMoney(totalBOB * data.feeBps / 10000);
-    const afterCommissionBOB = roundMoney(totalBOB - commissionBOB);
-    const cleaningBOB = totalBOB > 0 ? data.cleaningFeeBOB : 0;
-    row.getCell(5).value = { formula: `ROUND(J${rowNumber}+D${rowNumber}*$B$4,2)`, result: totalBOB };
-    row.getCell(6).value = { formula: `ROUND(E${rowNumber}*$E$4,2)`, result: commissionBOB };
-    row.getCell(7).value = { formula: `E${rowNumber}-F${rowNumber}`, result: afterCommissionBOB };
-    row.getCell(8).value = { formula: `IF(E${rowNumber}>0,$H$4,0)`, result: cleaningBOB };
-    row.getCell(9).value = { formula: `G${rowNumber}-H${rowNumber}`, result: roundMoney(afterCommissionBOB - cleaningBOB) };
+    const bookingCommissionBOB = item.channel === "booking" ? roundMoney(totalBOB * data.bookingCommissionBps / 10000) : 0;
+    const netBookingIncomeBOB = roundMoney(totalBOB - bookingCommissionBOB);
+    const managementCommissionBOB = roundMoney(netBookingIncomeBOB * data.feeBps / 10000);
+    const cleaningBOB = netBookingIncomeBOB > 0 ? data.cleaningFeeBOB : 0;
+    row.getCell(6).value = { formula: `ROUND(M${rowNumber}+E${rowNumber}*$B$4,2)`, result: totalBOB };
+    row.getCell(7).value = { formula: `IF(C${rowNumber}="Booking.com",ROUND(F${rowNumber}*$H$4,2),0)`, result: bookingCommissionBOB };
+    row.getCell(8).value = { formula: `F${rowNumber}-G${rowNumber}`, result: netBookingIncomeBOB };
+    row.getCell(9).value = { formula: `ROUND(H${rowNumber}*$E$4,2)`, result: managementCommissionBOB };
+    row.getCell(10).value = { formula: `IF(H${rowNumber}>0,$K$4,0)`, result: cleaningBOB };
+    row.getCell(11).value = { formula: `H${rowNumber}-I${rowNumber}-J${rowNumber}`, result: roundMoney(netBookingIncomeBOB - managementCommissionBOB - cleaningBOB) };
     row.height = 22;
     row.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
       cell.font = { name: "Arial", size: 10, color: { argb: `FF${dark}` } };
-      cell.alignment = { vertical: "middle", horizontal: columnNumber === 2 ? "left" : columnNumber <= 3 ? "center" : "right" };
+      cell.alignment = { vertical: "middle", horizontal: columnNumber === 2 ? "left" : columnNumber <= 4 ? "center" : "right" };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${index % 2 === 0 ? "FFFFFF" : pale}` } };
       cell.border = { bottom: { style: "thin", color: { argb: `FF${line}` } } };
     });
+    if (item.blocked) {
+      row.eachCell({ includeEmpty: true }, (cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF1F2" } };
+      });
+      row.getCell(2).font = { name: "Arial", size: 10, bold: true, color: { argb: "FFE11D48" } };
+      row.getCell(12).font = { name: "Arial", size: 10, color: { argb: "FF9F1239" } };
+      row.getCell(12).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+    }
   }
 
   const totalRowNumber = firstDataRow + data.rows.length;
   const totalRow = sheet.getRow(totalRowNumber);
   totalRow.getCell(1).value = "TOTALES";
   if (data.rows.length > 0) {
-    totalRow.getCell(3).value = { formula: `SUM(C${firstDataRow}:C${totalRowNumber - 1})`, result: data.rows.reduce((sum, item) => sum + item.nights, 0) };
-    for (let column = 5; column <= 9; column += 1) {
+    totalRow.getCell(4).value = { formula: `SUM(D${firstDataRow}:D${totalRowNumber - 1})`, result: data.rows.reduce((sum, item) => sum + item.nights, 0) };
+    for (let column = 5; column <= 11; column += 1) {
       const letter = sheet.getColumn(column).letter;
       const result = data.rows.reduce((sum, _item, index) => sum + Number(sheet.getRow(firstDataRow + index).getCell(column).result || 0), 0);
       totalRow.getCell(column).value = { formula: `SUM(${letter}${firstDataRow}:${letter}${totalRowNumber - 1})`, result: roundMoney(result) };
     }
   } else {
-    for (let column = 3; column <= 10; column += 1) totalRow.getCell(column).value = 0;
+    for (let column = 4; column <= 12; column += 1) totalRow.getCell(column).value = 0;
   }
   totalRow.height = 26;
   totalRow.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
@@ -991,16 +1037,17 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
     cell.alignment = { vertical: "middle", horizontal: columnNumber === 1 ? "left" : "right" };
     cell.border = { top: { style: "medium", color: { argb: `FF${navy}` } }, bottom: { style: "medium", color: { argb: `FF${navy}` } } };
   });
-  sheet.mergeCells(`A${totalRowNumber}:B${totalRowNumber}`);
+  sheet.mergeCells(`A${totalRowNumber}:C${totalRowNumber}`);
 
-  sheet.getColumn(4).numFmt = '"USD" #,##0.00;[Red]("USD" #,##0.00);-';
-  [5, 6, 7, 8, 9].forEach((column) => { sheet.getColumn(column).numFmt = '"Bs" #,##0.00;[Red]("Bs" #,##0.00);-'; });
+  sheet.getColumn(5).numFmt = '"USD" #,##0.00;[Red]("USD" #,##0.00);-';
+  [6, 7, 8, 9, 10, 11].forEach((column) => { sheet.getColumn(column).numFmt = '"Bs" #,##0.00;[Red]("Bs" #,##0.00);-'; });
   // Column E contains monetary values in the reservation table, but E4 is a
   // percentage. Reapply its cell-level format after styling the whole column.
   sheet.getCell("E4").numFmt = "0.0%";
-  sheet.getColumn(3).numFmt = "0";
-  if (data.rows.length > 0) sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: totalRowNumber - 1, column: 9 } };
-  sheet.pageSetup.printArea = `A1:I${totalRowNumber}`;
+  sheet.getCell("H4").numFmt = "0.0%";
+  sheet.getColumn(4).numFmt = "0";
+  if (data.rows.length > 0) sheet.autoFilter = { from: { row: 6, column: 1 }, to: { row: totalRowNumber - 1, column: 12 } };
+  sheet.pageSetup.printArea = `A1:L${totalRowNumber}`;
   sheet.pageSetup.printTitlesRow = "6:6";
   sheet.headerFooter.oddFooter = "&LDeptosBO&CReporte de administración&RPage &P de &N";
   return workbook;
