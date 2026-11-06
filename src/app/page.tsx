@@ -224,7 +224,7 @@ export default async function HomePage() {
       <footer className="border-t border-slate-200 px-5 py-8 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400">
         <div className="mx-auto flex max-w-[1180px] flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} DeptosBO. {copy.footer.tagline}</p>
-          <div className="flex gap-5"><Link href={localePath("/terms", locale)}>{copy.footer.terms}</Link><Link href={localePath("/privacy", locale)}>{copy.footer.privacy}</Link><a href={`mailto:${CONTACT_EMAIL}`}>{copy.footer.contact}</a></div>
+          <div className="flex gap-5"><Link href={localePath("/terms", locale)}>{copy.footer.terms}</Link><Link href={localePath("/privacy", locale)}>{copy.footer.privacy}</Link><a href={`mailto:${CONTACT_EMAIL}`}>{copy.footer.contact}</a><a href="https://app.deptosbo.com/dashboard">Admin</a></div>
         </div>
       </footer>
     </main>
