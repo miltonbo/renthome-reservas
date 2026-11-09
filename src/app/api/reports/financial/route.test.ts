@@ -119,8 +119,8 @@ describe("financial report workbook", () => {
     const { buildAdministrationWorkbook } = await import("./route");
     const workbook = buildAdministrationWorkbook({
       period: { from: "2026-09-01", to: "2026-09-30" },
-      property: "Luxe Suites 113",
-      feeBps: 1000,
+      property: "Uptown Nuu 10A",
+      feeBps: 1500,
       bookingCommissionBps: 1500,
       cleaningFeeBOB: 70,
       exchangeRate: 6.96,
@@ -133,21 +133,21 @@ describe("financial report workbook", () => {
     const buffer = await workbook.xlsx.writeBuffer();
     const loaded = new ExcelJS.Workbook();
     await loaded.xlsx.load(buffer);
-    const sheet = loaded.getWorksheet("Administración 113")!;
+    const sheet = loaded.getWorksheet("Administración")!;
     expect(sheet.getCell("B7").value).toBe("Francisco");
     expect(sheet.getCell("B4").value).toBe(6.96);
-    expect(sheet.getCell("E4").value).toBe(0.1);
+    expect(sheet.getCell("E4").value).toBe(0.15);
     expect(sheet.getCell("E4").numFmt).toBe("0.0%");
     expect(sheet.getCell("H4").value).toBe(0.15);
     expect(sheet.getCell("F7").value).toMatchObject({ formula: "ROUND(M7+E7*$B$4,2)", result: 560 });
     expect(sheet.getCell("G7").value).toMatchObject({ formula: 'IF(C7="Booking.com",ROUND(F7*$H$4,2),0)' });
-    expect(sheet.getCell("I7").value).toMatchObject({ formula: "ROUND(H7*$E$4,2)", result: 56 });
-    expect(sheet.getCell("K7").value).toMatchObject({ formula: "H7-I7-J7", result: 434 });
+    expect(sheet.getCell("I7").value).toMatchObject({ formula: "ROUND(H7*$E$4,2)", result: 84 });
+    expect(sheet.getCell("K7").value).toMatchObject({ formula: "H7-I7-J7", result: 406 });
     expect(sheet.getCell("F8").value).toMatchObject({ formula: "ROUND(M8+E8*$B$4,2)", result: 589.3 });
     expect(sheet.getCell("G8").value).toMatchObject({ formula: 'IF(C8="Booking.com",ROUND(F8*$H$4,2),0)', result: 88.4 });
     expect(sheet.getCell("H8").value).toMatchObject({ formula: "F8-G8", result: 500.9 });
-    expect(sheet.getCell("I8").value).toMatchObject({ formula: "ROUND(H8*$E$4,2)", result: 50.09 });
-    expect(sheet.getCell("K8").value).toMatchObject({ formula: "H8-I8-J8", result: 380.81 });
+    expect(sheet.getCell("I8").value).toMatchObject({ formula: "ROUND(H8*$E$4,2)", result: 75.14 });
+    expect(sheet.getCell("K8").value).toMatchObject({ formula: "H8-I8-J8", result: 355.76 });
     expect(sheet.getCell("B9").value).toBe("Noches bloqueadas");
     expect(sheet.getCell("C9").value).toBe("Bloqueo manual");
     expect(sheet.getCell("L9").value).toBe("Ocupado por el propietario");
@@ -156,7 +156,7 @@ describe("financial report workbook", () => {
     expect(sheet.getCell("D10").value).toMatchObject({ formula: "SUM(D7:D9)", result: 8 });
     expect(sheet.getCell("F10").value).toMatchObject({ formula: "SUM(F7:F9)", result: 1149.3 });
     expect(sheet.getCell("G10").value).toMatchObject({ formula: "SUM(G7:G9)", result: 88.4 });
-    expect(sheet.getCell("K10").value).toMatchObject({ formula: "SUM(K7:K9)", result: 814.81 });
+    expect(sheet.getCell("K10").value).toMatchObject({ formula: "SUM(K7:K9)", result: 761.76 });
     expect(sheet.getCell("A7").fill).not.toEqual(sheet.getCell("A8").fill);
   });
 });

@@ -75,7 +75,7 @@ const INVENTORY_ORDER = [
   "Sky Eclipse 1309", "Sky Eclipse 1402", "Sky Eclipse 1409", "Sky Eclipse 1602", "Sky Eclipse 1709",
   "Luxe Suites 104", "Luxe Suites 113", "Luxe Suites 117", "Luxe Suites 204",
   "Luxe Suites 205", "Luxe Suites 316", "Luxe Suites 406",
-  "Sky Moon 706", "Sky Luxia 112", "Stanza 8B", "Uptown Nuu 12D",
+  "Sky Moon 706", "Sky Luxia 112", "Stanza 8B", "Uptown Nuu 10D", "Uptown Nuu 12D",
 ];
 
 function startOfLocalDay(value = new Date()): Date {

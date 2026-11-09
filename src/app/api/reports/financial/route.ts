@@ -475,7 +475,8 @@ export async function GET(request: NextRequest) {
       rows,
     });
     const buffer = await workbook.xlsx.writeBuffer();
-    return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="reporte-administracion-113-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
+    const propertySlug = property.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return new NextResponse(Buffer.from(buffer), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="reporte-administracion-${propertySlug}-${period.fromKey}-${period.toKey}.xlsx"`, "Cache-Control": "no-store" } });
   }
 
   if (format === "booking-commissions") {
@@ -898,7 +899,7 @@ export function buildAdministrationWorkbook(data: AdministrationWorkbookData) {
   workbook.created = new Date();
   workbook.calcProperties.fullCalcOnLoad = true;
 
-  const sheet = workbook.addWorksheet("Administración 113", {
+  const sheet = workbook.addWorksheet("Administración", {
     views: [{ state: "frozen", ySplit: 6, showGridLines: false }],
     pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.25, right: 0.25, top: 0.4, bottom: 0.4, header: 0.15, footer: 0.15 } },
   });
