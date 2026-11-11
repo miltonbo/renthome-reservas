@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 export interface MasterCalendarStay {
@@ -33,6 +33,15 @@ interface MasterCalendarProps {
   onOpenImportedStay: (propertyId: number, stay: MasterCalendarStay) => void;
   onCreateReservation: (propertyId: number) => void;
   bookingPendingCount?: number;
+}
+
+interface ShadowDailyPrice {
+  propertyId: number;
+  date: string;
+  directBobMinor: number | null;
+  floorBobMinor: number;
+  status: string;
+  reasonSummary: string;
 }
 
 // Compact enough that a booking four weeks out is genuinely visible on a
@@ -90,6 +99,13 @@ function addDays(value: Date, days: number): Date {
   return next;
 }
 
+function localDateKey(value: Date): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function dayDiff(a: Date, b: Date): number {
   const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
   const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
@@ -134,10 +150,23 @@ export function MasterCalendar({
 }: MasterCalendarProps) {
   const today = useMemo(() => startOfLocalDay(), []);
   const [windowStart, setWindowStart] = useState(() => addDays(today, -2));
+  const [shadowPrices, setShadowPrices] = useState<ShadowDailyPrice[]>([]);
   const windowEnd = useMemo(() => addDays(windowStart, VISIBLE_DAYS), [windowStart]);
   const days = useMemo(
     () => Array.from({ length: VISIBLE_DAYS }, (_, index) => addDays(windowStart, index)),
     [windowStart],
+  );
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/pricing/recommendations?start=${localDateKey(windowStart)}&days=${VISIBLE_DAYS}`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : { prices: [] })
+      .then((body) => { if (!cancelled) setShadowPrices(Array.isArray(body.prices) ? body.prices : []); })
+      .catch(() => { if (!cancelled) setShadowPrices([]); });
+    return () => { cancelled = true; };
+  }, [windowStart]);
+  const shadowPriceMap = useMemo(
+    () => new Map(shadowPrices.map((price) => [`${price.propertyId}:${price.date}`, price])),
+    [shadowPrices],
   );
 
   const orderedProperties = useMemo(() => {
@@ -302,6 +331,7 @@ export function MasterCalendar({
                           day >= startOfLocalDay(stay.start) &&
                           day < startOfLocalDay(stay.end),
                         );
+                        const shadowPrice = shadowPriceMap.get(`${property.id}:${localDateKey(day)}`);
                         return (
                           <div
                             key={day.toISOString()}
@@ -312,7 +342,14 @@ export function MasterCalendar({
                                 ? "repeating-linear-gradient(135deg, transparent 0, transparent 6px, rgba(100,116,139,0.09) 6px, rgba(100,116,139,0.09) 7px)"
                                 : undefined,
                             }}
-                          />
+                            title={shadowPrice?.directBobMinor != null ? `Modo sombra: Bs ${(shadowPrice.directBobMinor / 100).toFixed(0)} · Piso Bs ${(shadowPrice.floorBobMinor / 100).toFixed(0)}${shadowPrice.reasonSummary ? ` · ${shadowPrice.reasonSummary}` : ""}` : undefined}
+                          >
+                            {!isOccupiedNight && shadowPrice?.directBobMinor != null && (
+                              <span className={`absolute inset-x-0 bottom-0.5 z-[1] truncate text-center text-[8px] font-semibold ${shadowPrice.status === "needs_review" ? "text-amber-600 dark:text-amber-300" : "text-[var(--ink-4)]"}`}>
+                                Bs {Math.round(shadowPrice.directBobMinor / 100)}
+                              </span>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

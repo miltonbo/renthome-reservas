@@ -88,6 +88,20 @@ beforeEach(() => {
 });
 
 describe("calendar sync — durable linked reservation metadata", () => {
+  it("restricts a manual Booking refresh to Booking feeds", async () => {
+    mocks.calendarLinkFindMany.mockResolvedValue([]);
+
+    await syncAllCalendars({ propertyIds: [propertyId], platforms: ["booking"] });
+
+    expect(mocks.calendarLinkFindMany).toHaveBeenCalledWith({
+      where: {
+        propertyId: { in: [propertyId] },
+        platform: { in: ["booking"] },
+      },
+      include: { property: true },
+    });
+  });
+
   it("keeps multiple Booking feeds for the same property isolated by link id", async () => {
     const secondLink = {
       ...link,

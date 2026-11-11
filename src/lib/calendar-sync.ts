@@ -65,6 +65,7 @@ async function log(
  */
 export async function syncAllCalendars(opts?: {
   propertyIds?: number[];
+  platforms?: string[];
 }): Promise<{
   propertiesSynced: number;
   newEvents: number;
@@ -76,11 +77,15 @@ export async function syncAllCalendars(opts?: {
   // An empty (but present) propertyIds list means "nothing to sync" —
   // return early rather than letting `in: []` fall through.
   if (opts?.propertyIds && opts.propertyIds.length === 0) return summary;
+  if (opts?.platforms && opts.platforms.length === 0) return summary;
 
   // Get the calendar links to sync, grouped by property. When scoped,
   // only the requested properties' links are fetched.
   const links = await prisma.calendarLink.findMany({
-    where: opts?.propertyIds ? { propertyId: { in: opts.propertyIds } } : undefined,
+    where: {
+      ...(opts?.propertyIds ? { propertyId: { in: opts.propertyIds } } : {}),
+      ...(opts?.platforms ? { platform: { in: opts.platforms } } : {}),
+    },
     include: { property: true },
   });
 
@@ -94,7 +99,8 @@ export async function syncAllCalendars(opts?: {
     byProperty.set(link.propertyId, arr);
   }
 
-  await log(`Sync started: ${byProperty.size} properties, ${links.length} feeds`);
+  const platformScope = opts?.platforms?.length ? `, platforms: ${opts.platforms.join(", ")}` : "";
+  await log(`Sync started: ${byProperty.size} properties, ${links.length} feeds${platformScope}`);
 
   for (const [propertyId, propertyLinks] of byProperty) {
     const propertyName = propertyLinks[0]?.property?.name || `#${propertyId}`;
@@ -259,7 +265,6 @@ export async function syncAllCalendars(opts?: {
         // Reservation by UNLINKING it (linkedEventUid = null) so guest
         // data survives the platform's cancellation and the host can
         // review and delete manually if desired.
-        let removedReservations = 0;
         let migratedReservations = 0;
         let unlinkedReservations = 0;
         if (removedEvents.length > 0) {
@@ -339,8 +344,6 @@ export async function syncAllCalendars(opts?: {
             }
           }
         }
-        removedReservations = migratedReservations + unlinkedReservations;
-
         // Update link status
         await prisma.calendarLink.update({
           where: { id: link.id },

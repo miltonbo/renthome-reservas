@@ -26,7 +26,10 @@ export type AuditResource =
   | "seoOverride" // RT-18.3: super-admin per-page SEO overrides
   | "guestFormTemplate" // RT-25.2: pre-arrival guest form template CRUD
   | "conversation"
-  | "conversationCase";
+  | "conversationCase"
+  | "pricingPolicy"
+  | "promotionPolicy"
+  | "marketEvent";
 
 // Self-delete (POST /api/auth/delete-account) is intentionally NOT audited
 // — the same request wipes the user's AuditLog rows for GDPR right-to-be-

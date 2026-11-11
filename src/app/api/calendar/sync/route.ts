@@ -18,9 +18,26 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     let propertyId: number | null = null;
+    let platforms: string[] | undefined;
     try {
       const body = await request.json();
       if (body && body.propertyId != null) propertyId = Number(body.propertyId);
+      const requestedPlatforms = Array.isArray(body?.platforms)
+        ? body.platforms
+        : body?.platform
+          ? [body.platform]
+          : [];
+      if (requestedPlatforms.length > 0) {
+        platforms = Array.from(new Set(
+          requestedPlatforms
+            .filter((value: unknown): value is string => typeof value === "string")
+            .map((value: string) => value.trim().toLowerCase())
+            .filter((value: string) => /^[a-z0-9][a-z0-9_-]{0,39}$/.test(value)),
+        ));
+        if (platforms.length === 0) {
+          return NextResponse.json({ error: "Invalid platform filter" }, { status: 400 });
+        }
+      }
     } catch {
       // No / empty body — fall through to the "all my properties" path.
     }
@@ -35,7 +52,7 @@ export async function POST(request: NextRequest) {
       propertyIds = await listAccessiblePropertyIds(session.userId, session.role);
     }
 
-    const result = await syncAllCalendars({ propertyIds });
+    const result = await syncAllCalendars({ propertyIds, platforms });
 
     // Record run
     const now = new Date().toISOString();

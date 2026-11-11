@@ -55,6 +55,8 @@ export function BookingAlertsPanel({ onCreateReservation, onOpenReservation, ref
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,7 +73,10 @@ export function BookingAlertsPanel({ onCreateReservation, onOpenReservation, ref
     }
   }, [selectedDate]);
 
-  useEffect(() => { load(); }, [load, refreshKey]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load, refreshKey]);
 
   const updateStatus = async (alert: BookingAlert, status: "pending" | "resolved") => {
     setUpdatingId(alert.id);
@@ -88,6 +93,34 @@ export function BookingAlertsPanel({ onCreateReservation, onOpenReservation, ref
       setError(updateError instanceof Error ? updateError.message : "No se pudo actualizar la alerta.");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const syncBookingCalendars = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setError("");
+    setSyncMessage("");
+    try {
+      const response = await fetch("/api/calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform: "booking" }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "No se pudieron sincronizar los calendarios de Booking.");
+      await load();
+      const properties = Number(body.propertiesSynced || 0);
+      const changes = Number(body.newEvents || 0) + Number(body.removedEvents || 0);
+      setSyncMessage(
+        properties === 0
+          ? "No hay calendarios de Booking conectados."
+          : `Booking sincronizado: ${properties} ${properties === 1 ? "alojamiento" : "alojamientos"}, ${changes} ${changes === 1 ? "cambio" : "cambios"}.`,
+      );
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "No se pudieron sincronizar los calendarios de Booking.");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -116,7 +149,18 @@ export function BookingAlertsPanel({ onCreateReservation, onOpenReservation, ref
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={syncBookingCalendars}
+            disabled={syncing}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#003580] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#00285f] disabled:cursor-wait disabled:opacity-70"
+          >
+            <svg className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992V4.356m-2.096 14.17a8.25 8.25 0 10-2.896-13.178l4.992 4.992" />
+            </svg>
+            {syncing ? "Sincronizando…" : "Sincronizar Booking"}
+          </button>
           <button type="button" onClick={() => setSelectedDate(shiftDate(selectedDate, -1))} aria-label="Día anterior" className="h-8 w-8 rounded-lg border border-[var(--line-2)] bg-[var(--bg)] text-[var(--ink-2)] hover:bg-[var(--bg-3)]">‹</button>
           <button type="button" onClick={() => setSelectedDate(today)} className="min-w-24 rounded-lg border border-[var(--line-2)] bg-[var(--bg)] px-3 py-1.5 text-xs font-medium capitalize text-[var(--ink)] hover:bg-[var(--bg-3)]">{selectedLabel}</button>
           <button type="button" onClick={() => setSelectedDate(shiftDate(selectedDate, 1))} aria-label="Día siguiente" className="h-8 w-8 rounded-lg border border-[var(--line-2)] bg-[var(--bg)] text-[var(--ink-2)] hover:bg-[var(--bg-3)]">›</button>
@@ -125,6 +169,7 @@ export function BookingAlertsPanel({ onCreateReservation, onOpenReservation, ref
 
       <div className="px-3 py-2.5 sm:px-4">
         {error && <p role="alert" className="mb-2 text-xs text-red-600 dark:text-red-300">{error}</p>}
+        {syncMessage && <p role="status" className="mb-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">{syncMessage}</p>}
         {!loading && pending.length > 0 && (
           <div role="status" className="mb-3 flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[11px] font-black text-white">!</span>

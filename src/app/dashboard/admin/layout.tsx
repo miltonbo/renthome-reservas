@@ -99,6 +99,7 @@ const NAV: NavGroup[] = [
   {
     label: { en: "Operations", ru: "Эксплуатация", de: "Betrieb", fr: "Exploitation", es: "Operaciones" },
     items: [
+      { label: { en: "Pricing agent", ru: "Агент цен", de: "Preisagent", fr: "Agent tarifaire", es: "Agente de precios" }, href: "/dashboard/admin/operations/pricing" },
       { label: { en: "Sync logs", ru: "Логи синхронизации", de: "Sync-Logs", fr: "Logs de sync", es: "Logs de sync" }, href: "/dashboard/admin/operations/sync-logs" },
       { label: { en: "Scheduled jobs", ru: "Задачи", de: "Aufgaben", fr: "Tâches", es: "Tareas" }, href: "/dashboard/admin/operations/scheduled-jobs" },
       { label: { en: "Property audit", ru: "Аудит объекта", de: "Unterkunfts-Audit", fr: "Audit du logement", es: "Auditoría del alojamiento" }, href: "/dashboard/admin/operations/property-audit" },
@@ -135,7 +136,8 @@ function AdminShell({ role, children }: { role: string; children: React.ReactNod
 
   // Close drawer on route change (mobile UX).
   useEffect(() => {
-    setSidebarOpen(false);
+    const timer = window.setTimeout(() => setSidebarOpen(false), 0);
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   return (

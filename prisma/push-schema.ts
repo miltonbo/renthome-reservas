@@ -288,6 +288,7 @@ CREATE TABLE IF NOT EXISTS "SyncLog" (
     // fall back to the auto-generated "[Platform] [dates] - [guest] -
     // [property]" string.
     `ALTER TABLE "Reservation" ADD COLUMN "groupName" TEXT`,
+    `ALTER TABLE "PricingPolicy" ADD COLUMN "commissionBps" INTEGER NOT NULL DEFAULT 0 CHECK ("commissionBps" BETWEEN 0 AND 10000)`,
     // Multi-language pre-arrival form — host-authored translations of
     // the form title + field text, keyed by locale. Empty {} keeps
     // existing single-language forms working unchanged.
@@ -1463,6 +1464,7 @@ CREATE TABLE IF NOT EXISTS "PricingPolicy" (
   "baseOccupancy" INTEGER NOT NULL DEFAULT 2 CHECK ("baseOccupancy" >= 1),
   "extraGuestFrom" INTEGER NOT NULL DEFAULT 3 CHECK ("extraGuestFrom" > "baseOccupancy"),
   "extraGuestMarkupBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("extraGuestMarkupBps" BETWEEN 0 AND 10000),
+  "commissionBps" INTEGER NOT NULL DEFAULT 0 CHECK ("commissionBps" BETWEEN 0 AND 10000),
   "maxDiscountBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("maxDiscountBps" BETWEEN 0 AND 10000),
   "defaultMinNights" INTEGER NOT NULL DEFAULT 2 CHECK ("defaultMinNights" >= 1),
   "gapMinNights" INTEGER NOT NULL DEFAULT 1 CHECK ("gapMinNights" >= 1),

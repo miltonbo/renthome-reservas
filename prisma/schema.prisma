@@ -790,6 +790,7 @@ model PricingPolicy {
   baseOccupancy       Int      @default(2)
   extraGuestFrom      Int      @default(3)
   extraGuestMarkupBps Int      @default(2000) // 2000 = +20%; also applies to weekly/monthly stays
+  commissionBps       Int      @default(0) // verified channel commission; Booking normally starts at 1500 = 15%
   maxDiscountBps      Int      @default(2000)
   defaultMinNights    Int      @default(2)
   gapMinNights        Int      @default(1)

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { syncAllCalendars } from "@/lib/calendar-sync";
 import { prisma } from "@/lib/prisma";
 import { boliviaPublicationWindow, refreshOfficialExchangeRate } from "@/lib/bcb-exchange-rate";
+import { pricingRunSlot } from "@/lib/pricing-engine";
+import { generateShadowPrices } from "@/lib/pricing-shadow";
 
 /**
  * GET /api/calendar/cron?secret=xxx
@@ -40,6 +42,32 @@ export async function GET(request: NextRequest) {
           message: `BCB exchange-rate refresh failed: ${error instanceof Error ? error.message : String(error)}`,
         },
       });
+    }
+  }
+
+  // Phase 2 shadow pricing: calculate recommendations three times per day,
+  // independently from calendar auto-sync. The slot key makes the 10-minute
+  // cron idempotent if it fires twice inside the same window.
+  const pricingSlot = pricingRunSlot();
+  if (pricingSlot) {
+    const lastSlot = await prisma.appSettings.findUnique({ where: { key: "pricing_shadow_last_slot" } });
+    if (lastSlot?.value !== pricingSlot) {
+      try {
+        const policyRows = await prisma.pricingPolicy.findMany({
+          where: { isActive: true }, select: { propertyId: true }, distinct: ["propertyId"],
+        });
+        const pricingResult = await generateShadowPrices({ propertyIds: policyRows.map((row) => row.propertyId), days: 90 });
+        await prisma.appSettings.upsert({
+          where: { key: "pricing_shadow_last_slot" }, update: { value: pricingSlot }, create: { key: "pricing_shadow_last_slot", value: pricingSlot },
+        });
+        await prisma.appSettings.upsert({
+          where: { key: "pricing_shadow_last_result" }, update: { value: JSON.stringify(pricingResult) }, create: { key: "pricing_shadow_last_result", value: JSON.stringify(pricingResult) },
+        });
+      } catch (error) {
+        await prisma.syncLog.create({
+          data: { level: "error", message: `Shadow pricing failed: ${error instanceof Error ? error.message : String(error)}` },
+        });
+      }
     }
   }
 
