@@ -144,6 +144,10 @@ model Property {
   guestFormTemplates         GuestFormTemplate[]
   moneyMovements             MoneyMovement[]
   conversationCases          ConversationCase[]
+  pricingPolicies            PricingPolicy[]
+  dailyPrices                DailyPrice[]
+  promotionPolicies          PromotionPolicy[]
+  pricingChanges             PricingChange[]
 
   @@index([userId])
 }
@@ -768,6 +772,131 @@ model GuestFormSubmission {
 
   @@index([reservationId])
   @@index([templateId])
+}
+
+// Phase 1 of the RentHome pricing agent. Monetary values are stored in minor
+// units (centavos/cents) so pricing decisions never depend on floating-point
+// arithmetic. A policy belongs to one sales channel because Airbnb, Booking
+// and direct reservations have different commissions and promotion mechanics.
+model PricingPolicy {
+  id                  Int      @id @default(autoincrement())
+  propertyId          Int
+  property            Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel             String // airbnb | booking | direct | vrbo
+  currency            String   @default("BOB") // BOB | USD
+  floorMinor          Int
+  targetMinor         Int
+  ceilingMinor        Int
+  baseOccupancy       Int      @default(2)
+  extraGuestFrom      Int      @default(3)
+  extraGuestMarkupBps Int      @default(2000) // 2000 = +20%; also applies to weekly/monthly stays
+  maxDiscountBps      Int      @default(2000)
+  defaultMinNights    Int      @default(2)
+  gapMinNights        Int      @default(1)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([propertyId, channel])
+  @@index([channel, isActive])
+}
+
+// Compact daily output consumed by the master calendar. There is exactly one
+// row per property/date; channel prices live in columns instead of multiplying
+// rows. BOB is the operational reference for floors and direct reservations.
+model DailyPrice {
+  id              Int      @id @default(autoincrement())
+  propertyId      Int
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date            String // YYYY-MM-DD, local Santa Cruz date
+  directBobMinor  Int?
+  airbnbUsdMinor  Int?
+  bookingUsdMinor Int?
+  floorBobMinor   Int
+  status          String   @default("draft") // draft | recommended | applied | manual_override
+  reasonSummary   String   @default("")
+  calculatedAt    DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([propertyId, date])
+  @@index([date, status])
+}
+
+// Promotion rules are stored independently from base prices so the agent can
+// raise the platform rate before applying Genius/mobile/country/last-minute
+// discounts and still preserve the property's net floor.
+model PromotionPolicy {
+  id                Int      @id @default(autoincrement())
+  propertyId        Int
+  property          Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel           String // airbnb | booking | direct | vrbo
+  promotionType     String // genius | mobile | country | last_minute | weekly | monthly | custom
+  enabled           Boolean  @default(false)
+  discountBps       Int      @default(0)
+  stackable         Boolean  @default(false)
+  minNights         Int      @default(1)
+  minLeadDays       Int?
+  maxLeadDays       Int?
+  netFloorMinor     Int
+  netFloorCurrency  String   @default("BOB")
+  requiresReviewBps Int      @default(2000)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([propertyId, channel, promotionType])
+  @@index([channel, enabled])
+}
+
+// Holidays and city events can begin as unconfirmed candidates and gain
+// confidence as their date approaches. This avoids treating a late government
+// announcement as certain while still allowing the agent to price ahead.
+model MarketEvent {
+  id             Int       @id @default(autoincrement())
+  name           String
+  city           String    @default("Santa Cruz de la Sierra")
+  eventType      String // holiday | fair | concert | sports | civic | other
+  startsOn       String // YYYY-MM-DD
+  endsOn         String // YYYY-MM-DD, inclusive
+  impactBps      Int       @default(0)
+  confidenceBps  Int       @default(5000)
+  status         String    @default("candidate") // candidate | confirmed | cancelled
+  sourceName     String    @default("")
+  sourceUrl      String?
+  lastVerifiedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([startsOn, endsOn])
+  @@index([city, status])
+}
+
+// Audit log of changes that were actually sent to a platform. Recommendations
+// remain in DailyPrice and do not create audit noise. Date ranges are inclusive
+// so one platform operation stays one compact row.
+model PricingChange {
+  id                 Int       @id @default(autoincrement())
+  propertyId         Int
+  property           Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel            String
+  changeType         String    @default("nightly_price") // nightly_price | promotion | min_stay
+  startsOn           String // YYYY-MM-DD
+  endsOn             String // YYYY-MM-DD, inclusive
+  previousMinor      Int?
+  newMinor           Int?
+  currency           String    @default("BOB")
+  previousValue      String?
+  newValue           String?
+  reasonCode         String
+  reason             String    @default("")
+  executionStatus    String    @default("applied") // applied | failed | rolled_back
+  verificationStatus String    @default("pending") // pending | verified | mismatch
+  appliedAt          DateTime  @default(now())
+  verifiedAt         DateTime?
+  externalReference  String?
+  createdAt          DateTime  @default(now())
+
+  @@index([propertyId, startsOn, endsOn])
+  @@index([channel, executionStatus, appliedAt])
 }
 
 model CalendarPlatform {

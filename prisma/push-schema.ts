@@ -1448,6 +1448,137 @@ CREATE INDEX IF NOT EXISTS "ConversationMessage_caseId_occurredAt_idx" ON "Conve
     await prisma.$executeRawUnsafe(stmt);
   }
 
+  // RentHome pricing agent — Phase 1. These tables are deliberately compact:
+  // one DailyPrice row per property/date, reusable policies, shared market
+  // events, and an audit row only after a platform mutation is attempted.
+  const pricingSchema = `
+CREATE TABLE IF NOT EXISTS "PricingPolicy" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "currency" TEXT NOT NULL DEFAULT 'BOB',
+  "floorMinor" INTEGER NOT NULL CHECK ("floorMinor" >= 0),
+  "targetMinor" INTEGER NOT NULL CHECK ("targetMinor" >= "floorMinor"),
+  "ceilingMinor" INTEGER NOT NULL CHECK ("ceilingMinor" >= "targetMinor"),
+  "baseOccupancy" INTEGER NOT NULL DEFAULT 2 CHECK ("baseOccupancy" >= 1),
+  "extraGuestFrom" INTEGER NOT NULL DEFAULT 3 CHECK ("extraGuestFrom" > "baseOccupancy"),
+  "extraGuestMarkupBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("extraGuestMarkupBps" BETWEEN 0 AND 10000),
+  "maxDiscountBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("maxDiscountBps" BETWEEN 0 AND 10000),
+  "defaultMinNights" INTEGER NOT NULL DEFAULT 2 CHECK ("defaultMinNights" >= 1),
+  "gapMinNights" INTEGER NOT NULL DEFAULT 1 CHECK ("gapMinNights" >= 1),
+  "isActive" INTEGER NOT NULL DEFAULT 1,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PricingPolicy_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PricingPolicy_propertyId_channel_key" ON "PricingPolicy"("propertyId", "channel");
+CREATE INDEX IF NOT EXISTS "PricingPolicy_channel_isActive_idx" ON "PricingPolicy"("channel", "isActive");
+
+CREATE TABLE IF NOT EXISTS "DailyPrice" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "date" TEXT NOT NULL,
+  "directBobMinor" INTEGER,
+  "airbnbUsdMinor" INTEGER,
+  "bookingUsdMinor" INTEGER,
+  "floorBobMinor" INTEGER NOT NULL CHECK ("floorBobMinor" >= 0),
+  "status" TEXT NOT NULL DEFAULT 'draft',
+  "reasonSummary" TEXT NOT NULL DEFAULT '',
+  "calculatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "DailyPrice_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "DailyPrice_date_check" CHECK (length("date") = 10),
+  CONSTRAINT "DailyPrice_prices_check" CHECK (
+    ("directBobMinor" IS NULL OR "directBobMinor" >= 0) AND
+    ("airbnbUsdMinor" IS NULL OR "airbnbUsdMinor" >= 0) AND
+    ("bookingUsdMinor" IS NULL OR "bookingUsdMinor" >= 0)
+  )
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "DailyPrice_propertyId_date_key" ON "DailyPrice"("propertyId", "date");
+CREATE INDEX IF NOT EXISTS "DailyPrice_date_status_idx" ON "DailyPrice"("date", "status");
+
+CREATE TABLE IF NOT EXISTS "PromotionPolicy" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "promotionType" TEXT NOT NULL,
+  "enabled" INTEGER NOT NULL DEFAULT 0,
+  "discountBps" INTEGER NOT NULL DEFAULT 0 CHECK ("discountBps" BETWEEN 0 AND 10000),
+  "stackable" INTEGER NOT NULL DEFAULT 0,
+  "minNights" INTEGER NOT NULL DEFAULT 1 CHECK ("minNights" >= 1),
+  "minLeadDays" INTEGER,
+  "maxLeadDays" INTEGER,
+  "netFloorMinor" INTEGER NOT NULL CHECK ("netFloorMinor" >= 0),
+  "netFloorCurrency" TEXT NOT NULL DEFAULT 'BOB',
+  "requiresReviewBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("requiresReviewBps" BETWEEN 0 AND 10000),
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PromotionPolicy_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PromotionPolicy_lead_days_check" CHECK (
+    ("minLeadDays" IS NULL OR "minLeadDays" >= 0) AND
+    ("maxLeadDays" IS NULL OR "maxLeadDays" >= 0) AND
+    ("minLeadDays" IS NULL OR "maxLeadDays" IS NULL OR "minLeadDays" <= "maxLeadDays")
+  )
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PromotionPolicy_propertyId_channel_promotionType_key" ON "PromotionPolicy"("propertyId", "channel", "promotionType");
+CREATE INDEX IF NOT EXISTS "PromotionPolicy_channel_enabled_idx" ON "PromotionPolicy"("channel", "enabled");
+
+CREATE TABLE IF NOT EXISTS "MarketEvent" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "name" TEXT NOT NULL,
+  "city" TEXT NOT NULL DEFAULT 'Santa Cruz de la Sierra',
+  "eventType" TEXT NOT NULL,
+  "startsOn" TEXT NOT NULL,
+  "endsOn" TEXT NOT NULL,
+  "impactBps" INTEGER NOT NULL DEFAULT 0,
+  "confidenceBps" INTEGER NOT NULL DEFAULT 5000 CHECK ("confidenceBps" BETWEEN 0 AND 10000),
+  "status" TEXT NOT NULL DEFAULT 'candidate',
+  "sourceName" TEXT NOT NULL DEFAULT '',
+  "sourceUrl" TEXT,
+  "lastVerifiedAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "MarketEvent_dates_check" CHECK (length("startsOn") = 10 AND length("endsOn") = 10 AND "startsOn" <= "endsOn")
+);
+CREATE INDEX IF NOT EXISTS "MarketEvent_startsOn_endsOn_idx" ON "MarketEvent"("startsOn", "endsOn");
+CREATE INDEX IF NOT EXISTS "MarketEvent_city_status_idx" ON "MarketEvent"("city", "status");
+
+CREATE TABLE IF NOT EXISTS "PricingChange" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "changeType" TEXT NOT NULL DEFAULT 'nightly_price',
+  "startsOn" TEXT NOT NULL,
+  "endsOn" TEXT NOT NULL,
+  "previousMinor" INTEGER,
+  "newMinor" INTEGER,
+  "currency" TEXT NOT NULL DEFAULT 'BOB',
+  "previousValue" TEXT,
+  "newValue" TEXT,
+  "reasonCode" TEXT NOT NULL,
+  "reason" TEXT NOT NULL DEFAULT '',
+  "executionStatus" TEXT NOT NULL DEFAULT 'applied',
+  "verificationStatus" TEXT NOT NULL DEFAULT 'pending',
+  "appliedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "verifiedAt" DATETIME,
+  "externalReference" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PricingChange_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PricingChange_dates_check" CHECK (length("startsOn") = 10 AND length("endsOn") = 10 AND "startsOn" <= "endsOn"),
+  CONSTRAINT "PricingChange_values_check" CHECK (
+    ("previousMinor" IS NULL OR "previousMinor" >= 0) AND
+    ("newMinor" IS NULL OR "newMinor" >= 0) AND
+    ("newMinor" IS NOT NULL OR "newValue" IS NOT NULL)
+  )
+);
+CREATE INDEX IF NOT EXISTS "PricingChange_propertyId_startsOn_endsOn_idx" ON "PricingChange"("propertyId", "startsOn", "endsOn");
+CREATE INDEX IF NOT EXISTS "PricingChange_channel_executionStatus_appliedAt_idx" ON "PricingChange"("channel", "executionStatus", "appliedAt");
+`;
+
+  for (const stmt of pricingSchema.split(";").map((s) => s.trim()).filter(Boolean)) {
+    await prisma.$executeRawUnsafe(stmt);
+  }
+
   console.log(`\nSchema pushed to ${config.label} successfully!`);
 }
 
