@@ -127,6 +127,21 @@ export function financialMovementPeriodWhere(
   };
 }
 
+/** Reservation rows use the same checkout-month boundary as their movements.
+ * A stay checking out on the first day of the month belongs to that month. */
+export function financialReservationPeriodWhere(
+  propertyIds: number[],
+  from: Date,
+  toExclusive: Date,
+) {
+  return {
+    propertyId: { in: propertyIds },
+    status: "confirmed",
+    checkIn: { lt: toExclusive },
+    checkOut: { gte: from },
+  };
+}
+
 function parsePeriod(request: NextRequest) {
   const now = new Date();
   const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -158,7 +173,7 @@ export async function GET(request: NextRequest) {
   const [properties, reservations, movements, calendarEvents, dateOverrides] = await Promise.all([
     prisma.property.findMany({ where: { id: { in: propertyIds } }, select: { id: true, name: true, financialOperator: true, financialModel: true, managementFeeBps: true, managementFixedFeeMinor: true, managementFixedFeeCurrency: true, managementBeneficiary: true, bookingCommissionPayer: true }, orderBy: { name: "asc" } }),
     prisma.reservation.findMany({
-      where: { propertyId: { in: propertyIds }, status: "confirmed", checkIn: { lt: period.toExclusive }, checkOut: { gt: period.from } },
+      where: financialReservationPeriodWhere(propertyIds, period.from, period.toExclusive),
       include: { property: { select: { id: true, name: true, financialOperator: true, bookingCommissionPayer: true } }, bookingOriginalProperty: { select: { id: true, name: true, financialOperator: true, bookingCommissionPayer: true } }, moneyMovements: true, bookingCommission: true },
       orderBy: [{ checkIn: "asc" }, { propertyId: "asc" }],
     }),

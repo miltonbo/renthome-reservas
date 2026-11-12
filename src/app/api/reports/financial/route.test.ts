@@ -63,6 +63,20 @@ describe("financial report workbook", () => {
     });
   });
 
+  it("includes a reservation checking out on the first day of the report month", async () => {
+    process.env.DATABASE_URL ||= "file:./data/test.db";
+    const { financialReservationPeriodWhere } = await import("./route");
+    const from = new Date("2026-10-01T00:00:00.000Z");
+    const toExclusive = new Date("2026-11-01T00:00:00.000Z");
+
+    expect(financialReservationPeriodWhere([1, 2], from, toExclusive)).toEqual({
+      propertyId: { in: [1, 2] },
+      status: "confirmed",
+      checkIn: { lt: toExclusive },
+      checkOut: { gte: from },
+    });
+  });
+
   it("creates a valid five-sheet Excel workbook with a separate Booking commission reconciliation", async () => {
     process.env.DATABASE_URL ||= "file:./data/test.db";
     const { buildFinancialWorkbook } = await import("./route");
