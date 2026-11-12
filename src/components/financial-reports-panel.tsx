@@ -36,7 +36,7 @@ function monthRange(month: string) {
   return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
 }
 
-export function FinancialReportsPanel({ propertyId, properties }: { propertyId?: number | null; properties: Array<{ id: number; name: string }> }) {
+export function FinancialReportsPanel({ propertyId, properties, onMonthChange }: { propertyId?: number | null; properties: Array<{ id: number; name: string }>; onMonthChange?: (month: string) => void }) {
   const [kind, setKind] = useState<ReportKind>("management");
   const [periodMode, setPeriodMode] = useState<"month" | "range">("month");
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -50,6 +50,10 @@ export function FinancialReportsPanel({ propertyId, properties }: { propertyId?:
   const [administrationExchangeRate, setAdministrationExchangeRate] = useState("");
   const { rate: officialRate } = useOfficialExchangeRate();
   const effectiveAdministrationExchangeRate = administrationExchangeRate || (officialRate ? String(officialRate.bobPerUsd) : "");
+
+  useEffect(() => {
+    onMonthChange?.(month);
+  }, [month, onMonthChange]);
 
   const selectedPeriod = useMemo(
     () => periodMode === "month" ? monthRange(month) : { from, to },

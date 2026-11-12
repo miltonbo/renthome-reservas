@@ -851,6 +851,10 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
   const [events, setEvents] = useState<CalendarEventRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [periodMonths, setPeriodMonths] = useState<PeriodChoice>(DEFAULT_PERIOD);
+  const [profitabilityMonth, setProfitabilityMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [currentMonthFinancial, setCurrentMonthFinancial] = useState<CurrentMonthFinancialData | null>(null);
   const [currentMonthFinancialLoading, setCurrentMonthFinancialLoading] = useState(true);
   const [profitExchangeRate, setProfitExchangeRate] = useState("");
@@ -864,16 +868,16 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
   const isMulti = !property;
 
   const currentMonthPeriod = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    const [year, monthNumber] = profitabilityMonth.split("-").map(Number);
+    const month = monthNumber - 1;
     const key = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const monthDate = new Date(year, month, 1);
     return {
       from: key(new Date(year, month, 1)),
       to: key(new Date(year, month + 1, 0)),
-      label: new Intl.DateTimeFormat("es-BO", { month: "long", year: "numeric" }).format(now),
+      label: new Intl.DateTimeFormat("es-BO", { month: "long", year: "numeric" }).format(monthDate),
     };
-  }, []);
+  }, [profitabilityMonth]);
   const targetIdsKey = useMemo(
     () => targetProperties.map((p) => p.id).sort((a, b) => a - b).join(","),
     [targetProperties],
@@ -905,6 +909,7 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
     const controller = new AbortController();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a fresh request must replace the prior period's loading state
     setCurrentMonthFinancialLoading(true);
+    setCurrentMonthFinancial(null);
     fetch(`/api/reports/financial?from=${currentMonthPeriod.from}&to=${currentMonthPeriod.to}`, { signal: controller.signal })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => setCurrentMonthFinancial(data))
@@ -1120,7 +1125,7 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
             <p className="mt-1 text-xs text-[var(--ink-3)]">{headerSubtitle}</p>
           </div>
 
-          <FinancialReportsPanel propertyId={property?.id} properties={properties} />
+          <FinancialReportsPanel propertyId={property?.id} properties={properties} onMonthChange={setProfitabilityMonth} />
 
           {targetProperties.length === 0 ? (
             <div className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-6 text-center text-xs text-[var(--ink-4)]">
