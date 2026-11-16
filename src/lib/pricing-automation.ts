@@ -40,6 +40,11 @@ export type ChannelListingSnapshot = {
   error?: string | null;
 };
 
+export type ChannelConnectionRegistration = Pick<
+  ChannelListingSnapshot,
+  "propertyId" | "externalListingId" | "externalRoomId" | "externalRatePlanId" | "status" | "metadata" | "error"
+>;
+
 export type AutomationVerificationResult = {
   propertyId: number;
   date: string;
@@ -128,6 +133,64 @@ export async function heartbeatPricingAutomationRun(runId: number, workerId: str
     data: { lastHeartbeatAt: new Date() },
   });
   return updated.count === 1;
+}
+
+export async function registerPricingChannelConnections(options: {
+  channel: AutomatedPricingChannel;
+  listings: ChannelConnectionRegistration[];
+}) {
+  const candidates = options.listings.slice(0, 500);
+  const propertyIds = [...new Set(candidates.map((listing) => boundedInteger(listing.propertyId, 1, Number.MAX_SAFE_INTEGER, 0)).filter(Boolean))];
+  const properties = await prisma.property.findMany({
+    where: { id: { in: propertyIds }, isPaused: false },
+    select: { id: true, name: true },
+  });
+  const allowed = new Map(properties.map((property) => [property.id, property]));
+  const now = new Date();
+  const connected: Array<{ propertyId: number; propertyName: string; externalListingId: string }> = [];
+  const rejected: Array<{ propertyId: number; reason: string }> = [];
+
+  for (const listing of candidates) {
+    const propertyId = boundedInteger(listing.propertyId, 1, Number.MAX_SAFE_INTEGER, 0);
+    const property = allowed.get(propertyId);
+    const externalListingId = String(listing.externalListingId || "").trim().slice(0, 200);
+    if (!property) {
+      rejected.push({ propertyId, reason: "Alojamiento inexistente o pausado." });
+      continue;
+    }
+    if (!externalListingId) {
+      rejected.push({ propertyId, reason: "Falta el identificador externo." });
+      continue;
+    }
+    const snapshotJson = JSON.stringify(listing.metadata || {}).slice(0, 20_000);
+    const status = listing.status || "connected";
+    await prisma.pricingChannelConnection.upsert({
+      where: { propertyId_channel: { propertyId, channel: options.channel } },
+      create: {
+        propertyId,
+        channel: options.channel,
+        externalListingId,
+        externalRoomId: listing.externalRoomId?.trim().slice(0, 200) || null,
+        externalRatePlanId: listing.externalRatePlanId?.trim().slice(0, 200) || null,
+        status,
+        snapshotJson,
+        lastCollectedAt: now,
+        lastError: listing.error?.slice(0, 1_000) || null,
+      },
+      update: {
+        externalListingId,
+        externalRoomId: listing.externalRoomId?.trim().slice(0, 200) || null,
+        externalRatePlanId: listing.externalRatePlanId?.trim().slice(0, 200) || null,
+        status,
+        snapshotJson,
+        lastCollectedAt: now,
+        lastError: listing.error?.slice(0, 1_000) || null,
+      },
+    });
+    connected.push({ propertyId, propertyName: property.name, externalListingId });
+  }
+
+  return { channel: options.channel, connected, rejected };
 }
 
 export async function ingestPricingAutomationSnapshot(options: {

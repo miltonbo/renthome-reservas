@@ -6,8 +6,10 @@ import {
   failPricingAutomationRun,
   heartbeatPricingAutomationRun,
   ingestPricingAutomationSnapshot,
+  registerPricingChannelConnections,
   type AutomatedPricingChannel,
   type AutomationVerificationResult,
+  type ChannelConnectionRegistration,
   type ChannelListingSnapshot,
 } from "@/lib/pricing-automation";
 import { authorizePricingWorker } from "@/lib/pricing-worker-auth";
@@ -37,6 +39,10 @@ export async function POST(request: NextRequest) {
     if (action === "claim") {
       const channels = Array.isArray(body.channels) ? body.channels.map(String) : [...AUTOMATED_PRICING_CHANNELS];
       return NextResponse.json({ run: await claimNextPricingAutomationRun(id, channels) });
+    }
+    if (action === "register_connections") {
+      const listings = Array.isArray(body.listings) ? body.listings as ChannelConnectionRegistration[] : [];
+      return NextResponse.json(await registerPricingChannelConnections({ channel: channel(body.channel), listings }));
     }
     const runId = integer(body.runId, "runId");
     if (action === "heartbeat") {
