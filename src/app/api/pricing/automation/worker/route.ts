@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AUTOMATED_PRICING_CHANNELS,
   claimNextPricingAutomationRun,
+  collectPricingChannelSnapshot,
   completePricingAutomationRun,
   failPricingAutomationRun,
   heartbeatPricingAutomationRun,
@@ -43,6 +44,10 @@ export async function POST(request: NextRequest) {
     if (action === "register_connections") {
       const listings = Array.isArray(body.listings) ? body.listings as ChannelConnectionRegistration[] : [];
       return NextResponse.json(await registerPricingChannelConnections({ channel: channel(body.channel), listings }));
+    }
+    if (action === "collect_snapshot") {
+      const listings = Array.isArray(body.listings) ? body.listings as ChannelListingSnapshot[] : [];
+      return NextResponse.json(await collectPricingChannelSnapshot({ channel: channel(body.channel), listings }));
     }
     const runId = integer(body.runId, "runId");
     if (action === "heartbeat") {

@@ -193,6 +193,126 @@ export async function registerPricingChannelConnections(options: {
   return { channel: options.channel, connected, rejected };
 }
 
+export async function collectPricingChannelSnapshot(options: {
+  channel: AutomatedPricingChannel;
+  listings: ChannelListingSnapshot[];
+}) {
+  const candidates = options.listings.slice(0, 500);
+  const propertyIds = [...new Set(candidates.map((listing) => boundedInteger(listing.propertyId, 1, Number.MAX_SAFE_INTEGER, 0)).filter(Boolean))];
+  const [properties, policies] = await Promise.all([
+    prisma.property.findMany({
+      where: { id: { in: propertyIds }, isPaused: false },
+      select: { id: true, name: true, pricingProfile: true },
+    }),
+    prisma.pricingPolicy.findMany({
+      where: { propertyId: { in: propertyIds }, channel: options.channel, isActive: true },
+    }),
+  ]);
+  const allowed = new Map(properties.map((property) => [property.id, property]));
+  const policyMap = new Map(policies.map((policy) => [policy.propertyId, policy]));
+  const now = new Date();
+  let observations = 0;
+  let promotions = 0;
+  const collected: Array<{ propertyId: number; propertyName: string }> = [];
+  const rejected: Array<{ propertyId: number; reason: string }> = [];
+
+  for (const listing of candidates) {
+    const propertyId = boundedInteger(listing.propertyId, 1, Number.MAX_SAFE_INTEGER, 0);
+    const property = allowed.get(propertyId);
+    const externalListingId = String(listing.externalListingId || "").trim().slice(0, 200);
+    if (!property || !externalListingId) {
+      rejected.push({ propertyId, reason: !property ? "Alojamiento inexistente o pausado." : "Falta el identificador externo." });
+      continue;
+    }
+
+    const reviewCount = boundedInteger(listing.reviewCount, 0, 100_000, 0);
+    const ratingHundredths = Math.round(Math.max(0, Math.min(options.channel === "airbnb" ? 5 : 10, Number(listing.rating) || 0)) * 100);
+    const currentProfile = normalizePricingKnowledge(property.name, property.pricingProfile);
+    const maxSellableUnits = Math.max(1, ...(listing.observations || []).map((row) => boundedInteger(row.availableUnits, 0, 100, 0)));
+    const profileValues = normalizePricingKnowledge(property.name, {
+      ...currentProfile,
+      ...(options.channel === "airbnb" ? {
+        airbnbReviewCount: reviewCount,
+        airbnbRatingHundredths: ratingHundredths,
+        airbnbHistoryStrength: historyStrength(reviewCount),
+      } : {
+        bookingReviewCount: reviewCount,
+        bookingRatingHundredths: ratingHundredths,
+        bookingHistoryStrength: historyStrength(reviewCount),
+        bookingFlexibleInventory: maxSellableUnits > 1,
+        bookingMaxSellableUnits: maxSellableUnits,
+      }),
+    });
+    await prisma.propertyPricingProfile.upsert({
+      where: { propertyId }, create: { propertyId, ...profileValues }, update: profileValues,
+    });
+
+    await prisma.pricingChannelConnection.upsert({
+      where: { propertyId_channel: { propertyId, channel: options.channel } },
+      create: {
+        propertyId, channel: options.channel, externalListingId,
+        externalRoomId: listing.externalRoomId?.trim().slice(0, 200) || null,
+        externalRatePlanId: listing.externalRatePlanId?.trim().slice(0, 200) || null,
+        status: listing.status || "connected", snapshotJson: JSON.stringify(listing.metadata || {}).slice(0, 20_000),
+        lastCollectedAt: now, lastError: listing.error?.slice(0, 1_000) || null,
+      },
+      update: {
+        externalListingId, externalRoomId: listing.externalRoomId?.trim().slice(0, 200) || null,
+        externalRatePlanId: listing.externalRatePlanId?.trim().slice(0, 200) || null,
+        status: listing.status || "connected", snapshotJson: JSON.stringify(listing.metadata || {}).slice(0, 20_000),
+        lastCollectedAt: now, lastError: listing.error?.slice(0, 1_000) || null,
+      },
+    });
+
+    const policy = policyMap.get(propertyId);
+    if (policy) {
+      for (const promotion of (listing.promotions || []).slice(0, 30)) {
+        if (!PROMOTION_TYPES.has(promotion.type)) continue;
+        await prisma.promotionPolicy.upsert({
+          where: { propertyId_channel_promotionType: { propertyId, channel: options.channel, promotionType: promotion.type } },
+          create: {
+            propertyId, channel: options.channel, promotionType: promotion.type, enabled: Boolean(promotion.enabled),
+            discountBps: boundedInteger(promotion.discountBps, 0, 9_999), stackable: options.channel === "booking" && Boolean(promotion.stackable),
+            minNights: boundedInteger(promotion.minNights, 1, 365, 1), minLeadDays: promotion.minLeadDays == null ? null : boundedInteger(promotion.minLeadDays, 0, 3_650),
+            maxLeadDays: promotion.maxLeadDays == null ? null : boundedInteger(promotion.maxLeadDays, 0, 3_650),
+            netFloorMinor: policy.floorMinor, netFloorCurrency: policy.floorCurrency, source: "platform", lastSyncedAt: now,
+          },
+          update: {
+            enabled: Boolean(promotion.enabled), discountBps: boundedInteger(promotion.discountBps, 0, 9_999),
+            stackable: options.channel === "booking" && Boolean(promotion.stackable), minNights: boundedInteger(promotion.minNights, 1, 365, 1),
+            minLeadDays: promotion.minLeadDays == null ? null : boundedInteger(promotion.minLeadDays, 0, 3_650),
+            maxLeadDays: promotion.maxLeadDays == null ? null : boundedInteger(promotion.maxLeadDays, 0, 3_650), source: "platform", lastSyncedAt: now,
+          },
+        });
+        promotions += 1;
+      }
+    }
+
+    for (const observation of (listing.observations || []).slice(0, 370)) {
+      if (!validDate(observation.date)) continue;
+      await prisma.channelPriceObservation.upsert({
+        where: { propertyId_channel_date: { propertyId, channel: options.channel, date: observation.date } },
+        create: {
+          propertyId, channel: options.channel, date: observation.date,
+          priceMinor: boundedInteger(observation.priceMinor, 0, 100_000_000), currency: "USD",
+          minNights: boundedInteger(observation.minNights, 1, 365, 2), promotionBps: boundedInteger(observation.promotionBps, 0, 9_999),
+          availableUnits: boundedInteger(observation.availableUnits, 0, 100, 1), observedAt: now,
+        },
+        update: {
+          priceMinor: boundedInteger(observation.priceMinor, 0, 100_000_000), currency: "USD",
+          minNights: boundedInteger(observation.minNights, 1, 365, 2), promotionBps: boundedInteger(observation.promotionBps, 0, 9_999),
+          availableUnits: boundedInteger(observation.availableUnits, 0, 100, 1), observedAt: now,
+        },
+      });
+      observations += 1;
+    }
+    collected.push({ propertyId, propertyName: property.name });
+  }
+
+  await prisma.channelPriceObservation.deleteMany({ where: { date: { lt: addDays(dateKey(), -7) } } });
+  return { channel: options.channel, collected, rejected, observations, promotions };
+}
+
 export async function ingestPricingAutomationSnapshot(options: {
   runId: number;
   workerId: string;
