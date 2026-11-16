@@ -86,6 +86,9 @@ const PUBLIC_PATHS = [
   "/api/onboard", // covers /api/onboard + /api/onboard/test-platform (startsWith)
   "/api/calendar/feed",
   "/api/calendar/cron",
+  // Dedicated browser worker authenticates inside the route with a
+  // constant-time bearer-token check; it has no interactive session cookie.
+  "/api/pricing/automation/worker",
   "/api/health",
   "/api/site-config",
   "/monitoring", // Sentry tunnel route (next.config.ts → withSentryConfig) — browser SDK POSTs here

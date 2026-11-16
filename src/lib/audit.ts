@@ -28,6 +28,8 @@ export type AuditResource =
   | "conversation"
   | "conversationCase"
   | "pricingPolicy"
+  | "propertyPricingProfile"
+  | "pricingStrategy"
   | "promotionPolicy"
   | "marketEvent";
 

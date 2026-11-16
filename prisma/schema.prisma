@@ -145,6 +145,9 @@ model Property {
   moneyMovements             MoneyMovement[]
   conversationCases          ConversationCase[]
   pricingPolicies            PricingPolicy[]
+  pricingProfile             PropertyPricingProfile?
+  pricingChannelConnections PricingChannelConnection[]
+  channelPriceObservations  ChannelPriceObservation[]
   dailyPrices                DailyPrice[]
   promotionPolicies          PromotionPolicy[]
   pricingChanges             PricingChange[]
@@ -785,13 +788,12 @@ model PricingPolicy {
   channel             String // airbnb | booking | direct | vrbo
   currency            String   @default("BOB") // BOB | USD
   floorMinor          Int
+  floorCurrency       String   @default("BOB") // floor may be BOB while Booking calendar prices remain USD
   targetMinor         Int
-  ceilingMinor        Int
   baseOccupancy       Int      @default(2)
   extraGuestFrom      Int      @default(3)
   extraGuestMarkupBps Int      @default(2000) // 2000 = +20%; also applies to weekly/monthly stays
   commissionBps       Int      @default(0) // verified channel commission; Booking normally starts at 1500 = 15%
-  maxDiscountBps      Int      @default(2000)
   defaultMinNights    Int      @default(2)
   gapMinNights        Int      @default(1)
   isActive            Boolean  @default(true)
@@ -800,6 +802,106 @@ model PricingPolicy {
 
   @@unique([propertyId, channel])
   @@index([channel, isActive])
+}
+
+// Compact operating knowledge used by the pricing engine. Stable facts and
+// slow-moving channel reputation live here; volatile reservations, prices and
+// events remain in their dedicated tables.
+model PropertyPricingProfile {
+  id                       Int      @id @default(autoincrement())
+  propertyId               Int      @unique
+  property                 Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  building                 String   @default("")
+  segment                  String   @default("standard") // value | standard | premium
+  balcony                  String   @default("unknown") // unknown | none | standard | premium
+  viewQuality              String   @default("unknown") // unknown | none | limited | standard | premium
+  airbnbHistoryStrength    String   @default("unknown") // unknown | new | growing | established
+  bookingHistoryStrength   String   @default("unknown")
+  airbnbReviewCount        Int      @default(0)
+  bookingReviewCount       Int      @default(0)
+  airbnbRatingHundredths   Int      @default(0) // 4.95 = 495
+  bookingRatingHundredths  Int      @default(0) // 9.20 = 920
+  sellThroughAdjustmentBps Int      @default(0) // negative moves faster; positive protects a differentiated unit
+  interchangeableGroup     String?
+  bookingFlexibleInventory Boolean  @default(false)
+  bookingMaxSellableUnits  Int      @default(1)
+  notes                    String   @default("")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([building])
+  @@index([interchangeableGroup])
+}
+
+// Latest browser-worker connection state for one listing/channel. The worker
+// updates this row instead of creating an unbounded event stream.
+model PricingChannelConnection {
+  id                 Int       @id @default(autoincrement())
+  propertyId         Int
+  property           Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel            String // airbnb | booking
+  externalListingId  String    @default("")
+  externalRoomId     String?
+  externalRatePlanId String?
+  status             String    @default("unconfigured") // unconfigured | connected | session_expired | verification_required | error
+  snapshotJson       String    @default("{}")
+  lastCollectedAt    DateTime?
+  lastAppliedAt      DateTime?
+  lastVerifiedAt     DateTime?
+  lastError          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([propertyId, channel])
+  @@index([channel, status])
+}
+
+// Rolling current platform calendar. Upserts keep storage bounded to one row
+// per property/channel/date and allow read-after-write verification.
+model ChannelPriceObservation {
+  id                 Int      @id @default(autoincrement())
+  propertyId         Int
+  property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel            String
+  date               String // YYYY-MM-DD
+  priceMinor         Int
+  currency           String   @default("USD")
+  minNights          Int      @default(2)
+  promotionBps       Int      @default(0)
+  availableUnits     Int      @default(1)
+  observedAt         DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([propertyId, channel, date])
+  @@index([channel, date])
+}
+
+// One compact row per scheduled channel run. Detailed successful mutations
+// are audited in PricingChange; this table only tracks orchestration health.
+model PricingAutomationRun {
+  id              Int       @id @default(autoincrement())
+  slotKey         String
+  channel         String
+  runType         String    @default("dynamic") // dynamic | weekly_profile | manual
+  status          String    @default("queued") // queued | claimed | calculated | applying | completed | partial | failed | blocked
+  workerId        String?
+  attempts        Int       @default(0)
+  propertyCount   Int       @default(0)
+  plannedChanges  Int       @default(0)
+  appliedChanges  Int       @default(0)
+  verifiedChanges Int       @default(0)
+  scheduledAt     DateTime  @default(now())
+  claimedAt       DateTime?
+  completedAt     DateTime?
+  lastHeartbeatAt DateTime?
+  errorCode       String?
+  errorMessage    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([slotKey, channel, runType])
+  @@index([status, scheduledAt])
+  @@index([channel, createdAt])
 }
 
 // Compact daily output consumed by the master calendar. There is exactly one
@@ -841,6 +943,8 @@ model PromotionPolicy {
   netFloorMinor     Int
   netFloorCurrency  String   @default("BOB")
   requiresReviewBps Int      @default(2000)
+  source            String   @default("manual") // manual | platform
+  lastSyncedAt      DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

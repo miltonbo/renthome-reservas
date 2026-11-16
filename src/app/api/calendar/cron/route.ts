@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { boliviaPublicationWindow, refreshOfficialExchangeRate } from "@/lib/bcb-exchange-rate";
 import { pricingRunSlot } from "@/lib/pricing-engine";
 import { generateShadowPrices } from "@/lib/pricing-shadow";
+import { syncAllMarketSignals } from "@/lib/pricing-market-calendar";
+import { refreshPricingHistoricalCalibration } from "@/lib/pricing-history-calibration";
+import { enqueuePricingAutomationRuns } from "@/lib/pricing-automation";
 
 /**
  * GET /api/calendar/cron?secret=xxx
@@ -53,10 +56,18 @@ export async function GET(request: NextRequest) {
     const lastSlot = await prisma.appSettings.findUnique({ where: { key: "pricing_shadow_last_slot" } });
     if (lastSlot?.value !== pricingSlot) {
       try {
+        const boliviaYear = Number(pricingSlot.slice(0, 4));
+        await syncAllMarketSignals([boliviaYear, boliviaYear + 1]);
+        await refreshPricingHistoricalCalibration();
         const policyRows = await prisma.pricingPolicy.findMany({
           where: { isActive: true }, select: { propertyId: true }, distinct: ["propertyId"],
         });
         const pricingResult = await generateShadowPrices({ propertyIds: policyRows.map((row) => row.propertyId), days: 90 });
+        await enqueuePricingAutomationRuns(pricingSlot, "dynamic");
+        const slotDate = new Date(`${pricingSlot.slice(0, 10)}T12:00:00.000Z`);
+        if (pricingSlot.endsWith("-08") && slotDate.getUTCDay() === 1) {
+          await enqueuePricingAutomationRuns(`${pricingSlot}-profile`, "weekly_profile");
+        }
         await prisma.appSettings.upsert({
           where: { key: "pricing_shadow_last_slot" }, update: { value: pricingSlot }, create: { key: "pricing_shadow_last_slot", value: pricingSlot },
         });

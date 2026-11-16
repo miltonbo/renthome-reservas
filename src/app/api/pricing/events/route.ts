@@ -2,12 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { syncAllMarketSignals } from "@/lib/pricing-market-calendar";
+import { getEventSourceStatus } from "@/lib/pricing-event-sources";
+
+function boliviaYear(): number {
+  return Number(new Intl.DateTimeFormat("en", { timeZone: "America/La_Paz", year: "numeric" }).format(new Date()));
+}
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const [events, sources] = await Promise.all([
+    prisma.marketEvent.findMany({ orderBy: [{ startsOn: "asc" }, { name: "asc" }] }),
+    getEventSourceStatus(),
+  ]);
+  return NextResponse.json({ events, sources });
+}
+
+export async function POST() {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.role !== "superadmin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const year = boliviaYear();
+  const result = await syncAllMarketSignals([year, year + 1]);
   const events = await prisma.marketEvent.findMany({ orderBy: [{ startsOn: "asc" }, { name: "asc" }] });
-  return NextResponse.json({ events });
+  return NextResponse.json({ ...result.recurring, events, sources: result.sources });
 }
 
 export async function PUT(request: NextRequest) {

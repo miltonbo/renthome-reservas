@@ -3,6 +3,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs";
+import { DEFAULT_PRICING_STRATEGY, PRICING_STRATEGY_SETTINGS_KEY } from "../src/lib/pricing-strategy";
 
 function resolveDbConfig(): { url: string; authToken?: string; label: string } {
   const dbUrl = process.env.DATABASE_URL;
@@ -1459,13 +1460,12 @@ CREATE TABLE IF NOT EXISTS "PricingPolicy" (
   "channel" TEXT NOT NULL,
   "currency" TEXT NOT NULL DEFAULT 'BOB',
   "floorMinor" INTEGER NOT NULL CHECK ("floorMinor" >= 0),
-  "targetMinor" INTEGER NOT NULL CHECK ("targetMinor" >= "floorMinor"),
-  "ceilingMinor" INTEGER NOT NULL CHECK ("ceilingMinor" >= "targetMinor"),
+  "floorCurrency" TEXT NOT NULL DEFAULT 'BOB',
+  "targetMinor" INTEGER NOT NULL CHECK ("targetMinor" >= 0),
   "baseOccupancy" INTEGER NOT NULL DEFAULT 2 CHECK ("baseOccupancy" >= 1),
   "extraGuestFrom" INTEGER NOT NULL DEFAULT 3 CHECK ("extraGuestFrom" > "baseOccupancy"),
   "extraGuestMarkupBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("extraGuestMarkupBps" BETWEEN 0 AND 10000),
   "commissionBps" INTEGER NOT NULL DEFAULT 0 CHECK ("commissionBps" BETWEEN 0 AND 10000),
-  "maxDiscountBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("maxDiscountBps" BETWEEN 0 AND 10000),
   "defaultMinNights" INTEGER NOT NULL DEFAULT 2 CHECK ("defaultMinNights" >= 1),
   "gapMinNights" INTEGER NOT NULL DEFAULT 1 CHECK ("gapMinNights" >= 1),
   "isActive" INTEGER NOT NULL DEFAULT 1,
@@ -1475,6 +1475,99 @@ CREATE TABLE IF NOT EXISTS "PricingPolicy" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "PricingPolicy_propertyId_channel_key" ON "PricingPolicy"("propertyId", "channel");
 CREATE INDEX IF NOT EXISTS "PricingPolicy_channel_isActive_idx" ON "PricingPolicy"("channel", "isActive");
+
+CREATE TABLE IF NOT EXISTS "PropertyPricingProfile" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "building" TEXT NOT NULL DEFAULT '',
+  "segment" TEXT NOT NULL DEFAULT 'standard',
+  "balcony" TEXT NOT NULL DEFAULT 'unknown',
+  "viewQuality" TEXT NOT NULL DEFAULT 'unknown',
+  "airbnbHistoryStrength" TEXT NOT NULL DEFAULT 'unknown',
+  "bookingHistoryStrength" TEXT NOT NULL DEFAULT 'unknown',
+  "airbnbReviewCount" INTEGER NOT NULL DEFAULT 0,
+  "bookingReviewCount" INTEGER NOT NULL DEFAULT 0,
+  "airbnbRatingHundredths" INTEGER NOT NULL DEFAULT 0,
+  "bookingRatingHundredths" INTEGER NOT NULL DEFAULT 0,
+  "sellThroughAdjustmentBps" INTEGER NOT NULL DEFAULT 0,
+  "interchangeableGroup" TEXT,
+  "bookingFlexibleInventory" INTEGER NOT NULL DEFAULT 0,
+  "bookingMaxSellableUnits" INTEGER NOT NULL DEFAULT 1,
+  "notes" TEXT NOT NULL DEFAULT '',
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PropertyPricingProfile_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PropertyPricingProfile_counts_check" CHECK (
+    "airbnbReviewCount" >= 0 AND "bookingReviewCount" >= 0 AND "bookingMaxSellableUnits" >= 1
+  ),
+  CONSTRAINT "PropertyPricingProfile_adjustment_check" CHECK ("sellThroughAdjustmentBps" BETWEEN -5000 AND 5000)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PropertyPricingProfile_propertyId_key" ON "PropertyPricingProfile"("propertyId");
+CREATE INDEX IF NOT EXISTS "PropertyPricingProfile_building_idx" ON "PropertyPricingProfile"("building");
+CREATE INDEX IF NOT EXISTS "PropertyPricingProfile_interchangeableGroup_idx" ON "PropertyPricingProfile"("interchangeableGroup");
+
+CREATE TABLE IF NOT EXISTS "PricingChannelConnection" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "externalListingId" TEXT NOT NULL DEFAULT '',
+  "externalRoomId" TEXT,
+  "externalRatePlanId" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'unconfigured',
+  "snapshotJson" TEXT NOT NULL DEFAULT '{}',
+  "lastCollectedAt" DATETIME,
+  "lastAppliedAt" DATETIME,
+  "lastVerifiedAt" DATETIME,
+  "lastError" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PricingChannelConnection_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PricingChannelConnection_propertyId_channel_key" ON "PricingChannelConnection"("propertyId", "channel");
+CREATE INDEX IF NOT EXISTS "PricingChannelConnection_channel_status_idx" ON "PricingChannelConnection"("channel", "status");
+
+CREATE TABLE IF NOT EXISTS "ChannelPriceObservation" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "date" TEXT NOT NULL,
+  "priceMinor" INTEGER NOT NULL,
+  "currency" TEXT NOT NULL DEFAULT 'USD',
+  "minNights" INTEGER NOT NULL DEFAULT 2,
+  "promotionBps" INTEGER NOT NULL DEFAULT 0,
+  "availableUnits" INTEGER NOT NULL DEFAULT 1,
+  "observedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ChannelPriceObservation_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "ChannelPriceObservation_values_check" CHECK ("priceMinor" >= 0 AND "minNights" >= 1 AND "availableUnits" >= 0)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "ChannelPriceObservation_propertyId_channel_date_key" ON "ChannelPriceObservation"("propertyId", "channel", "date");
+CREATE INDEX IF NOT EXISTS "ChannelPriceObservation_channel_date_idx" ON "ChannelPriceObservation"("channel", "date");
+
+CREATE TABLE IF NOT EXISTS "PricingAutomationRun" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "slotKey" TEXT NOT NULL,
+  "channel" TEXT NOT NULL,
+  "runType" TEXT NOT NULL DEFAULT 'dynamic',
+  "status" TEXT NOT NULL DEFAULT 'queued',
+  "workerId" TEXT,
+  "attempts" INTEGER NOT NULL DEFAULT 0,
+  "propertyCount" INTEGER NOT NULL DEFAULT 0,
+  "plannedChanges" INTEGER NOT NULL DEFAULT 0,
+  "appliedChanges" INTEGER NOT NULL DEFAULT 0,
+  "verifiedChanges" INTEGER NOT NULL DEFAULT 0,
+  "scheduledAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "claimedAt" DATETIME,
+  "completedAt" DATETIME,
+  "lastHeartbeatAt" DATETIME,
+  "errorCode" TEXT,
+  "errorMessage" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PricingAutomationRun_slotKey_channel_runType_key" ON "PricingAutomationRun"("slotKey", "channel", "runType");
+CREATE INDEX IF NOT EXISTS "PricingAutomationRun_status_scheduledAt_idx" ON "PricingAutomationRun"("status", "scheduledAt");
+CREATE INDEX IF NOT EXISTS "PricingAutomationRun_channel_createdAt_idx" ON "PricingAutomationRun"("channel", "createdAt");
 
 CREATE TABLE IF NOT EXISTS "DailyPrice" (
   "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -1513,6 +1606,8 @@ CREATE TABLE IF NOT EXISTS "PromotionPolicy" (
   "netFloorMinor" INTEGER NOT NULL CHECK ("netFloorMinor" >= 0),
   "netFloorCurrency" TEXT NOT NULL DEFAULT 'BOB',
   "requiresReviewBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("requiresReviewBps" BETWEEN 0 AND 10000),
+  "source" TEXT NOT NULL DEFAULT 'manual',
+  "lastSyncedAt" DATETIME,
   "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "PromotionPolicy_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -1579,6 +1674,96 @@ CREATE INDEX IF NOT EXISTS "PricingChange_channel_executionStatus_appliedAt_idx"
 
   for (const stmt of pricingSchema.split(";").map((s) => s.trim()).filter(Boolean)) {
     await prisma.$executeRawUnsafe(stmt);
+  }
+
+  const promotionColumns = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+    `PRAGMA table_info("PromotionPolicy")`,
+  );
+  if (!promotionColumns.some((column) => column.name === "source")) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "PromotionPolicy" ADD COLUMN "source" TEXT NOT NULL DEFAULT 'manual'`);
+  }
+  if (!promotionColumns.some((column) => column.name === "lastSyncedAt")) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "PromotionPolicy" ADD COLUMN "lastSyncedAt" DATETIME`);
+  }
+  const profileColumns = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+    `PRAGMA table_info("PropertyPricingProfile")`,
+  );
+  if (!profileColumns.some((column) => column.name === "airbnbRatingHundredths")) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "PropertyPricingProfile" ADD COLUMN "airbnbRatingHundredths" INTEGER NOT NULL DEFAULT 0`);
+  }
+  if (!profileColumns.some((column) => column.name === "bookingRatingHundredths")) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "PropertyPricingProfile" ADD COLUMN "bookingRatingHundredths" INTEGER NOT NULL DEFAULT 0`);
+  }
+
+  // Booking can keep its safety floor in BOB while its calendar price remains
+  // in USD. Pricing policies no longer have an artificial ceiling or maximum
+  // discount: the protected net floor is the sole monetary guardrail.
+  const pricingPolicyColumns = await prisma.$queryRawUnsafe<Array<{ name: string }>>(
+    `PRAGMA table_info("PricingPolicy")`,
+  );
+  const pricingPolicySqlRows = await prisma.$queryRawUnsafe<Array<{ sql: string }>>(
+    `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'PricingPolicy'`,
+  );
+  const needsPricingPolicyRebuild =
+    !pricingPolicyColumns.some((column) => column.name === "floorCurrency") ||
+    pricingPolicyColumns.some((column) => column.name === "ceilingMinor") ||
+    pricingPolicyColumns.some((column) => column.name === "maxDiscountBps") ||
+    (pricingPolicySqlRows[0]?.sql || "").includes('"targetMinor" >= "floorMinor"');
+
+  if (needsPricingPolicyRebuild) {
+    const hadFloorCurrency = pricingPolicyColumns.some((column) => column.name === "floorCurrency");
+    await prisma.$executeRawUnsafe(`ALTER TABLE "PricingPolicy" RENAME TO "PricingPolicy_legacy"`);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE "PricingPolicy" (
+        "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        "propertyId" INTEGER NOT NULL,
+        "channel" TEXT NOT NULL,
+        "currency" TEXT NOT NULL DEFAULT 'BOB',
+        "floorMinor" INTEGER NOT NULL CHECK ("floorMinor" >= 0),
+        "floorCurrency" TEXT NOT NULL DEFAULT 'BOB',
+        "targetMinor" INTEGER NOT NULL CHECK ("targetMinor" >= 0),
+        "baseOccupancy" INTEGER NOT NULL DEFAULT 2 CHECK ("baseOccupancy" >= 1),
+        "extraGuestFrom" INTEGER NOT NULL DEFAULT 3 CHECK ("extraGuestFrom" > "baseOccupancy"),
+        "extraGuestMarkupBps" INTEGER NOT NULL DEFAULT 2000 CHECK ("extraGuestMarkupBps" BETWEEN 0 AND 10000),
+        "commissionBps" INTEGER NOT NULL DEFAULT 0 CHECK ("commissionBps" BETWEEN 0 AND 10000),
+        "defaultMinNights" INTEGER NOT NULL DEFAULT 2 CHECK ("defaultMinNights" >= 1),
+        "gapMinNights" INTEGER NOT NULL DEFAULT 1 CHECK ("gapMinNights" >= 1),
+        "isActive" INTEGER NOT NULL DEFAULT 1,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "PricingPolicy_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "PricingPolicy" (
+        "id", "propertyId", "channel", "currency", "floorMinor", "floorCurrency",
+        "targetMinor", "baseOccupancy", "extraGuestFrom",
+        "extraGuestMarkupBps", "commissionBps",
+        "defaultMinNights", "gapMinNights", "isActive", "createdAt", "updatedAt"
+      )
+      SELECT
+        "id", "propertyId", "channel", "currency", "floorMinor",
+        ${hadFloorCurrency ? '"floorCurrency"' : '"currency"'},
+        "targetMinor", "baseOccupancy", "extraGuestFrom",
+        "extraGuestMarkupBps", "commissionBps",
+        "defaultMinNights", "gapMinNights", "isActive", "createdAt", "updatedAt"
+      FROM "PricingPolicy_legacy"
+    `);
+    await prisma.$executeRawUnsafe(`DROP TABLE "PricingPolicy_legacy"`);
+    await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX "PricingPolicy_propertyId_channel_key" ON "PricingPolicy"("propertyId", "channel")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX "PricingPolicy_channel_isActive_idx" ON "PricingPolicy"("channel", "isActive")`);
+  }
+
+  const pricingStrategy = await prisma.appSettings.findUnique({
+    where: { key: PRICING_STRATEGY_SETTINGS_KEY },
+  });
+  if (!pricingStrategy) {
+    await prisma.appSettings.create({
+      data: {
+        key: PRICING_STRATEGY_SETTINGS_KEY,
+        value: JSON.stringify(DEFAULT_PRICING_STRATEGY),
+      },
+    });
   }
 
   console.log(`\nSchema pushed to ${config.label} successfully!`);

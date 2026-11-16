@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { listAccessiblePropertyIds } from "@/lib/ownership";
 import { generateShadowPrices } from "@/lib/pricing-shadow";
+import { refreshPricingHistoricalCalibration } from "@/lib/pricing-history-calibration";
 
 function boundedDays(value: unknown, fallback: number): number {
   const parsed = Number(value);
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const requested = Array.isArray(body.propertyIds) ? body.propertyIds.map(Number) : accessible;
     const allowed = requested.filter((id: number) => accessible.includes(id));
+    await refreshPricingHistoricalCalibration();
     const result = await generateShadowPrices({
       propertyIds: allowed,
       startDate: typeof body.startDate === "string" ? body.startDate : undefined,

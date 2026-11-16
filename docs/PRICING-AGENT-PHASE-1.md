@@ -4,7 +4,7 @@ Esta fase agrega únicamente la base de datos y las reglas matemáticas de segur
 
 ## Modelo compacto en SQLite
 
-- `PricingPolicy`: piso, objetivo y techo por propiedad y canal. La ocupación base predeterminada es de dos personas y el tercer huésped suma 20 %, también en tarifas semanales y mensuales.
+- `PricingPolicy`: piso neto y referencia inicial por propiedad y canal, sin techo artificial. La ocupación base predeterminada es de dos personas y el tercer huésped suma 20 %, también en tarifas semanales y mensuales.
 - `DailyPrice`: una sola fila por propiedad y fecha. Guarda el precio directo en BOB, los precios de Airbnb y Booking en USD, el piso operativo en BOB y el estado de la recomendación.
 - `PromotionPolicy`: reglas reutilizables para Genius, móvil, país, último minuto, semanal, mensual y promociones personalizadas. Cada regla conserva un piso neto.
 - `MarketEvent`: feriados y eventos confirmados o todavía tentativos, con impacto y nivel de confianza para ajustar fechas futuras sin asumir que un anuncio incierto ya es oficial.
@@ -14,7 +14,7 @@ Todos los importes nuevos se almacenan como enteros en unidades menores: centavo
 
 ## Reglas implementadas
 
-- Se exige `piso <= objetivo <= techo`.
+- Se exige `objetivo >= piso`; no existe un techo artificial.
 - Una promoción nunca puede calcular un resultado menor al piso configurado.
 - El precio bruto requerido se puede elevar para absorber comisión y descuentos sin cruzar el piso neto.
 - Huéspedes uno y dos usan el precio base; desde el tercer huésped se aplica el recargo estándar de 20 %.

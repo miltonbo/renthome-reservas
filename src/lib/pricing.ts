@@ -6,7 +6,6 @@ export const RENTHOME_EXTRA_GUEST_MARKUP_BPS = 2_000;
 export type PricingBand = {
   floorMinor: number;
   targetMinor: number;
-  ceilingMinor: number;
 };
 
 function assertIntegerInRange(value: number, label: string, min: number, max = Number.MAX_SAFE_INTEGER) {
@@ -18,29 +17,39 @@ function assertIntegerInRange(value: number, label: string, min: number, max = N
 export function assertPricingBand(band: PricingBand): void {
   assertIntegerInRange(band.floorMinor, "floorMinor", 0);
   assertIntegerInRange(band.targetMinor, "targetMinor", 0);
-  assertIntegerInRange(band.ceilingMinor, "ceilingMinor", 0);
-  if (band.floorMinor > band.targetMinor || band.targetMinor > band.ceilingMinor) {
-    throw new RangeError("pricing band must satisfy floorMinor <= targetMinor <= ceilingMinor");
+  if (band.floorMinor > band.targetMinor) {
+    throw new RangeError("pricing band must satisfy floorMinor <= targetMinor");
   }
 }
 
 /**
  * Returns the minimum displayed gross price that preserves a desired net floor
  * after every percentage deduction (platform commission + stacked discounts).
- * Rates are additive because that is the conservative safe-floor assumption;
- * the platform-specific adapter may replace it with its verified calculation.
+ * Each deduction is applied sequentially. This matches a promotion reducing
+ * the sell rate and the platform commission being charged on the resulting
+ * booking subtotal.
  */
 export function grossMinorForNetFloor(netFloorMinor: number, deductionsBps: readonly number[]): number {
   assertIntegerInRange(netFloorMinor, "netFloorMinor", 0);
-  let totalDeductionsBps = 0;
+  let retention = 1;
   for (const deduction of deductionsBps) {
-    assertIntegerInRange(deduction, "deductionBps", 0, BASIS_POINTS);
-    totalDeductionsBps += deduction;
+    assertIntegerInRange(deduction, "deductionBps", 0, BASIS_POINTS - 1);
+    retention *= (BASIS_POINTS - deduction) / BASIS_POINTS;
   }
-  if (totalDeductionsBps >= BASIS_POINTS) {
-    throw new RangeError("combined deductions must be below 10000 basis points");
+  let gross = Math.ceil(netFloorMinor / retention);
+  while (netMinorAfterDeductions(gross, deductionsBps) < netFloorMinor) gross++;
+  return gross;
+}
+
+/** Returns the net payout after sequential discounts and commissions. */
+export function netMinorAfterDeductions(grossMinor: number, deductionsBps: readonly number[]): number {
+  assertIntegerInRange(grossMinor, "grossMinor", 0);
+  let net = grossMinor;
+  for (const deduction of deductionsBps) {
+    assertIntegerInRange(deduction, "deductionBps", 0, BASIS_POINTS - 1);
+    net = Math.floor(net * (BASIS_POINTS - deduction) / BASIS_POINTS);
   }
-  return Math.ceil((netFloorMinor * BASIS_POINTS) / (BASIS_POINTS - totalDeductionsBps));
+  return net;
 }
 
 /** Applies a percentage discount but never returns less than the configured floor. */
