@@ -228,7 +228,8 @@ export async function collectPricingChannelSnapshot(options: {
     const reviewCount = boundedInteger(listing.reviewCount, 0, 100_000, 0);
     const ratingHundredths = Math.round(Math.max(0, Math.min(options.channel === "airbnb" ? 5 : 10, Number(listing.rating) || 0)) * 100);
     const currentProfile = normalizePricingKnowledge(property.name, property.pricingProfile);
-    const maxSellableUnits = Math.max(1, ...(listing.observations || []).map((row) => boundedInteger(row.availableUnits, 0, 100, 0)));
+    const observedMaxSellableUnits = Math.max(1, ...(listing.observations || []).map((row) => boundedInteger(row.availableUnits, 0, 100, 0)));
+    const maxSellableUnits = Math.max(currentProfile.bookingMaxSellableUnits, observedMaxSellableUnits);
     const profileValues = normalizePricingKnowledge(property.name, {
       ...currentProfile,
       ...(options.channel === "airbnb" ? {
@@ -239,7 +240,7 @@ export async function collectPricingChannelSnapshot(options: {
         bookingReviewCount: reviewCount,
         bookingRatingHundredths: ratingHundredths,
         bookingHistoryStrength: historyStrength(reviewCount),
-        bookingFlexibleInventory: maxSellableUnits > 1,
+        bookingFlexibleInventory: currentProfile.bookingFlexibleInventory || maxSellableUnits > 1,
         bookingMaxSellableUnits: maxSellableUnits,
       }),
     });
