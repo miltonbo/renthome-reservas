@@ -3,6 +3,13 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { generateShadowPrices } from "@/lib/pricing-shadow";
 import { normalizePricingKnowledge } from "@/lib/pricing-strategy";
+import {
+  ingestChannelPerformanceMetrics,
+  recordAppliedPricingResults,
+  recordPricingExposures,
+  type PricingExposureInput,
+  type PricingPerformanceMetricInput,
+} from "@/lib/pricing-feedback";
 
 export const AUTOMATED_PRICING_CHANNELS = ["airbnb", "booking"] as const;
 export type AutomatedPricingChannel = typeof AUTOMATED_PRICING_CHANNELS[number];
@@ -35,6 +42,16 @@ export type ChannelListingSnapshot = {
     minNights?: number;
     promotionBps?: number;
     availableUnits?: number;
+  }>;
+  performanceMetrics?: Array<{
+    metric: string;
+    periodStart: string;
+    periodEnd: string;
+    dimensionKey?: string;
+    valueScaled: number;
+    scale?: number;
+    currency?: string | null;
+    source?: string;
   }>;
   metadata?: Record<string, unknown>;
   error?: string | null;
@@ -213,6 +230,8 @@ export async function collectPricingChannelSnapshot(options: {
   const now = new Date();
   let observations = 0;
   let promotions = 0;
+  const exposureInputs: PricingExposureInput[] = [];
+  const performanceInputs: PricingPerformanceMetricInput[] = [];
   const collected: Array<{ propertyId: number; propertyName: string }> = [];
   const rejected: Array<{ propertyId: number; reason: string }> = [];
 
@@ -305,11 +324,26 @@ export async function collectPricingChannelSnapshot(options: {
           availableUnits: boundedInteger(observation.availableUnits, 0, 100, 1), observedAt: now,
         },
       });
+      exposureInputs.push({
+        propertyId, channel: options.channel, stayDate: observation.date,
+        priceMinor: boundedInteger(observation.priceMinor, 0, 100_000_000), currency: "USD",
+        minNights: boundedInteger(observation.minNights, 1, 365, 2),
+        promotionBps: boundedInteger(observation.promotionBps, 0, 9_999),
+        availableUnits: boundedInteger(observation.availableUnits, 0, 100, 1),
+        source: "platform_snapshot", observedAt: now,
+      });
       observations += 1;
+    }
+    for (const metric of (listing.performanceMetrics || []).slice(0, 250)) {
+      performanceInputs.push({ propertyId, channel: options.channel, ...metric });
     }
     collected.push({ propertyId, propertyName: property.name });
   }
 
+  await Promise.all([
+    recordPricingExposures(exposureInputs),
+    ingestChannelPerformanceMetrics(performanceInputs),
+  ]);
   await prisma.channelPriceObservation.deleteMany({ where: { date: { lt: addDays(dateKey(), -7) } } });
   return { channel: options.channel, collected, rejected, observations, promotions };
 }
@@ -331,6 +365,8 @@ export async function ingestPricingAutomationSnapshot(options: {
   const allowed = new Map(activePolicies.map((policy) => [policy.propertyId, policy]));
   const now = new Date();
   const collectedPropertyIds = new Set<number>();
+  const exposureInputs: PricingExposureInput[] = [];
+  const performanceInputs: PricingPerformanceMetricInput[] = [];
 
   for (const listing of options.listings.slice(0, 500)) {
     const policy = allowed.get(boundedInteger(listing.propertyId, 1, Number.MAX_SAFE_INTEGER, 0));
@@ -410,9 +446,24 @@ export async function ingestPricingAutomationSnapshot(options: {
           availableUnits: boundedInteger(observation.availableUnits, 0, 100, 1), observedAt: now,
         },
       });
+      exposureInputs.push({
+        propertyId, channel: options.channel, stayDate: observation.date,
+        priceMinor: boundedInteger(observation.priceMinor, 0, 100_000_000), currency: "USD",
+        minNights: boundedInteger(observation.minNights, 1, 365, 2),
+        promotionBps: boundedInteger(observation.promotionBps, 0, 9_999),
+        availableUnits: boundedInteger(observation.availableUnits, 0, 100, 1),
+        source: "automation_snapshot", observedAt: now,
+      });
+    }
+    for (const metric of (listing.performanceMetrics || []).slice(0, 250)) {
+      performanceInputs.push({ propertyId, channel: options.channel, ...metric });
     }
   }
 
+  await Promise.all([
+    recordPricingExposures(exposureInputs),
+    ingestChannelPerformanceMetrics(performanceInputs),
+  ]);
   const propertyIds = [...collectedPropertyIds];
   if (propertyIds.length > 0) await generateShadowPrices({ propertyIds, days: 90 });
   const plan = await buildPricingAutomationPlan(options.channel, propertyIds);
@@ -508,6 +559,7 @@ export async function completePricingAutomationRun(options: {
       });
     }
   }
+  await recordAppliedPricingResults({ channel: run.channel, results: validResults, appliedAt: now });
   const propertyIds = [...new Set(validResults.map((row) => row.propertyId))];
   const failed = validResults.filter((row) => row.status === "failed").length;
   const mismatched = validResults.filter((row) => row.status === "mismatch").length;

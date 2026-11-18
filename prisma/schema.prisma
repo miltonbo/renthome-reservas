@@ -107,32 +107,32 @@ model SiteSetting {
 }
 
 model Property {
-  id                         Int                     @id @default(autoincrement())
+  id                         Int                        @id @default(autoincrement())
   userId                     Int
-  user                       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                       User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                       String
-  minNights                  Int                     @default(1)
-  checkInTime                String                  @default("14:00")
-  checkOutTime               String                  @default("11:00")
-  bookingWindow              Int                     @default(365) // days forward from today to accept bookings; beyond this, events are ignored
-  cleaningEnabled            Boolean                 @default(true) // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation; conflict detection still runs
-  isPaused                   Boolean                 @default(false) // retained in inventory but excluded from daily operational views
-  financialOperator          String                  @default("milton") // "milton" | "deysi"
-  financialModel             String                  @default("operator_split") // operator_split | owner_fee
-  managementFeeBps           Int                     @default(0) // percentage retained by management; 1000 = 10%
-  managementFixedFeeMinor    Int                     @default(0) // fixed fee in minor units, charged once per reservation
-  managementFixedFeeCurrency String                  @default("BOB")
-  managementBeneficiary      String                  @default("deysi")
-  bookingCommissionPayer     String                  @default("operator") // operator | owner | deysi | milton
-  monthlyRentMinor           Int                     @default(0) // monthly rent in BOB minor units
-  monthlyServicesMinor       Int                     @default(0) // estimated monthly utilities in BOB minor units
-  monthlyMaintenanceMinor    Int                     @default(0) // estimated monthly building maintenance in BOB minor units
-  feedToken                  String?                 @unique // optional opt-in token gating the public iCal feed; null = public
-  feedSlug                   String?                 @unique // durable URL identifier for the iCal feed; minted at creation, never changes
-  createdAt                  DateTime                @default(now())
+  minNights                  Int                        @default(1)
+  checkInTime                String                     @default("14:00")
+  checkOutTime               String                     @default("11:00")
+  bookingWindow              Int                        @default(365) // days forward from today to accept bookings; beyond this, events are ignored
+  cleaningEnabled            Boolean                    @default(true) // master toggle for buffer / sameDayCleaning / potentialCleaning / unbookable computation; conflict detection still runs
+  isPaused                   Boolean                    @default(false) // retained in inventory but excluded from daily operational views
+  financialOperator          String                     @default("milton") // "milton" | "deysi"
+  financialModel             String                     @default("operator_split") // operator_split | owner_fee
+  managementFeeBps           Int                        @default(0) // percentage retained by management; 1000 = 10%
+  managementFixedFeeMinor    Int                        @default(0) // fixed fee in minor units, charged once per reservation
+  managementFixedFeeCurrency String                     @default("BOB")
+  managementBeneficiary      String                     @default("deysi")
+  bookingCommissionPayer     String                     @default("operator") // operator | owner | deysi | milton
+  monthlyRentMinor           Int                        @default(0) // monthly rent in BOB minor units
+  monthlyServicesMinor       Int                        @default(0) // estimated monthly utilities in BOB minor units
+  monthlyMaintenanceMinor    Int                        @default(0) // estimated monthly building maintenance in BOB minor units
+  feedToken                  String?                    @unique // optional opt-in token gating the public iCal feed; null = public
+  feedSlug                   String?                    @unique // durable URL identifier for the iCal feed; minted at creation, never changes
+  createdAt                  DateTime                   @default(now())
   updatedAt                  DateTime?
   reservations               Reservation[]
-  bookingOriginReservations  Reservation[]           @relation("BookingOriginalProperty")
+  bookingOriginReservations  Reservation[]              @relation("BookingOriginalProperty")
   calendarLinks              CalendarLink[]
   calendarEvents             CalendarEvent[]
   dateOverrides              DateOverride[]
@@ -146,11 +146,16 @@ model Property {
   conversationCases          ConversationCase[]
   pricingPolicies            PricingPolicy[]
   pricingProfile             PropertyPricingProfile?
-  pricingChannelConnections PricingChannelConnection[]
-  channelPriceObservations  ChannelPriceObservation[]
+  pricingChannelConnections  PricingChannelConnection[]
+  channelPriceObservations   ChannelPriceObservation[]
   dailyPrices                DailyPrice[]
   promotionPolicies          PromotionPolicy[]
   pricingChanges             PricingChange[]
+  pricingDecisions           PricingDecision[]
+  pricingExposures           PricingExposure[]
+  pricingOutcomes            PricingOutcome[]
+  pricingCalibrations        PricingCalibration[]
+  channelPerformanceMetrics  ChannelPerformanceMetric[]
 
   @@index([userId])
 }
@@ -264,34 +269,34 @@ model CleanerAssignment {
 }
 
 model CalendarLink {
-  id            Int       @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   propertyId    Int
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property      Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   platform      String // "airbnb" or "booking"
   icalExportUrl String // iCal export URL from the platform
-  bufferBefore  Int       @default(1) // days before booking to block
-  bufferAfter   Int       @default(1) // days after booking to block
+  bufferBefore  Int             @default(1) // days before booking to block
+  bufferAfter   Int             @default(1) // days after booking to block
   lastFetchedAt DateTime?
   lastError     String?
-  failureCount  Int       @default(0)
-  createdAt     DateTime  @default(now())
-  events         CalendarEvent[]
+  failureCount  Int             @default(0)
+  createdAt     DateTime        @default(now())
+  events        CalendarEvent[]
 }
 
 model CalendarEvent {
-  id                  Int      @id @default(autoincrement())
+  id                  Int           @id @default(autoincrement())
   propertyId          Int
-  property            Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property            Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   calendarLinkId      Int?
   calendarLink        CalendarLink? @relation(fields: [calendarLinkId], references: [id], onDelete: Cascade)
   platform            String // source platform
   uid                 String // iCal event UID
-  summary             String   @default("")
+  summary             String        @default("")
   startDate           String // YYYY-MM-DD
   endDate             String // YYYY-MM-DD
-  bookingReviewStatus String   @default("pending") // pending | resolved; operational only for Booking iCal alerts
+  bookingReviewStatus String        @default("pending") // pending | resolved; operational only for Booking iCal alerts
   bookingReviewedAt   DateTime?
-  createdAt           DateTime @default(now())
+  createdAt           DateTime      @default(now())
 
   @@unique([calendarLinkId, uid])
   @@index([propertyId, platform])
@@ -363,6 +368,7 @@ model Reservation {
   moneyMovements            MoneyMovement[]
   bookingCommission         BookingCommission?
   conversationCases         ConversationCase[]
+  pricingOutcome            PricingOutcome?
   createdAt                 DateTime              @default(now())
   updatedAt                 DateTime              @updatedAt
 
@@ -859,18 +865,18 @@ model PricingChannelConnection {
 // Rolling current platform calendar. Upserts keep storage bounded to one row
 // per property/channel/date and allow read-after-write verification.
 model ChannelPriceObservation {
-  id                 Int      @id @default(autoincrement())
-  propertyId         Int
-  property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  channel            String
-  date               String // YYYY-MM-DD
-  priceMinor         Int
-  currency           String   @default("USD")
-  minNights          Int      @default(2)
-  promotionBps       Int      @default(0)
-  availableUnits     Int      @default(1)
-  observedAt         DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  propertyId     Int
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel        String
+  date           String // YYYY-MM-DD
+  priceMinor     Int
+  currency       String   @default("USD")
+  minNights      Int      @default(2)
+  promotionBps   Int      @default(0)
+  availableUnits Int      @default(1)
+  observedAt     DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([propertyId, channel, date])
   @@index([channel, date])
@@ -929,24 +935,24 @@ model DailyPrice {
 // raise the platform rate before applying Genius/mobile/country/last-minute
 // discounts and still preserve the property's net floor.
 model PromotionPolicy {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   propertyId        Int
-  property          Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property          Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   channel           String // airbnb | booking | direct | vrbo
   promotionType     String // genius | mobile | country | last_minute | weekly | monthly | custom
-  enabled           Boolean  @default(false)
-  discountBps       Int      @default(0)
-  stackable         Boolean  @default(false)
-  minNights         Int      @default(1)
+  enabled           Boolean   @default(false)
+  discountBps       Int       @default(0)
+  stackable         Boolean   @default(false)
+  minNights         Int       @default(1)
   minLeadDays       Int?
   maxLeadDays       Int?
   netFloorMinor     Int
-  netFloorCurrency  String   @default("BOB")
-  requiresReviewBps Int      @default(2000)
-  source            String   @default("manual") // manual | platform
+  netFloorCurrency  String    @default("BOB")
+  requiresReviewBps Int       @default(2000)
+  source            String    @default("manual") // manual | platform
   lastSyncedAt      DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@unique([propertyId, channel, promotionType])
   @@index([channel, enabled])
@@ -1002,6 +1008,148 @@ model PricingChange {
 
   @@index([propertyId, startsOn, endsOn])
   @@index([channel, executionStatus, appliedAt])
+}
+
+// Immutable recommendation/application history. Repeated calculations that
+// produce the same material result are deduplicated before insertion, keeping
+// the table compact while preserving every meaningful pricing decision.
+model PricingDecision {
+  id                    Int               @id @default(autoincrement())
+  propertyId            Int
+  property              Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel               String
+  stayDate              String
+  status                String            @default("proposed") // proposed | applied | mismatch | failed | superseded | manual_override
+  previousMinor         Int?
+  recommendedMinor      Int
+  appliedMinor          Int?
+  currency              String            @default("USD")
+  floorMinor            Int
+  floorCurrency         String            @default("BOB")
+  promotionBps          Int               @default(0)
+  commissionBps         Int               @default(0)
+  minNights             Int               @default(2)
+  availableRatioBps     Int               @default(0)
+  leadDays              Int               @default(0)
+  eventImpactBps        Int               @default(0)
+  learningAdjustmentBps Int               @default(0)
+  reasonSummary         String            @default("")
+  modelVersion          String            @default("pricing-feedback-v1")
+  source                String            @default("engine") // engine | manual | platform
+  calculatedAt          DateTime          @default(now())
+  appliedAt             DateTime?
+  supersededAt          DateTime?
+  exposures             PricingExposure[]
+  outcomes              PricingOutcome[]
+
+  @@index([propertyId, channel, stayDate, calculatedAt])
+  @@index([status, calculatedAt])
+}
+
+// A compact price-exposure interval. The same observed price extends the open
+// interval instead of adding a row for every browser collection.
+model PricingExposure {
+  id               Int              @id @default(autoincrement())
+  propertyId       Int
+  property         Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel          String
+  stayDate         String
+  priceMinor       Int
+  currency         String           @default("USD")
+  promotionBps     Int              @default(0)
+  minNights        Int              @default(2)
+  availableUnits   Int              @default(1)
+  decisionId       Int?
+  decision         PricingDecision? @relation(fields: [decisionId], references: [id], onDelete: SetNull)
+  source           String           @default("platform_snapshot")
+  startedAt        DateTime         @default(now())
+  lastObservedAt   DateTime         @default(now())
+  endedAt          DateTime?
+  observationCount Int              @default(1)
+  outcomes         PricingOutcome[]
+
+  @@index([propertyId, channel, stayDate, endedAt])
+  @@index([channel, stayDate])
+}
+
+// Attribution between an actual reservation and the price exposure/decision
+// that was active when it was booked. Imported historical reservations may
+// have lower attribution quality than live reservations.
+model PricingOutcome {
+  id                 Int              @id @default(autoincrement())
+  reservationId      Int              @unique
+  reservation        Reservation      @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  propertyId         Int
+  property           Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel            String
+  decisionId         Int?
+  decision           PricingDecision? @relation(fields: [decisionId], references: [id], onDelete: SetNull)
+  exposureId         Int?
+  exposure           PricingExposure? @relation(fields: [exposureId], references: [id], onDelete: SetNull)
+  outcomeType        String           @default("booked") // booked | cancelled
+  bookedAt           DateTime
+  checkIn            DateTime
+  checkOut           DateTime
+  nights             Int
+  durationBand       String
+  totalMinor         Int?
+  nightlyMinor       Int?
+  currency           String           @default("BOB")
+  leadDays           Int              @default(0)
+  attributionQuality String           @default("unattributed") // exact | nearest | imported | unattributed
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([propertyId, channel, bookedAt])
+  @@index([channel, durationBand, bookedAt])
+}
+
+// Weekly, bounded learning output. Only the "all" duration band affects the
+// nightly target today; duration-specific rows support weekly/monthly tuning.
+model PricingCalibration {
+  id                 Int      @id @default(autoincrement())
+  propertyId         Int
+  property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel            String
+  durationBand       String   @default("all")
+  exposureNights     Int      @default(0)
+  bookedNights       Int      @default(0)
+  bookingCount       Int      @default(0)
+  sellThroughBps     Int      @default(0)
+  peerSellThroughBps Int      @default(0)
+  adjustmentBps      Int      @default(0)
+  confidenceBps      Int      @default(0)
+  averageAdrMinor    Int?
+  currency           String   @default("USD")
+  dataFrom           String
+  dataUntil          String
+  calculatedAt       DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([propertyId, channel, durationBand])
+  @@index([channel, durationBand, calculatedAt])
+}
+
+// Optional platform reports. Values are scaled integers so views, conversion,
+// ADR and demand shares can be ingested without unbounded raw report storage.
+model ChannelPerformanceMetric {
+  id           Int      @id @default(autoincrement())
+  propertyId   Int
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  channel      String
+  metric       String
+  periodStart  String
+  periodEnd    String
+  dimensionKey String   @default("all")
+  valueScaled  Int
+  scale        Int      @default(1)
+  currency     String?
+  source       String   @default("platform")
+  collectedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([propertyId, channel, metric, periodStart, periodEnd, dimensionKey, source])
+  @@index([channel, metric, periodEnd])
 }
 
 model CalendarPlatform {

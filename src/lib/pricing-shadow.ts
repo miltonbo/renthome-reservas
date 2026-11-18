@@ -5,6 +5,11 @@ import { getOfficialExchangeRate } from "@/lib/bcb-exchange-rate";
 import { calculateShadowPrice, combinedPromotionBps } from "@/lib/pricing-engine";
 import { eventFamilyKey, getPricingHistoricalCalibration, type EventCalibrationProfile } from "@/lib/pricing-history-calibration";
 import {
+  getPricingLearningAdjustments,
+  persistPricingRecommendations,
+  type PricingRecommendationRecord,
+} from "@/lib/pricing-feedback";
+import {
   DEFAULT_PRICING_STRATEGY,
   normalizePricingKnowledge,
   pricingKnowledgeAdjustmentBps,
@@ -138,7 +143,7 @@ export async function generateShadowPrices(options: {
   const endInclusive = addDays(endExclusive, -1);
   const occupancyLookupStart = addDays(startDate, -1);
   const occupancyLookupEndExclusive = addDays(endExclusive, 1);
-  const [policies, promotions, reservations, calendarEvents, marketEvents, exchangeRate, eventCalibrations, properties, strategy] = await Promise.all([
+  const [policies, promotions, reservations, calendarEvents, marketEvents, exchangeRate, eventCalibrations, properties, strategy, learningAdjustments] = await Promise.all([
     prisma.pricingPolicy.findMany({
       where: { propertyId: { in: options.propertyIds }, isActive: true },
       orderBy: [{ propertyId: "asc" }, { channel: "asc" }],
@@ -175,6 +180,7 @@ export async function generateShadowPrices(options: {
       select: { id: true, name: true, pricingProfile: true },
     }),
     getPricingStrategyConfig(),
+    getPricingLearningAdjustments(options.propertyIds),
   ]);
 
   const policyPropertyIds = Array.from(new Set(policies.map((policy) => policy.propertyId)));
@@ -223,6 +229,7 @@ export async function generateShadowPrices(options: {
 
   let recommendations = 0;
   let needsReview = 0;
+  const decisionCandidates: PricingRecommendationRecord[] = [];
   for (let offset = 0; offset < days; offset++) {
     const date = addDays(startDate, offset);
     const occupiedIds = new Set(policyPropertyIds.filter((propertyId) =>
@@ -263,6 +270,10 @@ export async function generateShadowPrices(options: {
         const knowledgeAdjustment = knowledge
           ? pricingKnowledgeAdjustmentBps(knowledge, policy.channel, strategy)
           : { bps: 0, reasons: [] };
+        const learning = learningAdjustments.get(`${propertyId}:${policy.channel}`) || { adjustmentBps: 0, confidenceBps: 0 };
+        const learningReasons = learning.adjustmentBps === 0
+          ? []
+          : [learning.adjustmentBps > 0 ? "desempeño histórico superior al canal" : "ritmo histórico inferior a comparables"];
         const baseFloorBobMinor = toBobMinor(policy.floorMinor, policy.floorCurrency, exchangeRate.bobPerUsd);
         const effectiveFloorBobMinor = baseFloorBobMinor + (oneNightGap ? strategy.oneNightGapPremiumBobMinor : 0);
         const floorInChannelMinor = convertMinor(effectiveFloorBobMinor, "BOB", policy.currency, exchangeRate.bobPerUsd);
@@ -273,8 +284,8 @@ export async function generateShadowPrices(options: {
           availableRatio,
           peerAvailableRatio,
           eventImpactBps,
-          propertyAdjustmentBps: knowledgeAdjustment.bps,
-          propertyReasons: knowledgeAdjustment.reasons,
+          propertyAdjustmentBps: knowledgeAdjustment.bps + learning.adjustmentBps,
+          propertyReasons: [...knowledgeAdjustment.reasons, ...learningReasons],
           commissionBps: policy.commissionBps,
           requestedPromotionBps: combinedPromotionBps(channelPromotions, policy.channel),
           occupied: occupiedIds.has(propertyId),
@@ -283,6 +294,16 @@ export async function generateShadowPrices(options: {
         });
         if (oneNightGap) result.reasons.unshift(`hueco de una noche: limpieza + Bs ${strategy.oneNightGapPremiumBobMinor / 100}`);
         channelResults.set(policy.channel, result);
+        if (!occupiedIds.has(propertyId)) decisionCandidates.push({
+          propertyId, channel: policy.channel, stayDate: date, previousMinor: null,
+          recommendedMinor: result.recommendedMinor, currency: policy.currency,
+          floorMinor: policy.floorMinor, floorCurrency: policy.floorCurrency,
+          promotionBps: result.appliedPromotionBps, commissionBps: policy.commissionBps,
+          minNights: oneNightGap ? policy.gapMinNights : policy.defaultMinNights,
+          availableRatioBps: Math.round(availableRatio * 10_000), leadDays: daysBetween(calculationToday, date),
+          eventImpactBps, learningAdjustmentBps: learning.adjustmentBps,
+          reasonSummary: result.reasons.join("; "),
+        });
       }
 
       const directPolicy = byChannel.get("direct");
@@ -336,6 +357,8 @@ export async function generateShadowPrices(options: {
     }
   }
 
+  const storedDecisions = await persistPricingRecommendations(decisionCandidates);
+
   return {
     properties: policyPropertyIds.length,
     dates: days,
@@ -345,5 +368,6 @@ export async function generateShadowPrices(options: {
     endDate: endInclusive,
     exchangeRate: exchangeRate.bobPerUsd,
     exchangeRateDate: exchangeRate.effectiveDate,
+    storedDecisions,
   };
 }

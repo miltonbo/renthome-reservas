@@ -40,6 +40,15 @@ type AutomationRun = {
   plannedChanges: number; appliedChanges: number; verifiedChanges: number; createdAt: string;
   completedAt?: string | null; errorMessage?: string | null;
 };
+type FeedbackCalibration = {
+  id: number; propertyId: number; channel: string; exposureNights: number; bookedNights: number;
+  bookingCount: number; sellThroughBps: number; peerSellThroughBps: number; adjustmentBps: number;
+  confidenceBps: number; calculatedAt: string; property: { name: string };
+};
+type PricingFeedback = {
+  counts: { decisions: number; appliedDecisions: number; exposures: number; outcomes: number; calibrations: number; performanceMetrics: number };
+  latestCalibrationAt?: string | null; calibrations: FeedbackCalibration[];
+};
 
 const CHANNELS = [
   { value: "direct", label: "Directas" },
@@ -140,17 +149,21 @@ export default function PricingOperationsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [automation, setAutomation] = useState<{ workerConfigured: boolean; connections: PricingConnection[]; runs: AutomationRun[] }>({ workerConfigured: false, connections: [], runs: [] });
   const [queueingAutomation, setQueueingAutomation] = useState(false);
+  const [feedback, setFeedback] = useState<PricingFeedback>({ counts: { decisions: 0, appliedDecisions: 0, exposures: 0, outcomes: 0, calibrations: 0, performanceMetrics: 0 }, calibrations: [] });
+  const [recalibratingFeedback, setRecalibratingFeedback] = useState(false);
   const { rate: officialRate, loading: exchangeRateLoading } = useOfficialExchangeRate();
   const currency = channelCurrency(channel);
 
   const load = useCallback(async () => {
-    const [policyResponse, eventResponse, automationResponse] = await Promise.all([fetch("/api/pricing/policies"), fetch("/api/pricing/events"), fetch("/api/pricing/automation/status")]);
+    const [policyResponse, eventResponse, automationResponse, feedbackResponse] = await Promise.all([fetch("/api/pricing/policies"), fetch("/api/pricing/events"), fetch("/api/pricing/automation/status"), fetch("/api/pricing/feedback")]);
     if (!policyResponse.ok) throw new Error("No se pudieron cargar las políticas.");
     const policyBody = await policyResponse.json();
     const eventBody = eventResponse.ok ? await eventResponse.json() : { events: [] };
     const automationBody = automationResponse.ok ? await automationResponse.json() : { workerConfigured: false, connections: [], runs: [] };
+    const feedbackBody = feedbackResponse.ok ? await feedbackResponse.json() : { counts: { decisions: 0, appliedDecisions: 0, exposures: 0, outcomes: 0, calibrations: 0, performanceMetrics: 0 }, calibrations: [] };
     setProperties(policyBody.properties || []); setPolicies(policyBody.policies || []); setPromotions(policyBody.promotions || []); setProfiles(policyBody.profiles || []); setEvents(eventBody.events || []); setSourceStatuses(eventBody.sources || []);
     setAutomation(automationBody);
+    setFeedback(feedbackBody);
     setSelectedPropertyId((current) => current ?? policyBody.properties?.[0]?.id ?? null);
   }, []);
 
@@ -224,6 +237,19 @@ export default function PricingOperationsPage() {
     } catch (runError) { setError(runError instanceof Error ? runError.message : "No se pudo calcular"); } finally { setRunning(false); }
   };
 
+  const recalibrateFeedback = async () => {
+    setRecalibratingFeedback(true); setError(""); setMessage("");
+    try {
+      const response = await fetch("/api/pricing/feedback", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "No se pudo recalibrar");
+      setMessage(`Aprendizaje actualizado: ${body.outcomes} reservas vinculadas y ${body.profiles} perfiles recalculados.`);
+      await load();
+    } catch (feedbackError) {
+      setError(feedbackError instanceof Error ? feedbackError.message : "No se pudo recalibrar");
+    } finally { setRecalibratingFeedback(false); }
+  };
+
   const syncSignals = async () => {
     setSyncingSignals(true); setError(""); setMessage("");
     try {
@@ -280,6 +306,16 @@ export default function PricingOperationsPage() {
           const connected = connections.filter((row) => row.status === "connected").length;
           return <div key={automationChannel} className="rounded-lg border border-[var(--line)] bg-[var(--bg)] p-3"><div className="flex items-center justify-between"><strong className="capitalize text-[var(--ink)]">{automationChannel}</strong><span className="text-[11px] text-[var(--ink-4)]">{connected}/{connections.length || properties.length} conectados</span></div><p className="mt-2 text-xs text-[var(--ink-3)]">Última ejecución: {latestRun ? `${latestRun.status} · ${latestRun.verifiedChanges}/${latestRun.plannedChanges} verificados` : "todavía no ejecutada"}</p><p className="mt-1 text-xs text-[var(--ink-4)]">Alojamiento seleccionado: {selectedConnection ? `${selectedConnection.status} · ${selectedConnection.lastCollectedAt ? new Date(selectedConnection.lastCollectedAt).toLocaleString("es-BO") : "sin lectura"}` : "pendiente de vincular"}</p>{selectedConnection?.lastError && <p className="mt-1 text-xs text-rose-600">{selectedConnection.lastError}</p>}</div>;
         })}</div>
+      </section>
+
+      <section className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-[var(--ink)]">Aprendizaje de decisiones</h3><p className="mt-1 max-w-3xl text-xs text-[var(--ink-4)]">Relaciona las tarifas realmente publicadas con su tiempo de exposición y las reservas obtenidas. El ajuste aprendido está limitado a ±5 % y nunca modifica los pisos económicos.</p></div><button type="button" onClick={recalibrateFeedback} disabled={recalibratingFeedback} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-sm font-semibold text-[var(--ink)] disabled:opacity-50">{recalibratingFeedback ? "Recalibrando…" : "Recalibrar ahora"}</button></div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">{[
+          ["Decisiones", feedback.counts.decisions], ["Aplicadas", feedback.counts.appliedDecisions], ["Exposiciones", feedback.counts.exposures],
+          ["Resultados", feedback.counts.outcomes], ["Perfiles", feedback.counts.calibrations], ["Métricas externas", feedback.counts.performanceMetrics],
+        ].map(([label, value]) => <div key={String(label)} className="rounded-lg border border-[var(--line)] bg-[var(--bg)] p-3"><p className="text-[10px] uppercase tracking-wide text-[var(--ink-4)]">{label}</p><p className="mt-1 text-lg font-semibold text-[var(--ink)]">{value}</p></div>)}</div>
+        <div className="mt-3 grid gap-2 md:grid-cols-2">{feedback.calibrations.filter((row) => row.propertyId === selectedPropertyId).map((row) => <div key={row.id} className="rounded-lg border border-[var(--line)] bg-[var(--bg)] p-3"><div className="flex items-center justify-between"><strong className="capitalize text-sm text-[var(--ink)]">{row.channel}</strong><span className={`text-xs font-semibold ${row.adjustmentBps > 0 ? "text-emerald-600" : row.adjustmentBps < 0 ? "text-amber-600" : "text-[var(--ink-4)]"}`}>{row.adjustmentBps > 0 ? "+" : ""}{(row.adjustmentBps / 100).toFixed(1)} %</span></div><p className="mt-1 text-xs text-[var(--ink-4)]">Venta observada {(row.sellThroughBps / 100).toFixed(1)} % · canal {(row.peerSellThroughBps / 100).toFixed(1)} % · confianza {(row.confidenceBps / 100).toFixed(0)} %</p></div>)}</div>
+        <p className="mt-3 text-[11px] text-[var(--ink-4)]">{feedback.latestCalibrationAt ? `Última calibración: ${new Date(feedback.latestCalibrationAt).toLocaleString("es-BO")}.` : "Todavía no existe una muestra suficiente; el primer ciclo semanal la irá construyendo."} Solo aprende de precios aplicados y resultados reales, nunca de una recomendación no publicada.</p>
       </section>
 
       <section className="rounded-xl border border-[var(--line)] bg-[var(--bg-2)] p-4">

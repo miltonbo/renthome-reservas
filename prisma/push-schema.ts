@@ -1670,6 +1670,145 @@ CREATE TABLE IF NOT EXISTS "PricingChange" (
 );
 CREATE INDEX IF NOT EXISTS "PricingChange_propertyId_startsOn_endsOn_idx" ON "PricingChange"("propertyId", "startsOn", "endsOn");
 CREATE INDEX IF NOT EXISTS "PricingChange_channel_executionStatus_appliedAt_idx" ON "PricingChange"("channel", "executionStatus", "appliedAt");
+
+CREATE TABLE IF NOT EXISTS "PricingDecision" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "stayDate" TEXT NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'proposed',
+  "previousMinor" INTEGER,
+  "recommendedMinor" INTEGER NOT NULL,
+  "appliedMinor" INTEGER,
+  "currency" TEXT NOT NULL DEFAULT 'USD',
+  "floorMinor" INTEGER NOT NULL,
+  "floorCurrency" TEXT NOT NULL DEFAULT 'BOB',
+  "promotionBps" INTEGER NOT NULL DEFAULT 0,
+  "commissionBps" INTEGER NOT NULL DEFAULT 0,
+  "minNights" INTEGER NOT NULL DEFAULT 2,
+  "availableRatioBps" INTEGER NOT NULL DEFAULT 0,
+  "leadDays" INTEGER NOT NULL DEFAULT 0,
+  "eventImpactBps" INTEGER NOT NULL DEFAULT 0,
+  "learningAdjustmentBps" INTEGER NOT NULL DEFAULT 0,
+  "reasonSummary" TEXT NOT NULL DEFAULT '',
+  "modelVersion" TEXT NOT NULL DEFAULT 'pricing-feedback-v1',
+  "source" TEXT NOT NULL DEFAULT 'engine',
+  "calculatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "appliedAt" DATETIME,
+  "supersededAt" DATETIME,
+  CONSTRAINT "PricingDecision_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PricingDecision_date_check" CHECK (length("stayDate") = 10),
+  CONSTRAINT "PricingDecision_values_check" CHECK (
+    "recommendedMinor" >= 0 AND "floorMinor" >= 0 AND "minNights" >= 1 AND
+    "promotionBps" BETWEEN 0 AND 9999 AND "commissionBps" BETWEEN 0 AND 9999
+  )
+);
+CREATE INDEX IF NOT EXISTS "PricingDecision_propertyId_channel_stayDate_calculatedAt_idx" ON "PricingDecision"("propertyId", "channel", "stayDate", "calculatedAt");
+CREATE INDEX IF NOT EXISTS "PricingDecision_status_calculatedAt_idx" ON "PricingDecision"("status", "calculatedAt");
+
+CREATE TABLE IF NOT EXISTS "PricingExposure" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "stayDate" TEXT NOT NULL,
+  "priceMinor" INTEGER NOT NULL,
+  "currency" TEXT NOT NULL DEFAULT 'USD',
+  "promotionBps" INTEGER NOT NULL DEFAULT 0,
+  "minNights" INTEGER NOT NULL DEFAULT 2,
+  "availableUnits" INTEGER NOT NULL DEFAULT 1,
+  "decisionId" INTEGER,
+  "source" TEXT NOT NULL DEFAULT 'platform_snapshot',
+  "startedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "lastObservedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "endedAt" DATETIME,
+  "observationCount" INTEGER NOT NULL DEFAULT 1,
+  CONSTRAINT "PricingExposure_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PricingExposure_decisionId_fkey" FOREIGN KEY ("decisionId") REFERENCES "PricingDecision" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "PricingExposure_date_check" CHECK (length("stayDate") = 10),
+  CONSTRAINT "PricingExposure_values_check" CHECK ("priceMinor" >= 0 AND "minNights" >= 1 AND "availableUnits" >= 0 AND "observationCount" >= 1)
+);
+CREATE INDEX IF NOT EXISTS "PricingExposure_propertyId_channel_stayDate_endedAt_idx" ON "PricingExposure"("propertyId", "channel", "stayDate", "endedAt");
+CREATE INDEX IF NOT EXISTS "PricingExposure_channel_stayDate_idx" ON "PricingExposure"("channel", "stayDate");
+
+CREATE TABLE IF NOT EXISTS "PricingOutcome" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "reservationId" INTEGER NOT NULL,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "decisionId" INTEGER,
+  "exposureId" INTEGER,
+  "outcomeType" TEXT NOT NULL DEFAULT 'booked',
+  "bookedAt" DATETIME NOT NULL,
+  "checkIn" DATETIME NOT NULL,
+  "checkOut" DATETIME NOT NULL,
+  "nights" INTEGER NOT NULL,
+  "durationBand" TEXT NOT NULL,
+  "totalMinor" INTEGER,
+  "nightlyMinor" INTEGER,
+  "currency" TEXT NOT NULL DEFAULT 'BOB',
+  "leadDays" INTEGER NOT NULL DEFAULT 0,
+  "attributionQuality" TEXT NOT NULL DEFAULT 'unattributed',
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PricingOutcome_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PricingOutcome_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PricingOutcome_decisionId_fkey" FOREIGN KEY ("decisionId") REFERENCES "PricingDecision" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "PricingOutcome_exposureId_fkey" FOREIGN KEY ("exposureId") REFERENCES "PricingExposure" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "PricingOutcome_values_check" CHECK ("nights" >= 1 AND ("totalMinor" IS NULL OR "totalMinor" >= 0) AND ("nightlyMinor" IS NULL OR "nightlyMinor" >= 0))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PricingOutcome_reservationId_key" ON "PricingOutcome"("reservationId");
+CREATE INDEX IF NOT EXISTS "PricingOutcome_propertyId_channel_bookedAt_idx" ON "PricingOutcome"("propertyId", "channel", "bookedAt");
+CREATE INDEX IF NOT EXISTS "PricingOutcome_channel_durationBand_bookedAt_idx" ON "PricingOutcome"("channel", "durationBand", "bookedAt");
+
+CREATE TABLE IF NOT EXISTS "PricingCalibration" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "durationBand" TEXT NOT NULL DEFAULT 'all',
+  "exposureNights" INTEGER NOT NULL DEFAULT 0,
+  "bookedNights" INTEGER NOT NULL DEFAULT 0,
+  "bookingCount" INTEGER NOT NULL DEFAULT 0,
+  "sellThroughBps" INTEGER NOT NULL DEFAULT 0,
+  "peerSellThroughBps" INTEGER NOT NULL DEFAULT 0,
+  "adjustmentBps" INTEGER NOT NULL DEFAULT 0,
+  "confidenceBps" INTEGER NOT NULL DEFAULT 0,
+  "averageAdrMinor" INTEGER,
+  "currency" TEXT NOT NULL DEFAULT 'USD',
+  "dataFrom" TEXT NOT NULL,
+  "dataUntil" TEXT NOT NULL,
+  "calculatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PricingCalibration_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PricingCalibration_dates_check" CHECK (length("dataFrom") = 10 AND length("dataUntil") = 10 AND "dataFrom" <= "dataUntil"),
+  CONSTRAINT "PricingCalibration_values_check" CHECK (
+    "exposureNights" >= 0 AND "bookedNights" >= 0 AND "bookingCount" >= 0 AND
+    "sellThroughBps" BETWEEN 0 AND 10000 AND "peerSellThroughBps" BETWEEN 0 AND 10000 AND
+    "adjustmentBps" BETWEEN -5000 AND 5000 AND "confidenceBps" BETWEEN 0 AND 10000
+  )
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "PricingCalibration_propertyId_channel_durationBand_key" ON "PricingCalibration"("propertyId", "channel", "durationBand");
+CREATE INDEX IF NOT EXISTS "PricingCalibration_channel_durationBand_calculatedAt_idx" ON "PricingCalibration"("channel", "durationBand", "calculatedAt");
+
+CREATE TABLE IF NOT EXISTS "ChannelPerformanceMetric" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "propertyId" INTEGER NOT NULL,
+  "channel" TEXT NOT NULL,
+  "metric" TEXT NOT NULL,
+  "periodStart" TEXT NOT NULL,
+  "periodEnd" TEXT NOT NULL,
+  "dimensionKey" TEXT NOT NULL DEFAULT 'all',
+  "valueScaled" INTEGER NOT NULL,
+  "scale" INTEGER NOT NULL DEFAULT 1,
+  "currency" TEXT,
+  "source" TEXT NOT NULL DEFAULT 'platform',
+  "collectedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ChannelPerformanceMetric_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "ChannelPerformanceMetric_dates_check" CHECK (length("periodStart") = 10 AND length("periodEnd") = 10 AND "periodStart" <= "periodEnd"),
+  CONSTRAINT "ChannelPerformanceMetric_scale_check" CHECK ("scale" >= 1)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "ChannelPerformanceMetric_propertyId_channel_metric_periodStart_periodEnd_dimensionKey_source_key" ON "ChannelPerformanceMetric"("propertyId", "channel", "metric", "periodStart", "periodEnd", "dimensionKey", "source");
+CREATE INDEX IF NOT EXISTS "ChannelPerformanceMetric_channel_metric_periodEnd_idx" ON "ChannelPerformanceMetric"("channel", "metric", "periodEnd");
 `;
 
   for (const stmt of pricingSchema.split(";").map((s) => s.trim()).filter(Boolean)) {
