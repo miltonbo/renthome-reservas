@@ -298,9 +298,39 @@ const SOURCES: EventSource[] = [
   { key: "superticket", name: "SuperTicket", url: "https://superticket.bo/?subcategoria=Santa+Cruz", parse: (html, _now, url) => parseSuperTicketEvents(html, url) },
 ];
 
-function fetchWithSystemCertificates(url: string): Promise<string> {
+const INTERMEDIATE_CERTIFICATE_URLS: Record<string, string> = {
+  "culturayturismo.gmsantacruz.gob.bo": "https://certs.godaddy.com/repository/gdig2.crt",
+};
+
+const intermediateCertificateCache = new Map<string, string>();
+
+function certificatePem(contents: Buffer): string {
+  const text = contents.toString("utf8");
+  if (text.includes("-----BEGIN CERTIFICATE-----")) return text;
+  const base64 = contents.toString("base64").match(/.{1,64}/g)?.join("\n") || "";
+  return `-----BEGIN CERTIFICATE-----\n${base64}\n-----END CERTIFICATE-----\n`;
+}
+
+async function trustedIntermediateFor(url: string): Promise<string | null> {
+  const hostname = new URL(url).hostname;
+  const certificateUrl = INTERMEDIATE_CERTIFICATE_URLS[hostname];
+  if (!certificateUrl) return null;
+  const cached = intermediateCertificateCache.get(certificateUrl);
+  if (cached) return cached;
+  const response = await fetch(certificateUrl, { cache: "force-cache", signal: AbortSignal.timeout(8_000) });
+  if (!response.ok) throw new Error(`No se pudo obtener el certificado intermedio: HTTP ${response.status}`);
+  const pem = certificatePem(Buffer.from(await response.arrayBuffer()));
+  intermediateCertificateCache.set(certificateUrl, pem);
+  return pem;
+}
+
+function fetchWithSystemCertificates(url: string, intermediateCertificate?: string | null): Promise<string> {
   const tlsWithSystem = tls as typeof tls & { getCACertificates?: (type: "system") => string[] };
-  const ca = [...tls.rootCertificates, ...(tlsWithSystem.getCACertificates?.("system") || [])];
+  const ca = [
+    ...tls.rootCertificates,
+    ...(tlsWithSystem.getCACertificates?.("system") || []),
+    ...(intermediateCertificate ? [intermediateCertificate] : []),
+  ];
   return new Promise((resolve, reject) => {
     const request = https.get(url, { ca, headers: { Accept: "text/html,application/xhtml+xml", "User-Agent": "DeptosBO-RentHome-EventMonitor/1.0" } }, (response) => {
       const status = response.statusCode || 0;
@@ -334,8 +364,8 @@ async function fetchHtml(url: string): Promise<string> {
     return await response.text();
   } catch (error) {
     const code = error instanceof Error && "cause" in error && error.cause && typeof error.cause === "object" && "code" in error.cause ? String(error.cause.code) : "";
-    if (code !== "UNABLE_TO_VERIFY_LEAF_SIGNATURE") throw error;
-    return fetchWithSystemCertificates(url);
+    if (!new Set(["UNABLE_TO_VERIFY_LEAF_SIGNATURE", "UNABLE_TO_GET_ISSUER_CERT_LOCALLY"]).has(code)) throw error;
+    return fetchWithSystemCertificates(url, await trustedIntermediateFor(url));
   }
 }
 
