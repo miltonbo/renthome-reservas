@@ -462,6 +462,11 @@ CREATE INDEX IF NOT EXISTS "Feedback_userId_idx" ON "Feedback"("userId");
   // Property makes the profitability table data-driven and lets a future
   // settings screen edit them without changing report code.
   const rentHomeCosts: Array<[string[], number, number, number]> = [
+    [["Sky Elite 329", "Sky 329"], 3650, 550, 250],
+    [["Sky Elite 406", "Sky 406"], 3600, 790, 250],
+    [["Sky Elite 527", "Sky 527"], 3300, 550, 250],
+    [["Sky Elite 528", "Sky 528"], 3800, 550, 250],
+    [["Uptown Nuu 12D", "UpTown 12D"], 3100, 750, 250],
     [["Sky Elite 540", "Sky 540"], 0, 720, 250],
     [["Stanza 8B", "8B"], 0, 740, 300],
     [["Sky Elite 331", "Sky 331"], 3400, 540, 250],
