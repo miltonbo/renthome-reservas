@@ -142,6 +142,36 @@ export function combinedPromotionBps(
   if (channel === "direct") {
     return enabled.reduce((maximum, promotion) => Math.max(maximum, promotion.discountBps), 0);
   }
+  // Booking combines at most one discount from each category. In particular,
+  // mobile and country rates are alternatives, not cumulative discounts. A
+  // qualifying reservation can still combine the strongest targeted rate
+  // with Genius and one catalogue deal such as last minute.
+  if (channel === "booking") {
+    const category = (promotionType?: string) => {
+      if (promotionType === "genius") return "genius";
+      if (promotionType === "mobile" || promotionType === "country") return "targeted";
+      if (promotionType === "last_minute" || promotionType === "custom") return "catalogue";
+      return promotionType || "other";
+    };
+    const strongestStackableByCategory = new Map<string, number>();
+    for (const promotion of enabled.filter((row) => row.stackable)) {
+      const key = category(promotion.promotionType);
+      strongestStackableByCategory.set(
+        key,
+        Math.max(strongestStackableByCategory.get(key) || 0, promotion.discountBps),
+      );
+    }
+    const strongestExclusive = enabled
+      .filter((promotion) => !promotion.stackable)
+      .reduce((max, promotion) => Math.max(max, promotion.discountBps), 0);
+    const deductions = [...strongestStackableByCategory.values(), strongestExclusive]
+      .filter((discount) => discount > 0);
+    const retention = deductions.reduce(
+      (remaining, discount) => remaining * (BASIS_POINTS - Math.min(discount, BASIS_POINTS - 1)) / BASIS_POINTS,
+      1,
+    );
+    return Math.min(BASIS_POINTS - 1, Math.round((1 - retention) * BASIS_POINTS));
+  }
   const strongestExclusive = enabled
     .filter((promotion) => !promotion.stackable)
     .reduce((max, promotion) => Math.max(max, promotion.discountBps), 0);

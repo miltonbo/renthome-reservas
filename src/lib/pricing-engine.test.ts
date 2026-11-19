@@ -123,6 +123,30 @@ describe("phase 2 shadow pricing", () => {
     ])).toBe(2_733);
   });
 
+  it("protects Booking's net floor after Genius, targeted and last-minute discounts", () => {
+    const promotionBps = combinedPromotionBps([
+      { enabled: true, discountBps: 2_000, stackable: true, promotionType: "genius" },
+      { enabled: true, discountBps: 1_000, stackable: true, promotionType: "mobile" },
+      { enabled: true, discountBps: 1_000, stackable: true, promotionType: "country" },
+      { enabled: true, discountBps: 1_000, stackable: true, promotionType: "last_minute" },
+    ], "booking");
+    expect(promotionBps).toBe(3_520);
+
+    const result = calculateShadowPrice({
+      band: { floorMinor: 2_141, targetMinor: 4_000 },
+      today: "2026-11-19",
+      date: "2026-11-19",
+      availableRatio: 0.5,
+      eventImpactBps: 0,
+      commissionBps: 1_500,
+      requestedPromotionBps: promotionBps,
+      occupied: false,
+      localHour: 17,
+    });
+    expect(result.recommendedMinor).toBeGreaterThanOrEqual(3_887);
+    expect(result.netMinor).toBeGreaterThanOrEqual(2_141);
+  });
+
   it("uses Airbnb discount priority instead of adding main discounts", () => {
     expect(combinedPromotionBps([
       { enabled: true, discountBps: 1_500, stackable: true, promotionType: "last_minute" },
