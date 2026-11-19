@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 export interface MasterCalendarStay {
@@ -39,9 +39,17 @@ interface ShadowDailyPrice {
   propertyId: number;
   date: string;
   directBobMinor: number | null;
+  airbnbUsdMinor: number | null;
+  bookingUsdMinor: number | null;
   floorBobMinor: number;
   status: string;
   reasonSummary: string;
+}
+
+interface QuoteSelection {
+  propertyId: number;
+  anchor: string;
+  focus: string;
 }
 
 // Compact enough that a booking four weeks out is genuinely visible on a
@@ -106,6 +114,11 @@ function localDateKey(value: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function dateFromKey(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 function dayDiff(a: Date, b: Date): number {
   const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
   const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
@@ -139,6 +152,85 @@ function formatBolivianos(value: number): string {
   return `Bs ${new Intl.NumberFormat("es-BO", { maximumFractionDigits: 2 }).format(value)}`;
 }
 
+function formatUsdMinor(value: number): string {
+  return `USD ${new Intl.NumberFormat("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value / 100)}`;
+}
+
+function explainPricingCriterion(criterion: string): { title: string; detail: string } {
+  const normalized = criterion.toLocaleLowerCase("es");
+  if (normalized.includes("hoy al cierre") || normalized.includes("hoy")) {
+    return { title: "La fecha sigue libre hoy", detail: "Se vuelve más competitivo el precio para aumentar la posibilidad de reservarla." };
+  }
+  if (normalized.includes("último minuto") || normalized.includes("próximos 7 días")) {
+    return { title: "La llegada está cerca", detail: "Se ajusta el precio porque quedan pocos días para vender esas noches." };
+  }
+  if (normalized.includes("alta disponibilidad")) {
+    return { title: "Hay muchas opciones disponibles", detail: "Se usa un precio más atractivo para competir con los demás departamentos libres." };
+  }
+  if (normalized.includes("disponibilidad amplia")) {
+    return { title: "Todavía quedan varias opciones", detail: "El precio se mantiene competitivo para mejorar la ocupación." };
+  }
+  if (normalized.includes("inventario casi agotado") || normalized.includes("baja disponibilidad")) {
+    return { title: "Quedan pocos departamentos libres", detail: "La menor disponibilidad permite buscar una tarifa más alta." };
+  }
+  if (normalized.includes("lunes/martes")) {
+    return { title: "Es un día de menor demanda", detail: "Lunes y martes suelen necesitar un precio más competitivo." };
+  }
+  if (normalized.includes("domingo")) {
+    return { title: "Es domingo", detail: "Normalmente tiene menor demanda y el precio se ajusta para facilitar la reserva." };
+  }
+  if (normalized.includes("fin de semana")) {
+    return { title: "Es fin de semana", detail: "La demanda habitual de viernes y sábado permite defender mejor el precio." };
+  }
+  if (normalized.includes("reserva anticipada")) {
+    return { title: "Es una reserva con anticipación", detail: "Todavía hay tiempo para esperar una tarifa más rentable." };
+  }
+  if (normalized.includes("feriado") || normalized.includes("evento")) {
+    return { title: "Hay un feriado o evento relevante", detail: "La demanda esperada para esas fechas permite elevar la tarifa." };
+  }
+  if (normalized.includes("rotación")) {
+    return { title: "Este alojamiento necesita más movimiento", detail: "Se prioriza conseguir una reserva sin bajar del mínimo protegido." };
+  }
+  if (normalized.includes("histórico superior")) {
+    return { title: "Tiene buen desempeño histórico", detail: "Sus reservas anteriores respaldan cobrar una tarifa más alta." };
+  }
+  if (normalized.includes("ritmo histórico inferior")) {
+    return { title: "Se está reservando más lento", detail: "Se vuelve más competitivo frente a propiedades comparables." };
+  }
+  if (normalized.includes("promociones") || normalized.includes("descuentos")) {
+    return { title: "Hay descuentos activos", detail: "El precio bruto se eleva lo necesario para que el ingreso final respete el mínimo." };
+  }
+  if (normalized.includes("hueco de una noche")) {
+    return { title: "Es un espacio libre de una noche", detail: "Se agregan Bs 50 al mínimo para cubrir la limpieza de esa estadía corta." };
+  }
+  return { title: criterion, detail: "Este dato fue considerado al calcular el precio recomendado." };
+}
+
+function selectedRange(selection: QuoteSelection): { start: Date; end: Date } {
+  const anchor = dateFromKey(selection.anchor);
+  const focus = dateFromKey(selection.focus);
+  return anchor <= focus ? { start: anchor, end: focus } : { start: focus, end: anchor };
+}
+
+function nightUnavailable(property: MasterCalendarProperty, day: Date): boolean {
+  const localDay = startOfLocalDay(day);
+  return property.stays.some((stay) => localDay >= startOfLocalDay(stay.start) && localDay < startOfLocalDay(stay.end));
+}
+
+function clampSelectionFocus(property: MasterCalendarProperty, anchorKey: string, focusKey: string): string {
+  const anchor = dateFromKey(anchorKey);
+  const focus = dateFromKey(focusKey);
+  const direction = focus >= anchor ? 1 : -1;
+  let cursor = anchor;
+  let lastAvailable = anchor;
+  while (localDateKey(cursor) !== localDateKey(focus)) {
+    cursor = addDays(cursor, direction);
+    if (nightUnavailable(property, cursor)) break;
+    lastAvailable = cursor;
+  }
+  return localDateKey(lastAvailable);
+}
+
 export function MasterCalendar({
   properties,
   loading = false,
@@ -151,6 +243,11 @@ export function MasterCalendar({
   const today = useMemo(() => startOfLocalDay(), []);
   const [windowStart, setWindowStart] = useState(() => addDays(today, -2));
   const [shadowPrices, setShadowPrices] = useState<ShadowDailyPrice[]>([]);
+  const [quoteSelection, setQuoteSelection] = useState<QuoteSelection | null>(null);
+  const [quoteDetailsOpen, setQuoteDetailsOpen] = useState(false);
+  const dragSelectionRef = useRef<{ propertyId: number; anchor: string } | null>(null);
+  const mouseMovedRef = useRef(false);
+  const lastPointerTypeRef = useRef<string | null>(null);
   const windowEnd = useMemo(() => addDays(windowStart, VISIBLE_DAYS), [windowStart]);
   const days = useMemo(
     () => Array.from({ length: VISIBLE_DAYS }, (_, index) => addDays(windowStart, index)),
@@ -178,11 +275,101 @@ export function MasterCalendar({
     });
   }, [properties]);
 
+  useEffect(() => {
+    const stopDragging = () => { dragSelectionRef.current = null; };
+    window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
+    return () => {
+      window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
+    };
+  }, []);
+
+  const beginMouseSelection = (property: MasterCalendarProperty, date: string) => {
+    dragSelectionRef.current = { propertyId: property.id, anchor: date };
+    mouseMovedRef.current = false;
+  };
+
+  const extendMouseSelection = (property: MasterCalendarProperty, date: string) => {
+    const drag = dragSelectionRef.current;
+    if (!drag || drag.propertyId !== property.id) return;
+    if (drag.anchor === date) return;
+    mouseMovedRef.current = true;
+    setQuoteSelection({ propertyId: property.id, anchor: drag.anchor, focus: clampSelectionFocus(property, drag.anchor, date) });
+  };
+
+  const tapSelection = (property: MasterCalendarProperty, date: string) => {
+    setQuoteDetailsOpen(false);
+    setQuoteSelection((current) => {
+      if (!current || current.propertyId !== property.id) return { propertyId: property.id, anchor: date, focus: date };
+      if (current.anchor !== current.focus) return { propertyId: property.id, anchor: date, focus: date };
+      return { ...current, focus: clampSelectionFocus(property, current.anchor, date) };
+    });
+  };
+
+  const selectedProperty = quoteSelection
+    ? orderedProperties.find((property) => property.id === quoteSelection.propertyId) || null
+    : null;
+  const quoteRange = quoteSelection ? selectedRange(quoteSelection) : null;
+  const quoteNights = quoteRange ? dayDiff(quoteRange.end, quoteRange.start) + 1 : 0;
+  const quoteRows = useMemo(() => {
+    if (!quoteSelection || !quoteRange) return [];
+    return Array.from({ length: quoteNights }, (_, index) => {
+      const date = addDays(quoteRange.start, index);
+      return shadowPriceMap.get(`${quoteSelection.propertyId}:${localDateKey(date)}`) || null;
+    });
+  }, [quoteNights, quoteRange, quoteSelection, shadowPriceMap]);
+  const quoteTotals = useMemo(() => {
+    const availableRows = quoteRows.filter((row): row is ShadowDailyPrice => row != null);
+    const complete = availableRows.length === quoteRows.length && quoteRows.length > 0;
+    const sum = (field: "directBobMinor" | "airbnbUsdMinor" | "bookingUsdMinor") => {
+      if (!complete || availableRows.some((row) => row[field] == null)) return null;
+      return availableRows.reduce((total, row) => total + (row[field] || 0), 0);
+    };
+    const criteria = Array.from(new Set(availableRows.flatMap((row) => row.reasonSummary.split(";").map((reason) => reason.trim()).filter(Boolean))));
+    return {
+      directBobMinor: sum("directBobMinor"),
+      airbnbUsdMinor: sum("airbnbUsdMinor"),
+      bookingUsdMinor: sum("bookingUsdMinor"),
+      floorBobMinor: complete ? availableRows.reduce((total, row) => total + row.floorBobMinor, 0) : null,
+      criteria,
+      needsReview: availableRows.some((row) => row.status === "needs_review"),
+      missingNights: quoteRows.length - availableRows.length,
+    };
+  }, [quoteRows]);
+
   const monthFormatter = new Intl.DateTimeFormat("es-BO", { month: "short", year: "numeric" });
   const lastVisibleDay = addDays(windowEnd, -1);
   const monthLabel = windowStart.getMonth() === lastVisibleDay.getMonth()
     ? monthFormatter.format(windowStart)
     : `${monthFormatter.format(windowStart)} – ${monthFormatter.format(lastVisibleDay)}`;
+  const quoteCards = [
+    {
+      label: "Directa",
+      note: "Total final en Bs",
+      color: "text-emerald-700 dark:text-emerald-300",
+      total: quoteTotals.directBobMinor == null ? null : formatBolivianos(quoteTotals.directBobMinor / 100),
+      average: quoteTotals.directBobMinor == null || quoteNights === 0 ? null : `${formatBolivianos(quoteTotals.directBobMinor / quoteNights / 100)} / noche`,
+    },
+    {
+      label: "Airbnb",
+      note: "Bruto sugerido",
+      color: "text-rose-600 dark:text-rose-300",
+      total: quoteTotals.airbnbUsdMinor == null ? null : formatUsdMinor(quoteTotals.airbnbUsdMinor),
+      average: quoteTotals.airbnbUsdMinor == null || quoteNights === 0 ? null : `${formatUsdMinor(quoteTotals.airbnbUsdMinor / quoteNights)} / noche`,
+    },
+    {
+      label: "Booking",
+      note: "Bruto sugerido",
+      color: "text-sky-700 dark:text-sky-300",
+      total: quoteTotals.bookingUsdMinor == null ? null : formatUsdMinor(quoteTotals.bookingUsdMinor),
+      average: quoteTotals.bookingUsdMinor == null || quoteNights === 0 ? null : `${formatUsdMinor(quoteTotals.bookingUsdMinor / quoteNights)} / noche`,
+    },
+  ];
+  const friendlyCriteria = quoteTotals.criteria
+    .map(explainPricingCriterion)
+    .filter((criterion, index, all) => all.findIndex((item) => item.title === criterion.title) === index)
+    .slice(0, 4);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col [--property-column-width:116px] overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-2)] shadow-sm sm:[--property-column-width:184px] lg:[--property-column-width:210px]">
@@ -206,8 +393,9 @@ export function MasterCalendar({
             )}
           </div>
           <p className="mt-0.5 hidden text-xs text-[var(--ink-4)] sm:block">
-            Reservas confirmadas, ingresos y salidas en una sola vista
+            Arrastra sobre noches libres para cotizar; en celular toca la primera y la última noche
           </p>
+          <p className="mt-0.5 text-[10px] text-[var(--ink-4)] sm:hidden">Toca noches libres para cotizar</p>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -239,6 +427,32 @@ export function MasterCalendar({
           </span>
         </div>
       </div>
+
+      {quoteSelection && selectedProperty && quoteRange && !quoteDetailsOpen && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-[var(--line)] bg-[var(--bg-2)] px-2.5 py-2 sm:hidden">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-[var(--ink)]">{selectedProperty.name}</p>
+            <p className="mt-0.5 truncate text-[10px] text-[var(--ink-3)]">
+              {formatRange(quoteRange.start, addDays(quoteRange.end, 1))} · {quoteNights} {quoteNights === 1 ? "noche" : "noches"} · {quoteCards[0].total || "Calculando"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setQuoteDetailsOpen(true)}
+            className="h-8 shrink-0 rounded-lg bg-[var(--brand-teal)] px-3 text-[10px] font-semibold text-white"
+          >
+            Ver detalle
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuoteSelection(null)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-2)] text-sm text-[var(--ink-3)]"
+            aria-label="Cerrar cotización"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
         <div style={{ minWidth: `calc(var(--property-column-width) + ${DAY_WIDTH * VISIBLE_DAYS}px)` }}>
@@ -331,25 +545,46 @@ export function MasterCalendar({
                           day >= startOfLocalDay(stay.start) &&
                           day < startOfLocalDay(stay.end),
                         );
+                        const isUnavailableNight = nightUnavailable(property, day);
                         const shadowPrice = shadowPriceMap.get(`${property.id}:${localDateKey(day)}`);
+                        const isSelectedNight = quoteSelection?.propertyId === property.id && quoteRange != null && day >= quoteRange.start && day <= quoteRange.end;
                         return (
-                          <div
+                          <button
                             key={day.toISOString()}
-                            className={`relative h-full shrink-0 border-r border-[var(--line)] ${isOccupiedNight ? "bg-slate-500/[0.14] shadow-[inset_0_1px_0_rgba(148,163,184,0.12),inset_0_-1px_0_rgba(148,163,184,0.12)]" : ""} ${isToday ? "before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
+                            type="button"
+                            disabled={isUnavailableNight || !shadowPrice}
+                            onPointerDown={(event) => {
+                              lastPointerTypeRef.current = event.pointerType;
+                              if (event.pointerType === "mouse") {
+                                beginMouseSelection(property, localDateKey(day));
+                              }
+                            }}
+                            onPointerEnter={() => extendMouseSelection(property, localDateKey(day))}
+                            onClick={() => {
+                              if (lastPointerTypeRef.current === "mouse") {
+                                lastPointerTypeRef.current = null;
+                                if (!mouseMovedRef.current) tapSelection(property, localDateKey(day));
+                                mouseMovedRef.current = false;
+                                return;
+                              }
+                              tapSelection(property, localDateKey(day));
+                            }}
+                            className={`relative h-full shrink-0 touch-pan-x touch-pan-y border-r border-[var(--line)] text-left outline-none transition-colors focus-visible:z-[4] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-orange)] disabled:cursor-default ${isOccupiedNight ? "bg-slate-500/[0.14] shadow-[inset_0_1px_0_rgba(148,163,184,0.12),inset_0_-1px_0_rgba(148,163,184,0.12)]" : "hover:bg-[var(--brand-orange-soft)]"} ${isSelectedNight ? "z-[1] bg-[var(--brand-orange-soft)] shadow-[inset_0_0_0_2px_var(--brand-orange)]" : ""} ${isToday ? "before:absolute before:inset-y-0 before:left-0 before:z-[1] before:w-0.5 before:bg-[var(--brand-orange)]" : ""}`}
                             style={{
                               width: DAY_WIDTH,
                               backgroundImage: weekend && !isOccupiedNight
                                 ? "repeating-linear-gradient(135deg, transparent 0, transparent 6px, rgba(100,116,139,0.09) 6px, rgba(100,116,139,0.09) 7px)"
                                 : undefined,
                             }}
-                            title={shadowPrice?.directBobMinor != null ? `Modo sombra: Bs ${(shadowPrice.directBobMinor / 100).toFixed(0)} · Piso Bs ${(shadowPrice.floorBobMinor / 100).toFixed(0)}${shadowPrice.reasonSummary ? ` · ${shadowPrice.reasonSummary}` : ""}` : undefined}
+                            aria-label={shadowPrice?.directBobMinor != null ? `Cotizar ${property.name}, ${localDateKey(day)}, Bs ${Math.round(shadowPrice.directBobMinor / 100)}` : undefined}
+                            title={shadowPrice?.directBobMinor != null ? `Seleccionar para cotizar · Bs ${(shadowPrice.directBobMinor / 100).toFixed(0)} · Piso Bs ${(shadowPrice.floorBobMinor / 100).toFixed(0)}${shadowPrice.reasonSummary ? ` · ${shadowPrice.reasonSummary}` : ""}` : undefined}
                           >
                             {!isOccupiedNight && shadowPrice?.directBobMinor != null && (
-                              <span className={`absolute inset-x-0 bottom-0.5 z-[1] truncate text-center text-[8px] font-semibold ${shadowPrice.status === "needs_review" ? "text-amber-600 dark:text-amber-300" : "text-[var(--ink-4)]"}`}>
+                              <span className={`absolute inset-x-0 bottom-0.5 z-[1] truncate text-center text-[8px] font-semibold ${isSelectedNight ? "text-[var(--brand-orange)]" : shadowPrice.status === "needs_review" ? "text-amber-600 dark:text-amber-300" : "text-[var(--ink-4)]"}`}>
                                 Bs {Math.round(shadowPrice.directBobMinor / 100)}
                               </span>
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -414,6 +649,104 @@ export function MasterCalendar({
           })}
         </div>
       </div>
+
+      {quoteSelection && selectedProperty && quoteRange && (
+        <aside
+          aria-live="polite"
+          aria-label="Cotización tentativa"
+          className={`fixed inset-x-2 bottom-2 z-50 max-h-[72vh] overflow-y-auto rounded-2xl border border-[var(--line-2)] bg-[var(--bg-2)] p-3 shadow-2xl sm:left-1/2 sm:right-auto sm:block sm:w-[min(920px,calc(100%-32px))] sm:-translate-x-1/2 sm:p-4 ${quoteDetailsOpen ? "block" : "hidden"}`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[var(--ink)]">{selectedProperty.name}</p>
+              <p className="mt-0.5 text-xs text-[var(--ink-3)]">
+                {formatRange(quoteRange.start, addDays(quoteRange.end, 1))} · {quoteNights} {quoteNights === 1 ? "noche" : "noches"} · 1–2 huéspedes
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setQuoteDetailsOpen(false)}
+                className="flex h-8 items-center justify-center rounded-full border border-[var(--line-2)] px-2.5 text-[10px] font-semibold text-[var(--ink-3)] sm:hidden"
+                aria-label="Minimizar cotización"
+              >
+                Minimizar
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuoteSelection(null)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--line-2)] text-sm text-[var(--ink-3)] hover:bg-[var(--bg-3)]"
+                aria-label="Cerrar cotización"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-1.5 sm:gap-3">
+            {quoteCards.map((card) => (
+              <div key={card.label} className="min-w-0 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-2 sm:p-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                  <span className={`text-[11px] font-semibold sm:text-xs ${card.color}`}>{card.label}</span>
+                  <span className="hidden text-[9px] text-[var(--ink-4)] sm:inline">{card.note}</span>
+                </div>
+                <p className="mt-1 truncate text-sm font-bold text-[var(--ink)] sm:text-lg">{card.total || "Sin cálculo"}</p>
+                <p className="mt-0.5 truncate text-[9px] text-[var(--ink-4)] sm:text-[11px]">{card.average || card.note}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs">
+            {quoteTotals.floorBobMinor != null && (
+              <span className="rounded-full bg-emerald-500/10 px-2 py-1 font-medium text-emerald-700 dark:text-emerald-300">
+                Mínimo protegido del canal más exigente: {formatBolivianos(quoteTotals.floorBobMinor / 100)}
+              </span>
+            )}
+            {quoteTotals.needsReview && (
+              <span className="rounded-full bg-amber-500/10 px-2 py-1 font-medium text-amber-700 dark:text-amber-300">Requiere revisión</span>
+            )}
+          </div>
+
+          {friendlyCriteria.length > 0 && (
+            <div className="mt-3">
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {friendlyCriteria.map((criterion) => (
+                  <div key={criterion.title} className="rounded-lg bg-[var(--bg-3)] px-2.5 py-2">
+                    <p className="text-[10px] font-semibold text-[var(--ink-2)] sm:text-xs">{criterion.title}</p>
+                    <p className="mt-0.5 text-[9px] leading-3.5 text-[var(--ink-4)] sm:text-[10px] sm:leading-4">{criterion.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {quoteTotals.missingNights > 0 && (
+            <p className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-2 text-[10px] text-amber-800 dark:text-amber-200">
+              Faltan recomendaciones para {quoteTotals.missingNights} {quoteTotals.missingNights === 1 ? "noche" : "noches"}; el total se mostrará al recalcular precios.
+            </p>
+          )}
+          {quoteNights >= 7 && (
+            <p className="mt-2 rounded-lg bg-sky-500/10 px-2.5 py-2 text-[10px] text-sky-800 dark:text-sky-200">
+              Cotización preliminar: suma las tarifas diarias. El descuento semanal o mensual todavía no se aplica automáticamente al total.
+            </p>
+          )}
+          {quoteNights === 1 && (
+            <p className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-2 text-[10px] text-amber-800 dark:text-amber-200">
+              <strong>Cotización de una noche:</strong> úsala solamente si esta fecha quedó libre entre dos reservas, o si es hoy y mañana ingresa otro huésped. En esos casos el precio mínimo ya suma Bs 50 para cubrir la limpieza adicional.
+            </p>
+          )}
+
+          <div className="mt-3 flex justify-end border-t border-[var(--line)] pt-2.5">
+            <button
+              type="button"
+              onClick={() => setQuoteSelection(null)}
+              className="h-8 shrink-0 rounded-lg border border-[var(--line-2)] px-3 text-xs font-semibold text-[var(--ink-2)] hover:bg-[var(--bg-3)]"
+            >
+              Limpiar
+            </button>
+          </div>
+        </aside>
+      )}
 
       <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--line)] px-4 py-2 text-[10px] text-[var(--ink-4)] sm:flex">
         {[
