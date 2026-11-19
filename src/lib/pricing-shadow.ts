@@ -327,7 +327,11 @@ export async function generateShadowPrices(options: {
         : results.some((result) => result.floorRisk)
           ? "needs_review"
           : "recommended";
-      const reasons = Array.from(new Set(results.flatMap((result) => result.reasons))).slice(0, 4);
+      const allReasons = Array.from(new Set(results.flatMap((result) => result.reasons)));
+      const priorityReasons = allReasons.filter((reason) =>
+        /demanda festiva|feriado o evento|precio futuro protegido|descuento futuro limitado/.test(reason),
+      );
+      const reasons = [...priorityReasons, ...allReasons.filter((reason) => !priorityReasons.includes(reason))].slice(0, 4);
       if (status === "needs_review") needsReview++;
 
       await prisma.dailyPrice.upsert({

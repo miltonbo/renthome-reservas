@@ -29,8 +29,13 @@ describe("RentHome pricing knowledge", () => {
   });
 
   it("bounds editable global strategy values", () => {
-    const strategy = normalizePricingStrategy({ eventImpactCapBps: 99_999, minimumHistoricalEventPairs: 0 });
+    const strategy = normalizePricingStrategy({
+      eventImpactCapBps: 99_999,
+      minimumHistoricalEventPairs: 0,
+      futureTargetProtectionDays: 999,
+    });
     expect(strategy.eventImpactCapBps).toBe(20_000);
     expect(strategy.minimumHistoricalEventPairs).toBe(1);
+    expect(strategy.futureTargetProtectionDays).toBe(365);
   });
 });

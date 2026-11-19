@@ -34,6 +34,41 @@ describe("phase 2 shadow pricing", () => {
     expect(result.reasons).toContain("feriado o evento de mercado");
   });
 
+  it("does not push distant dates to the floor while there is still time to sell", () => {
+    const result = calculateShadowPrice({
+      band: { floorMinor: 24_000, targetMinor: 28_000 },
+      today: "2026-11-19",
+      date: "2026-12-30",
+      availableRatio: 0.96,
+      peerAvailableRatio: 0.96,
+      propertyAdjustmentBps: -1_000,
+      eventImpactBps: 0,
+      commissionBps: 0,
+      requestedPromotionBps: 0,
+      occupied: false,
+    });
+    expect(result.recommendedMinor).toBe(28_000);
+    expect(result.reasons).toContain("precio futuro protegido mientras aún hay tiempo para vender");
+  });
+
+  it("protects an anticipated holiday uplift from availability discounts", () => {
+    const result = calculateShadowPrice({
+      band: { floorMinor: 24_000, targetMinor: 28_000 },
+      today: "2026-11-19",
+      date: "2026-12-31",
+      availableRatio: 0.96,
+      peerAvailableRatio: 0.96,
+      propertyAdjustmentBps: -1_000,
+      eventImpactBps: 1_800,
+      commissionBps: 0,
+      requestedPromotionBps: 0,
+      occupied: false,
+    });
+    expect(result.adjustmentBps).toBe(1_800);
+    expect(result.recommendedMinor).toBe(33_040);
+    expect(result.reasons).toContain("demanda festiva protegida con anticipación");
+  });
+
   it("prices Booking commission and Genius above the net floor", () => {
     const result = calculateShadowPrice({
       band,

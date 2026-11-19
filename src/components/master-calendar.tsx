@@ -158,6 +158,12 @@ function formatUsdMinor(value: number): string {
 
 function explainPricingCriterion(criterion: string): { title: string; detail: string } {
   const normalized = criterion.toLocaleLowerCase("es");
+  if (normalized.includes("demanda festiva protegida") || normalized.includes("feriado") || normalized.includes("evento")) {
+    return { title: "Es una fecha especial con mayor demanda", detail: "El precio se mantiene por encima de la referencia para aprovechar el feriado o evento." };
+  }
+  if (normalized.includes("precio futuro protegido") || normalized.includes("descuento futuro limitado")) {
+    return { title: "Todavía hay tiempo para conseguir una mejor reserva", detail: "No se baja prematuramente al mínimo cuando la fecha aún está suficientemente lejos." };
+  }
   if (normalized.includes("hoy al cierre") || normalized.includes("hoy")) {
     return { title: "La fecha sigue libre hoy", detail: "Se vuelve más competitivo el precio para aumentar la posibilidad de reservarla." };
   }
@@ -184,9 +190,6 @@ function explainPricingCriterion(criterion: string): { title: string; detail: st
   }
   if (normalized.includes("reserva anticipada")) {
     return { title: "Es una reserva con anticipación", detail: "Todavía hay tiempo para esperar una tarifa más rentable." };
-  }
-  if (normalized.includes("feriado") || normalized.includes("evento")) {
-    return { title: "Hay un feriado o evento relevante", detail: "La demanda esperada para esas fechas permite elevar la tarifa." };
   }
   if (normalized.includes("rotación")) {
     return { title: "Este alojamiento necesita más movimiento", detail: "Se prioriza conseguir una reserva sin bajar del mínimo protegido." };

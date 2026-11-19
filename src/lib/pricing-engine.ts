@@ -80,9 +80,22 @@ export function calculateShadowPrice(input: ShadowPricingInput): ShadowPricingRe
   const weightedPeerBps = Math.round(peerAvailability.bps * strategy.peerAvailabilityWeightBps / BASIS_POINTS);
   const propertyAdjustmentBps = Math.max(-5_000, Math.min(5_000, Math.round(input.propertyAdjustmentBps || 0)));
   const eventImpactBps = Math.max(-5_000, Math.min(strategy.eventImpactCapBps, Math.round(input.eventImpactBps)));
-  const adjustmentBps = weekday.bps + lead.bps + availability.bps + weightedPeerBps + propertyAdjustmentBps + eventImpactBps;
+  const rawAdjustmentBps = weekday.bps + lead.bps + availability.bps + weightedPeerBps + propertyAdjustmentBps + eventImpactBps;
   const reasons = [weekday.reason, lead.reason, availability.reason, weightedPeerBps ? peerAvailability.reason : "", ...(input.propertyReasons || [])].filter(Boolean);
   if (eventImpactBps !== 0) reasons.push("feriado o evento de mercado");
+
+  let adjustmentBps = rawAdjustmentBps;
+  if (leadDays >= strategy.farFutureTargetProtectionDays && adjustmentBps < 0) {
+    adjustmentBps = 0;
+    reasons.push("precio futuro protegido mientras aún hay tiempo para vender");
+  } else if (leadDays >= strategy.futureTargetProtectionDays && adjustmentBps < strategy.futureTargetDiscountFloorBps) {
+    adjustmentBps = strategy.futureTargetDiscountFloorBps;
+    reasons.push("descuento futuro limitado mientras aún hay tiempo para vender");
+  }
+  if (eventImpactBps > 0 && leadDays >= strategy.eventProtectionLeadDays && adjustmentBps < eventImpactBps) {
+    adjustmentBps = eventImpactBps;
+    reasons.push("demanda festiva protegida con anticipación");
+  }
 
   const adjustedTarget = Math.round(input.band.targetMinor * (BASIS_POINTS + adjustmentBps) / BASIS_POINTS);
   const boundedTarget = Math.max(input.band.floorMinor, adjustedTarget);

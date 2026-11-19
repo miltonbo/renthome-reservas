@@ -21,6 +21,7 @@ describe("automatic pricing market calendar", () => {
   it("includes Santa Cruz and year-end demand signals", () => {
     const events = recurringBoliviaMarketEvents(2027);
     expect(events.some((event) => event.name === "Efeméride de Santa Cruz" && event.startsOn === "2027-09-24")).toBe(true);
-    expect(events.some((event) => event.name === "Navidad" && event.startsOn === "2027-12-25")).toBe(true);
+    expect(events.some((event) => event.name === "Navidad" && event.startsOn === "2027-12-24" && event.endsOn === "2027-12-25")).toBe(true);
+    expect(events.some((event) => event.name === "Año Nuevo" && event.startsOn === "2026-12-30" && event.endsOn === "2027-01-01")).toBe(true);
   });
 });

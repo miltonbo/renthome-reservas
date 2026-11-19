@@ -65,7 +65,14 @@ export function recurringBoliviaMarketEvents(year: number): AutomaticMarketEvent
   });
 
   return [
-    oneDay("Año Nuevo", "holiday", utcDate(year, 1, 1), 1_500, 8_000),
+    {
+      name: "Año Nuevo",
+      eventType: "holiday",
+      startsOn: dateKey(utcDate(year - 1, 12, 30)),
+      endsOn: dateKey(utcDate(year, 1, 1)),
+      impactBps: 2_000,
+      confidenceBps: 9_000,
+    },
     oneDay("Día del Estado Plurinacional", "holiday", utcDate(year, 1, 22), 500),
     oneDay("Carnaval · lunes", "holiday", addDays(easter, -48), 1_000, 7_000),
     oneDay("Carnaval · martes", "holiday", addDays(easter, -47), 1_000, 7_000),
@@ -76,7 +83,14 @@ export function recurringBoliviaMarketEvents(year: number): AutomaticMarketEvent
     oneDay("Día de la Independencia", "holiday", utcDate(year, 8, 6), 600, 6_500),
     oneDay("Efeméride de Santa Cruz", "civic", utcDate(year, 9, 24), 600),
     oneDay("Día de Todos los Difuntos", "holiday", utcDate(year, 11, 2), 400, 5_000),
-    oneDay("Navidad", "holiday", utcDate(year, 12, 25), 1_200, 7_500),
+    {
+      name: "Navidad",
+      eventType: "holiday",
+      startsOn: dateKey(utcDate(year, 12, 24)),
+      endsOn: dateKey(utcDate(year, 12, 25)),
+      impactBps: 1_500,
+      confidenceBps: 8_500,
+    },
   ];
 }
 
@@ -89,7 +103,11 @@ export async function syncAutomaticMarketCalendar(years: number[]) {
     const existing = await prisma.marketEvent.findFirst({
       where: {
         name: event.name,
-        startsOn: event.startsOn,
+        // Some lodging-demand windows begin before the named holiday (for
+        // example Año Nuevo starts on 30 December). Match the edition by the
+        // year in which it ends so an existing one-day row is expanded rather
+        // than duplicated.
+        endsOn: { startsWith: event.endsOn.slice(0, 4) },
         sourceName: AUTOMATIC_CALENDAR_SOURCE,
       },
     });
@@ -98,6 +116,7 @@ export async function syncAutomaticMarketCalendar(years: number[]) {
         where: { id: existing.id },
         data: {
           eventType: event.eventType,
+          startsOn: event.startsOn,
           endsOn: event.endsOn,
           impactBps: event.impactBps,
           confidenceBps: event.confidenceBps,

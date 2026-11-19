@@ -32,6 +32,10 @@ export type PricingStrategyConfig = {
   lastMinuteBps: number;
   nextSevenDaysBps: number;
   advanceBookingBps: number;
+  futureTargetProtectionDays: number;
+  farFutureTargetProtectionDays: number;
+  futureTargetDiscountFloorBps: number;
+  eventProtectionLeadDays: number;
   highAvailabilityBps: number;
   broadAvailabilityBps: number;
   lowAvailabilityBps: number;
@@ -59,6 +63,15 @@ export const DEFAULT_PRICING_STRATEGY: PricingStrategyConfig = {
   lastMinuteBps: -800,
   nextSevenDaysBps: -400,
   advanceBookingBps: 300,
+  // Avoid discounting distant dates as if they were already distressed.
+  // From 30 days out the reference target is protected; from 14 days out a
+  // small discount remains possible while there is still time to sell.
+  futureTargetProtectionDays: 14,
+  farFutureTargetProtectionDays: 30,
+  futureTargetDiscountFloorBps: -500,
+  // Confirmed/recurring demand windows should retain their uplift until the
+  // final week, when unsold inventory may legitimately become last minute.
+  eventProtectionLeadDays: 7,
   highAvailabilityBps: -1_000,
   broadAvailabilityBps: -500,
   lowAvailabilityBps: 800,
@@ -90,12 +103,13 @@ export function normalizePricingStrategy(value: unknown): PricingStrategyConfig 
   const result = { ...DEFAULT_PRICING_STRATEGY };
   for (const key of Object.keys(result) as Array<keyof PricingStrategyConfig>) {
     const isMinor = key === "oneNightGapPremiumBobMinor";
+    const isDays = key === "futureTargetProtectionDays" || key === "farFutureTargetProtectionDays" || key === "eventProtectionLeadDays";
     const isWeight = key === "peerAvailabilityWeightBps" || key === "minimumHistoricalEventPairs" || key === "eventImpactCapBps";
     result[key] = boundedInteger(
       source[key],
       result[key],
-      key === "minimumHistoricalEventPairs" ? 1 : isWeight || isMinor ? 0 : -5_000,
-      key === "minimumHistoricalEventPairs" ? 100 : isMinor ? 100_000 : 20_000,
+      key === "minimumHistoricalEventPairs" ? 1 : isDays || isWeight || isMinor ? 0 : -5_000,
+      key === "minimumHistoricalEventPairs" ? 100 : isDays ? 365 : isMinor ? 100_000 : 20_000,
     );
   }
   return result;

@@ -72,6 +72,18 @@ agresiva. Las promociones de último minuto solo se consideran dentro de su vent
 de anticipación; las semanales, mensuales y de publicación nueva se protegen en el
 cálculo del bruto correspondiente.
 
+La disponibilidad alta no autoriza liquidar prematuramente fechas lejanas. Desde
+30 días antes, una noche ordinaria no baja de la referencia configurada; entre 14
+y 29 días puede aplicarse como máximo una reducción inicial de 5 % sobre esa
+referencia. Al acercarse la llegada, el motor recupera gradualmente la libertad de
+bajar hacia el piso según ocupación y hora del día.
+
+Los feriados se modelan como ventanas reales de alojamiento, no solamente como el
+día que figura en el calendario civil. Navidad cubre 24–25 de diciembre y Año Nuevo
+cubre 30 de diciembre–1 de enero. Mientras falten al menos siete días, el incremento
+ponderado del evento funciona como mínimo sobre la referencia y no puede ser
+anulado por alta disponibilidad, prioridad de rotación o poco historial del anuncio.
+
 El piso neto prevalece sobre cualquier promoción. Si comisión y descuentos reducen el neto, el motor eleva el precio bruto necesario; no existe un techo que impida aprovechar demanda excepcional.
 
 Las fuentes externas se consultan de forma tolerante a fallos: si una no responde, las demás y el calendario recurrente continúan funcionando. Una confirmación oficial de un feriado no se suma otra vez al mismo feriado recurrente; se conserva el impacto ponderado más fuerte. Eventos independientes que coinciden en una fecha sí pueden acumularse, con un límite de seguridad de +100 %.
