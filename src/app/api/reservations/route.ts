@@ -8,6 +8,7 @@ import { parseReservationDate } from "@/lib/reservation-dates";
 import { loadEffectiveLinkedStayRange } from "@/lib/linked-stay";
 import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
 import { isCurrency } from "@/lib/finance";
+import { recalculatePricingAfterReservation } from "@/lib/pricing-reservation-refresh";
 
 export async function GET(request: NextRequest) {
   try {
@@ -453,6 +454,7 @@ export async function POST(request: NextRequest) {
       note: reservation.note,
       extensionOfId: reservation.extensionOfId,
     });
+    await recalculatePricingAfterReservation("direct");
     return NextResponse.json(reservation);
   } catch (err) {
     console.error("Route error:", err);

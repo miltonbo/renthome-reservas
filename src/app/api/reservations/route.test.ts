@@ -11,6 +11,11 @@ const mocks = vi.hoisted(() => ({
   reservationCreate: vi.fn(),
   calendarEventFindFirst: vi.fn(),
   dateOverrideDeleteMany: vi.fn(),
+  recalculatePricingAfterReservation: vi.fn(),
+}));
+
+vi.mock("@/lib/pricing-reservation-refresh", () => ({
+  recalculatePricingAfterReservation: mocks.recalculatePricingAfterReservation,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -75,6 +80,7 @@ beforeEach(() => {
   }));
   mocks.dateOverrideDeleteMany.mockResolvedValue({ count: 0 });
   mocks.logAudit.mockResolvedValue(undefined);
+  mocks.recalculatePricingAfterReservation.mockResolvedValue({ ok: true, properties: 23, recommendations: 92 });
 });
 
 describe("POST /api/reservations — linked calendar source", () => {
@@ -93,6 +99,7 @@ describe("POST /api/reservations — linked calendar source", () => {
     expect(response.status).toBe(200);
     expect(mocks.reservationCreate).toHaveBeenCalled();
     expect(mocks.calendarEventFindFirst).toHaveBeenCalledTimes(2);
+    expect(mocks.recalculatePricingAfterReservation).toHaveBeenCalledWith("direct");
   });
 
   it("still rejects a real synced booking behind an overlapping host block", async () => {

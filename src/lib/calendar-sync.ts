@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { parseICal, type ICalEvent } from "@/lib/ical";
 import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
+import { recalculatePricingAfterReservation } from "@/lib/pricing-reservation-refresh";
 
 /**
  * Fetch and parse an iCal feed from a URL.
@@ -73,6 +74,7 @@ export async function syncAllCalendars(opts?: {
   errors: number;
 }> {
   const summary = { propertiesSynced: 0, newEvents: 0, removedEvents: 0, errors: 0 };
+  let receivedReservations = 0;
 
   // An empty (but present) propertyIds list means "nothing to sync" —
   // return early rather than letting `in: []` fall through.
@@ -180,6 +182,7 @@ export async function syncAllCalendars(opts?: {
 
         // Detect new events
         const newEvents = futureEvents.filter((e) => !existingUIDs.has(e.uid));
+        receivedReservations += newEvents.filter((event) => !isAvailabilityBlockSummary(event.summary)).length;
 
         // Detect removed events (no longer in feed). Keep the full
         // event rows (not just uids) so the prune step below can read
@@ -501,6 +504,10 @@ export async function syncAllCalendars(opts?: {
     `Sync complete: ${summary.propertiesSynced} properties, ${summary.newEvents} new, ${summary.removedEvents} removed, ${summary.errors} errors`,
     summary.errors > 0 ? "warn" : "success"
   );
+
+  if (receivedReservations > 0) {
+    await recalculatePricingAfterReservation("calendar-sync");
+  }
 
   return summary;
 }

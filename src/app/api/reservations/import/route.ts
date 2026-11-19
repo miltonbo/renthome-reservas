@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { canManageProperty, listAccessiblePropertyIds } from "@/lib/ownership";
+import { recalculatePricingAfterReservation } from "@/lib/pricing-reservation-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -212,6 +213,10 @@ export async function POST(request: NextRequest) {
       error: results.filter((r) => r.status === "error").length,
       dryRun,
     };
+
+    if (!dryRun && summary.created > 0) {
+      await recalculatePricingAfterReservation("csv-import");
+    }
 
     return NextResponse.json({ summary, results });
   } catch (err) {

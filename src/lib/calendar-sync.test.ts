@@ -12,6 +12,11 @@ const mocks = vi.hoisted(() => ({
   syncLogCreate: vi.fn(),
   syncLogFindMany: vi.fn(),
   syncLogDeleteMany: vi.fn(),
+  recalculatePricingAfterReservation: vi.fn(),
+}));
+
+vi.mock("@/lib/pricing-reservation-refresh", () => ({
+  recalculatePricingAfterReservation: mocks.recalculatePricingAfterReservation,
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -85,6 +90,7 @@ beforeEach(() => {
   mocks.syncLogCreate.mockResolvedValue({});
   mocks.syncLogFindMany.mockResolvedValue([]);
   mocks.syncLogDeleteMany.mockResolvedValue({ count: 0 });
+  mocks.recalculatePricingAfterReservation.mockResolvedValue({ ok: true, properties: 23, recommendations: 92 });
 });
 
 describe("calendar sync — durable linked reservation metadata", () => {
@@ -127,6 +133,8 @@ describe("calendar sync — durable linked reservation metadata", () => {
     const result = await syncAllCalendars({ propertyIds: [propertyId] });
 
     expect(result).toMatchObject({ propertiesSynced: 1, newEvents: 2, errors: 0 });
+    expect(mocks.recalculatePricingAfterReservation).toHaveBeenCalledTimes(1);
+    expect(mocks.recalculatePricingAfterReservation).toHaveBeenCalledWith("calendar-sync");
     expect(mocks.calendarEventFindMany).toHaveBeenNthCalledWith(1, {
       where: { calendarLinkId: firstBookingLink.id },
     });

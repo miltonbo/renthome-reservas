@@ -94,6 +94,12 @@ La confirmación de que un evento existe se expresa mediante su estado y su fuen
 
 El cron existente calcula 90 días tres veces al día, a las 08:00, 12:00 y 17:00 de Bolivia. Cada ventana es idempotente aunque el cron general se ejecute cada diez minutos. También puede ejecutarse manualmente desde la pantalla del agente.
 
+Cuando DeptosBO recibe una nueva reserva directa, una reserva nueva desde un
+calendario Airbnb/Booking o una importación CSV, recalcula inmediatamente hoy y
+los tres días siguientes. El recálculo incluye todo el portafolio con políticas
+activas porque la nueva ocupación cambia tanto la disponibilidad general como la
+de los grupos comparables.
+
 ## Calendario maestro
 
 Las noches disponibles muestran la recomendación directa en bolivianos. Al pasar el cursor se muestran el piso y las razones principales. Las fechas ocupadas conservan la recomendación en la base para análisis, pero no muestran el valor encima de la reserva.
