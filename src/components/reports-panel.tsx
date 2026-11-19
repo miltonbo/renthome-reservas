@@ -938,6 +938,7 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
         const services = (item.monthlyServicesMinor || 0) / 100;
         const maintenance = (item.monthlyMaintenanceMinor || 0) / 100;
         const administrationBps = item.financialModel === "operator_split" && item.financialOperator === "milton" ? 2000 : 0;
+        const administrationBOB = grossBOB * administrationBps / 10_000;
         return {
           property: item,
           income,
@@ -946,7 +947,8 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
           services,
           maintenance,
           administrationBps,
-          grossProfitBOB: grossBOB - rent - services - maintenance,
+          administrationBOB,
+          netProfitBOB: grossBOB - administrationBOB - rent - services - maintenance,
         };
       })
       .sort((a, b) => a.property.name.localeCompare(b.property.name, "es"));
@@ -1307,7 +1309,7 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
                   <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
                     <div>
                       <h2 className="text-sm font-semibold text-[var(--ink)]">Resultado por propiedad · {currentMonthPeriod.label}</h2>
-                      <p className="mt-0.5 text-[11px] text-[var(--ink-4)]">La utilidad bruta descuenta alquiler, servicios y mantenimiento. El porcentaje de administración se muestra como referencia y no se descuenta en esta fórmula.</p>
+                      <p className="mt-0.5 text-[11px] text-[var(--ink-4)]">La utilidad neta estimada descuenta del ingreso bruto la administración correspondiente, el alquiler, los servicios y el mantenimiento. El porcentaje de administración se aplica sobre el ingreso bruto.</p>
                     </div>
                     <label className="text-[10px] uppercase tracking-wide text-[var(--ink-4)]">
                       TC estimado USD → Bs
@@ -1333,7 +1335,7 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
                         <th className="px-3 py-2 text-right font-medium sm:px-4">Mantenimiento</th>
                         <th className="px-3 py-2 text-right font-medium sm:px-4">Administración</th>
                         <th className="px-3 py-2 text-right font-medium sm:px-4">Ingreso bruto</th>
-                        <th className="px-3 py-2 text-right font-medium sm:px-4">Utilidad bruta</th>
+                        <th className="px-3 py-2 text-right font-medium sm:px-4">Utilidad neta estimada</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1355,9 +1357,11 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
                             <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">Bs {row.rent.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
                             <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">Bs {row.services.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
                             <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">Bs {row.maintenance.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
-                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">{row.administrationBps ? `${row.administrationBps / 100}%` : "—"}</td>
+                            <td className="px-3 py-2.5 text-right text-[var(--ink-2)] tabular-nums sm:px-4">
+                              {row.administrationBps ? <><span>{row.administrationBps / 100}%</span><span className="block text-[10px] text-[var(--ink-4)]">Bs {row.administrationBOB.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></> : "—"}
+                            </td>
                             <td className="px-3 py-2.5 text-right tabular-nums sm:px-4"><span className="font-semibold text-[var(--ink)]">Bs {row.grossBOB.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>{row.income.USD > 0 && <span className="block text-[10px] text-[var(--ink-4)]">incluye USD {row.income.USD.toLocaleString("es-BO", { maximumFractionDigits: 2 })}</span>}</td>
-                            <td className={`px-3 py-2.5 text-right font-bold tabular-nums sm:px-4 ${row.grossProfitBOB >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>Bs {row.grossProfitBOB.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td className={`px-3 py-2.5 text-right font-bold tabular-nums sm:px-4 ${row.netProfitBOB >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>Bs {row.netProfitBOB.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           </tr>
                           ))}
                           <tr className="border-t-2 border-[var(--line-2)] bg-[var(--bg-3)] font-bold text-[var(--ink)]">
@@ -1365,9 +1369,9 @@ export function ReportsPanel({ property, properties }: ReportsPanelProps) {
                             <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.rent, 0).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
                             <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.services, 0).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
                             <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.maintenance, 0).toLocaleString("es-BO", { maximumFractionDigits: 2 })}</td>
-                            <td className="px-3 py-3 text-right sm:px-4">—</td>
+                            <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.administrationBOB, 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td className="px-3 py-3 text-right tabular-nums sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.grossBOB, 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            <td className="px-3 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 sm:px-4">Bs {propertyProfitability.reduce((sum, row) => sum + row.grossProfitBOB, 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td className={`px-3 py-3 text-right tabular-nums sm:px-4 ${propertyProfitability.reduce((sum, row) => sum + row.netProfitBOB, 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>Bs {propertyProfitability.reduce((sum, row) => sum + row.netProfitBOB, 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           </tr>
                         </>
                       )}
