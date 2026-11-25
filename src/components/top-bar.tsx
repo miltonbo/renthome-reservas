@@ -41,7 +41,7 @@ interface CopyShape {
 const COPY: Record<Locale, CopyShape> = {
   en: {
     tabDashboard: "Dashboard",
-    tabBooking: "Booking",
+    tabBooking: "Preconfirmed bookings",
     tabCalendar: "Calendar",
     tabCleaning: "Cleaning",
     tabReports: "Reports",
@@ -69,7 +69,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   ru: {
     tabDashboard: "Обзор",
-    tabBooking: "Booking",
+    tabBooking: "Предварительные брони",
     tabCalendar: "Календарь",
     tabCleaning: "Уборки",
     tabReports: "Отчёты",
@@ -96,7 +96,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   de: {
     tabDashboard: "Übersicht",
-    tabBooking: "Booking",
+    tabBooking: "Vorgemerkte Buchungen",
     tabCalendar: "Kalender",
     tabCleaning: "Reinigung",
     tabReports: "Berichte",
@@ -124,7 +124,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   fr: {
     tabDashboard: "Tableau de bord",
-    tabBooking: "Booking",
+    tabBooking: "Réservations préconfirmées",
     tabCalendar: "Calendrier",
     tabCleaning: "Ménage",
     tabReports: "Rapports",
@@ -152,7 +152,7 @@ const COPY: Record<Locale, CopyShape> = {
   },
   es: {
     tabDashboard: "Panel",
-    tabBooking: "Booking",
+    tabBooking: "Reservas preconfirmadas",
     tabCalendar: "Calendario",
     tabCleaning: "Check-ins / Check-outs",
     tabReports: "Informes",

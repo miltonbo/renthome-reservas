@@ -61,6 +61,14 @@ export async function PATCH(
     }
 
     const body = await request.json();
+    const webRequest = await prisma.rentHomeRequest.findUnique({ where: { reservationId: numId }, select: { totalMinor: true } });
+    if (webRequest && (
+      (body.totalPrice !== undefined && body.totalPrice !== webRequest.totalMinor / 100) ||
+      (body.priceCurrency !== undefined && body.priceCurrency !== "BOB") ||
+      (body.platform !== undefined && body.platform !== "direct")
+    )) {
+      return NextResponse.json({ error: "La tarifa confirmada en la web de RentHome queda fija." }, { status: 409 });
+    }
     const data: Record<string, unknown> = {};
     if (body.propertyId !== undefined) {
       if (

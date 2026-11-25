@@ -29,6 +29,31 @@ const adapter = new PrismaLibSql({ url: config.url, authToken: config.authToken 
 const prisma = new PrismaClient({ adapter });
 
 const schema = `
+CREATE TABLE IF NOT EXISTS "RentHomeListing" (
+    "propertyId" INTEGER NOT NULL PRIMARY KEY REFERENCES "Property"("id") ON DELETE CASCADE,
+    "published" BOOLEAN NOT NULL DEFAULT false,
+    "detailsJson" TEXT NOT NULL,
+    "photosJson" TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "RentHomeRequest" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "code" TEXT NOT NULL,
+    "requestedPropertyId" INTEGER NOT NULL,
+    "assignedPropertyId" INTEGER,
+    "reservationId" INTEGER,
+    "checkIn" TEXT NOT NULL,
+    "checkOut" TEXT NOT NULL,
+    "guests" INTEGER NOT NULL,
+    "guestName" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "totalMinor" INTEGER NOT NULL,
+    "state" TEXT NOT NULL DEFAULT 'pending',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "RentHomeRequest_code_key" ON "RentHomeRequest"("code");
+CREATE UNIQUE INDEX IF NOT EXISTS "RentHomeRequest_reservationId_key" ON "RentHomeRequest"("reservationId");
+CREATE INDEX IF NOT EXISTS "RentHomeRequest_requestedPropertyId_state_idx" ON "RentHomeRequest"("requestedPropertyId", "state");
+
 CREATE TABLE IF NOT EXISTS "User" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "username" TEXT NOT NULL,

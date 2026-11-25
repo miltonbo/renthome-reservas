@@ -13,6 +13,8 @@ const property = (reservations: Reservation[]): Property => ({
   id: 1,
   userId: 1,
   name: "Sky Elite 406",
+  feedToken: "test-feed-token",
+  createdAt: "2026-08-01T00:00:00Z",
   minNights: 1,
   checkInTime: "14:00",
   checkOutTime: "11:00",

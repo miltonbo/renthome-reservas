@@ -311,6 +311,31 @@ model SyncLog {
   createdAt  DateTime @default(now())
 }
 
+model RentHomeListing {
+  propertyId Int @id
+  published Boolean @default(false)
+  detailsJson String
+  photosJson String
+}
+
+model RentHomeRequest {
+  id Int @id @default(autoincrement())
+  code String @unique
+  requestedPropertyId Int
+  assignedPropertyId Int?
+  reservationId Int? @unique
+  checkIn String
+  checkOut String
+  guests Int
+  guestName String
+  phone String
+  totalMinor Int
+  state String @default("pending")
+  createdAt DateTime @default(now())
+
+  @@index([requestedPropertyId, state])
+}
+
 model Reservation {
   id                        Int                   @id @default(autoincrement())
   name                      String

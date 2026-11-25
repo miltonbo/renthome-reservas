@@ -7,6 +7,7 @@ import { CleaningSchedule, type CleanerAssignmentInfo } from "@/components/clean
 import { DashboardOnboarding } from "@/components/dashboard-onboarding";
 import { MasterCalendar, type MasterCalendarStay } from "@/components/master-calendar";
 import { BookingAlertsPanel, type BookingAlert } from "@/components/booking-alerts-panel";
+import { RentHomeStaffPanel } from "@/components/renthome-staff-panel";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, Reservation, CalendarLink, DateOverride } from "@/lib/types";
@@ -1613,10 +1614,10 @@ export function Dashboard({
     return Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  const title = mode === "booking" ? "Booking" : selectedProperty ? selectedProperty.name : t("dashboard.title");
+  const title = mode === "booking" ? "Reservas preconfirmadas" : selectedProperty ? selectedProperty.name : t("dashboard.title");
   const resCount = displayReservations.length;
   const subtitle = mode === "booking"
-    ? "Reservas detectadas mediante los calendarios de Booking.com"
+    ? "Alertas de Booking.com y solicitudes de reserva directa"
     : selectedProperty
     ? c.reservationsCount(resCount)
     : c.reservationsAcross(resCount, properties.length);
@@ -1939,14 +1940,20 @@ export function Dashboard({
       )}
 
       {mode === "booking" && !selectedProperty && properties.length > 0 && (
-        <BookingAlertsPanel
-          onCreateReservation={openReservationFormForBookingAlert}
-          onOpenReservation={(reservationId) => {
+        <div className="space-y-4">
+          <BookingAlertsPanel
+            onCreateReservation={openReservationFormForBookingAlert}
+            onOpenReservation={(reservationId) => {
+              setSettlementWarning("");
+              setInspectedReservationId(reservationId);
+            }}
+            refreshKey={bookingAlertRefreshKey}
+          />
+          <RentHomeStaffPanel onConfirmed={onRefresh} onOpen={(reservationId) => {
             setSettlementWarning("");
             setInspectedReservationId(reservationId);
-          }}
-          refreshKey={bookingAlertRefreshKey}
-        />
+          }} />
+        </div>
       )}
 
       {mode === "dashboard" && !selectedProperty && properties.length > 0 && (

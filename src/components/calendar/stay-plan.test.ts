@@ -26,7 +26,6 @@ describe("planStay", () => {
         platform: "airbnb-block",
         startDate: "2026-08-19",
         endDate: "2026-08-23",
-        segments: [],
       }],
       { cleaningEnabled: true, bufferBefore: 0 },
     );

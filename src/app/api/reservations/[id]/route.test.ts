@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   reservationFindMany: vi.fn(),
   reservationUpdate: vi.fn(),
   reservationDelete: vi.fn(),
+  rentHomeRequestFindUnique: vi.fn(),
   calendarEventFindFirst: vi.fn(),
   calendarEventDelete: vi.fn(),
   dateOverrideDeleteMany: vi.fn(),
@@ -34,6 +35,7 @@ vi.mock("@/lib/bcb-exchange-rate", () => ({
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    rentHomeRequest: { findUnique: mocks.rentHomeRequestFindUnique },
     reservation: {
       findUnique: mocks.reservationFindUnique,
       findFirst: mocks.reservationFindFirst,
@@ -88,6 +90,7 @@ beforeEach(() => {
   // PATCH loads the reservation once for authorization and once to
   // resolve an omitted date boundary. Both reads see the same row.
   mocks.reservationFindUnique.mockResolvedValue(original);
+  mocks.rentHomeRequestFindUnique.mockResolvedValue(null);
   mocks.reservationFindFirst.mockResolvedValue(null);
   mocks.reservationFindMany.mockResolvedValue([]);
   mocks.calendarEventFindFirst.mockResolvedValue(null);
@@ -100,6 +103,13 @@ beforeEach(() => {
   mocks.dateOverrideDeleteMany.mockResolvedValue({ count: 0 });
   mocks.logAudit.mockResolvedValue(undefined);
   mocks.getOfficialExchangeRate.mockResolvedValue({ bobPerUsd: 12, effectiveDate: "2026-10-28", stale: false });
+});
+
+it("preserves a confirmed RentHome website price", async () => {
+  mocks.rentHomeRequestFindUnique.mockResolvedValue({ totalMinor: 50500 });
+  const response = await PATCH(patchRequest({ totalPrice: 500 }), patchParams());
+  expect(response.status).toBe(409);
+  expect(mocks.reservationUpdate).not.toHaveBeenCalled();
 });
 
 describe("PATCH /api/reservations/:id — date edits", () => {

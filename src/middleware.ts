@@ -95,6 +95,8 @@ const PUBLIC_PATHS = [
   "/g", // RT-25.2: public guest-form fill-in page at /g/[token]
   "/api/g", // RT-25.2: public submit endpoint at /api/g/[token]/submit
   "/api/feedback", // site-wide feedback endpoint — accepts anonymous POSTs, rate-limited by IP-hash at the route layer
+  "/renthome",
+  "/api/renthome/",
 ];
 
 function clientIpFromRequest(request: NextRequest): string {
@@ -243,7 +245,7 @@ export async function middleware(request: NextRequest) {
   // Special-case "/" so it behaves as exact-match (PUBLIC_PATHS uses startsWith,
   // and "/" would match every path). The landing page itself redirects to
   // /dashboard for logged-in visitors via getSession().
-  if (pathname === "/" || PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (pathname === "/" || pathname === "/api/renthome" || PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     const r = withSecurityHeaders(
       NextResponse.next({ request: { headers: i18nHeaders } }),
     );

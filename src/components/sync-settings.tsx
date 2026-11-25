@@ -7,6 +7,7 @@ import { OnboardingTooltip } from "@/components/onboarding-tooltip";
 import { MessageTemplatesPanel } from "@/components/message-templates-panel";
 import { PropertyManagersPanel } from "@/components/property-managers-panel";
 import { PropertySwitcher } from "@/components/property-switcher";
+import { RentHomeListingEditor } from "@/components/renthome-listing-editor";
 import { PlatformInstructions } from "@/components/platform-instructions";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
@@ -748,6 +749,8 @@ export function SyncSettings({ propertyId, propertyName, properties, minNights, 
           {syncing ? t("sync.syncing") : t("sync.syncNow")}
         </button>
       </div>
+
+      <RentHomeListingEditor key={propertyId} propertyId={propertyId} />
 
       {!loading && links.length === 0 && (
         <EmptyState
