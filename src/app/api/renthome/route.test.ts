@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const { db, catalog } = vi.hoisted(() => ({
   db: {
@@ -12,7 +12,7 @@ const { db, catalog } = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: (work: (tx: typeof db) => unknown) => work(db) } }));
 vi.mock("@/lib/renthome", () => ({
   rentHomeCatalog: catalog,
-  rentHomeDates: (input: { checkIn: string; checkOut: string }) => ({ ...input, guests: 2 }),
+  rentHomeDates: (input: { checkIn: string; checkOut: string; guests?: string }) => ({ ...input, guests: Number(input.guests ?? 2) }),
 }));
 vi.mock("@/lib/messaging-availability", () => ({ boliviaDateString: () => "2026-11-25" }));
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => ({ ok: true }) }));
@@ -30,7 +30,7 @@ function send(extra = {}) {
 describe("RentHome direct request WhatsApp confirmation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    catalog.mockResolvedValue([{ id: 5, totalMinor: 50_000 }]);
+    catalog.mockResolvedValue([{ id: 5, details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 }]);
     db.rentHomeRequest.create.mockResolvedValue({ id: 2 });
     db.rentHomeRequest.findMany.mockResolvedValue([]);
     db.reservation.findFirst.mockResolvedValue(null);
@@ -51,7 +51,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
   });
 
   it("asks for explicit confirmation before accepting a different stay", async () => {
-    db.rentHomeRequest.findMany.mockResolvedValue([{ state: "pending", requestedPropertyId: 20 }]);
+    db.rentHomeRequest.findMany.mockResolvedValue([{ state: "pending", requestedPropertyId: 20, units: [] }]);
     const warning = await send({ phone: "00591 70000001" });
     expect(warning.status).toBe(409);
     expect(await warning.json()).toEqual({ code: "active_request", error: expect.any(String) });
@@ -60,7 +60,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
 
   it("rejects the same apartment and dates even after confirmation", async () => {
     db.rentHomeRequest.findMany.mockResolvedValue([{
-      state: "pending", requestedPropertyId: 5, checkIn: "2026-12-02", checkOut: "2026-12-04",
+      state: "pending", requestedPropertyId: 5, checkIn: "2026-12-02", checkOut: "2026-12-04", units: [],
     }]);
     const duplicate = await send({ confirmAnother: true });
     expect(duplicate.status).toBe(409);
@@ -68,12 +68,52 @@ describe("RentHome direct request WhatsApp confirmation", () => {
   });
 
   it("uses the linked booking's current status and checkout date", async () => {
-    db.rentHomeRequest.findMany.mockResolvedValue([{ state: "confirmed", reservationId: 90 }]);
+    db.rentHomeRequest.findMany.mockResolvedValue([{ state: "confirmed", reservationId: 90, units: [] }]);
     db.reservation.findFirst.mockResolvedValueOnce({ id: 90 });
     expect((await send()).status).toBe(409);
     expect(db.reservation.findFirst).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: { in: [90] }, status: "confirmed", checkOut: { gt: new Date("2026-11-25") } },
     }));
     expect((await send()).status).toBe(201);
+  });
+
+  it("returns a same-building pair for five guests even when neither listing fits alone", async () => {
+    catalog.mockResolvedValue([
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 3 }, totalMinor: 60_000 },
+      { id: 7, building: "Sky Moon", details: { title: "Departamento C", capacity: 3 }, totalMinor: 40_000 },
+    ]);
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=5"));
+    expect(await response.json()).toMatchObject({ listings: [], groups: [{
+      building: "Sky Elite", totalMinor: 110_000,
+      units: [{ propertyId: 5, guests: 2, totalMinor: 50_000 }, { propertyId: 6, guests: 3, totalMinor: 60_000 }],
+    }] });
+  });
+
+  it("offers three units when two cannot hold the group", async () => {
+    catalog.mockResolvedValue([5, 6, 7].map((id) => ({
+      id, building: "Sky Elite", details: { title: "Departamento", capacity: 2 }, totalMinor: 50_000,
+    })));
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=5"));
+    const result = await response.json();
+    expect(result.groups).toHaveLength(1);
+    expect(result.groups[0].units.map((unit: { guests: number }) => unit.guests)).toEqual([2, 2, 1]);
+  });
+
+  it("stores the price and occupancy of both units and rejects stale per-unit prices", async () => {
+    catalog.mockResolvedValue([
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 3 }, totalMinor: 60_000 },
+    ]);
+    const units = [{ propertyId: 5, totalMinor: 50_000 }, { propertyId: 6, totalMinor: 60_000 }];
+    const response = await send({ guests: "5", units, totalMinor: 110_000 });
+    expect(response.status).toBe(201);
+    expect(db.rentHomeRequest.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
+      guests: 5, totalMinor: 110_000, units: { create: [
+        { ...units[0], guests: 2 }, { ...units[1], guests: 3 },
+      ] },
+    }) }));
+    expect((await send({ guests: "5", units: [{ propertyId: 5, totalMinor: 49_000 }, { propertyId: 6, totalMinor: 61_000 }], totalMinor: 110_000 })).status).toBe(409);
+    expect(db.rentHomeRequest.create).toHaveBeenCalledTimes(1);
   });
 });

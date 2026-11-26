@@ -1,0 +1,36 @@
+.storefront {
+  --rh-ink: #14283d;
+  --rh-muted: #466073;
+  --rh-brand: #153e66;
+  --rh-deep: #0b233c;
+  --rh-tint: #edf4f7;
+  --rh-line: #dbe5ea;
+  --rh-bg: #f6f9fb;
+  --rh-gold: #ffcc86;
+  color-scheme: light;
+  color: var(--rh-ink);
+  background: var(--rh-bg);
+  caret-color: var(--rh-brand);
+}
+
+.storefront ::selection {
+  color: var(--rh-deep);
+  background: #b9dbea;
+}
+
+.storefront :is(a, button, input):focus-visible {
+  outline: 2px solid #24739b;
+  outline-offset: 3px;
+}
+
+.heroShade {
+  background: linear-gradient(90deg, rgb(10 30 48 / 96%) 0%, rgb(10 30 48 / 78%) 36%, rgb(10 30 48 / 15%) 76%),
+    linear-gradient(0deg, rgb(10 30 48 / 48%), transparent 28%);
+}
+
+@media (max-width: 639px) {
+  .heroShade {
+    background: linear-gradient(90deg, rgb(10 30 48 / 55%), transparent 85%),
+      linear-gradient(0deg, rgb(10 30 48 / 94%) 3%, rgb(10 30 48 / 45%) 70%, rgb(10 30 48 / 10%));
+  }
+}

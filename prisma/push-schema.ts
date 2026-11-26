@@ -53,6 +53,15 @@ CREATE TABLE IF NOT EXISTS "RentHomeRequest" (
 CREATE UNIQUE INDEX IF NOT EXISTS "RentHomeRequest_code_key" ON "RentHomeRequest"("code");
 CREATE UNIQUE INDEX IF NOT EXISTS "RentHomeRequest_reservationId_key" ON "RentHomeRequest"("reservationId");
 CREATE INDEX IF NOT EXISTS "RentHomeRequest_requestedPropertyId_state_idx" ON "RentHomeRequest"("requestedPropertyId", "state");
+CREATE TABLE IF NOT EXISTS "RentHomeRequestUnit" (
+    "requestId" INTEGER NOT NULL REFERENCES "RentHomeRequest"("id") ON DELETE CASCADE,
+    "propertyId" INTEGER NOT NULL,
+    "guests" INTEGER NOT NULL,
+    "totalMinor" INTEGER NOT NULL,
+    "reservationId" INTEGER,
+    PRIMARY KEY ("requestId", "propertyId")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "RentHomeRequestUnit_reservationId_key" ON "RentHomeRequestUnit"("reservationId");
 
 CREATE TABLE IF NOT EXISTS "User" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,

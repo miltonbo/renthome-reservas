@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { addDateDays, evaluatePropertyAvailability, parseAvailabilityQuery } from "@/lib/messaging-availability";
 import type { RentHomeDetails } from "@/lib/renthome-listing-details";
+import { rentHomeBuilding } from "@/lib/renthome-group";
 
 export function rentHomeOwner() {
   const id = Number(process.env.RENTHOME_OWNER_ID);
@@ -43,20 +44,20 @@ export async function rentHomeAvailability(db: Prisma.TransactionClient, propert
   return !!property && evaluatePropertyAvailability(property, query).dateStatus === "available";
 }
 
-export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>) {
+export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>, includeSmaller = false) {
   const owner = rentHomeOwner();
   if (!owner) return [];
   const listings = await prisma.rentHomeListing.findMany({ where: { published: true } });
   const properties = await prisma.property.findMany({
     where: { id: { in: listings.map((item) => item.propertyId) }, userId: owner, isPaused: false },
-    select: { id: true, checkInTime: true, checkOutTime: true },
+    select: { id: true, name: true, pricingProfile: { select: { building: true } }, checkInTime: true, checkOutTime: true },
     orderBy: { name: "asc" },
   });
   const byId = new Map(listings.map((item) => [item.propertyId, item]));
-  return (await Promise.all(properties.map(async (property) => {
+  return (await Promise.all(properties.map(async ({ name, pricingProfile, ...property }) => {
     const listing = readListing(byId.get(property.id)!);
-    if (!query) return { ...property, ...listing, totalMinor: null };
-    if (listing.details.capacity < (query.guests ?? 1) || !(await rentHomeAvailability(prisma, property.id, query))) return null;
+    if (!query) return { ...property, ...listing, totalMinor: null, building: "" };
+    if ((!includeSmaller && listing.details.capacity < (query.guests ?? 1)) || !(await rentHomeAvailability(prisma, property.id, query))) return null;
     const prices = await prisma.dailyPrice.findMany({
       where: { propertyId: property.id, date: { gte: query.checkIn, lt: query.checkOut } },
       select: { date: true, directBobMinor: true },
@@ -68,6 +69,6 @@ export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>) 
       if (!amount || amount < 1) return null;
       totalMinor += amount;
     }
-    return { ...property, ...listing, totalMinor };
+    return { ...property, ...listing, totalMinor, building: includeSmaller ? rentHomeBuilding(name, pricingProfile?.building) : "" };
   }))).filter((property) => property !== null);
 }

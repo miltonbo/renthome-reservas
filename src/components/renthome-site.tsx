@@ -4,7 +4,10 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Grid2X2, MapPin, MessageCircle, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Grid2X2, List, Map, MapPin, MessageCircle, Users, X } from "lucide-react";
+import heroPhoto from "@/app/renthome/sky-elite-rooftop.webp";
+import styles from "@/app/renthome/storefront.module.css";
+import type { RentHomeGroup } from "@/lib/renthome-group";
 import { RentHomeAmenities } from "./renthome-amenities";
 import { RentHomeSearch, rentHomeDateLabel as dateLabel, type RentHomeDates as Dates } from "./renthome-search";
 import { parseReservationDate, reservationNights } from "@/lib/reservation-dates";
@@ -14,42 +17,43 @@ type Listing = {
   id: number; details: RentHomeDetails; photos: string[];
   checkInTime: string; checkOutTime: string; totalMinor: number | null;
 };
-type StayRequest = Dates & { propertyId: number; totalMinor: number; guestName: FormDataEntryValue | null; phone: FormDataEntryValue | null };
+type StayRequest = Dates & {
+  propertyId?: number; units?: { propertyId: number; totalMinor: number }[];
+  totalMinor: number; guestName: FormDataEntryValue | null; phone: FormDataEntryValue | null;
+};
 const money = (amount: number) => `Bs ${(amount / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}`;
 const photoUrl = (id: number, photo: string) => `/api/renthome/photos/${id}/${photo}`;
 const filters = ["Piscina", "Balcón", "Gimnasio", "Cowork", "Sauna"];
 const RentHomeResultsMap = dynamic(() => import("./renthome-results-map"), {
   ssr: false,
-  loading: () => <div className="h-[330px] rounded-2xl border border-[#dce2e2] bg-[#e7eeeb] lg:h-[420px]" role="status"><span className="sr-only">Cargando mapa…</span></div>,
+  loading: () => <div className="h-[330px] rounded-2xl border border-[var(--rh-line)] bg-[var(--rh-tint)] lg:h-[420px]" role="status"><span className="sr-only">Cargando mapa…</span></div>,
 });
 
 function ListingCard({ listing, query }: { listing: Listing; query: Dates | null }) {
   const [index, setIndex] = useState(0);
   const url = `/renthome/${listing.id}${query ? `?${new URLSearchParams(query)}` : ""}`;
   const current = index % Math.max(listing.photos.length, 1);
+  const firstService = rentHomeServices(listing.details.services)[0];
   return (
-    <article className="group min-w-0 overflow-hidden rounded-2xl border border-[#dce2e2] bg-white shadow-[0_8px_24px_#10272908] transition-shadow hover:shadow-[0_12px_32px_#10272916]">
-      <div className="relative aspect-[4/3] bg-[#e7eeeb]">
+    <article className="group min-w-0 overflow-hidden rounded-2xl border border-[var(--rh-line)] bg-white">
+      <div className="relative aspect-[16/11] bg-[var(--rh-tint)]">
         <Link href={url} className="absolute inset-0" aria-label={`Ver ${listing.details.title}`}>
           {listing.photos[current] && <Image fill unoptimized loading="lazy" sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 32vw" src={photoUrl(listing.id, listing.photos[current])}
-            alt={`${listing.details.title}, foto ${current + 1}`} className="object-cover" />}
+            alt={`${listing.details.title}, foto ${current + 1}`} className="object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.025]" />}
         </Link>
         {listing.photos.length > 1 && <>
-          <button type="button" aria-label={`Foto anterior de ${listing.details.title}`} onClick={() => setIndex((current + listing.photos.length - 1) % listing.photos.length)} className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[#132a34] shadow-sm hover:bg-white"><ChevronLeft size={19} aria-hidden /></button>
-          <button type="button" aria-label={`Foto siguiente de ${listing.details.title}`} onClick={() => setIndex((current + 1) % listing.photos.length)} className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[#132a34] shadow-sm hover:bg-white"><ChevronRight size={19} aria-hidden /></button>
+          <button type="button" aria-label={`Foto anterior de ${listing.details.title}`} onClick={() => setIndex((current + listing.photos.length - 1) % listing.photos.length)} className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[var(--rh-ink)] shadow-sm hover:bg-white"><ChevronLeft size={19} aria-hidden /></button>
+          <button type="button" aria-label={`Foto siguiente de ${listing.details.title}`} onClick={() => setIndex((current + 1) % listing.photos.length)} className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[var(--rh-ink)] shadow-sm hover:bg-white"><ChevronRight size={19} aria-hidden /></button>
           <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-[#122a33]/85 px-2.5 py-1 text-xs font-semibold text-white">{current + 1} / {listing.photos.length}</span>
         </>}
       </div>
-      <div className="space-y-3 p-5">
-        <p className="flex items-center gap-1.5 text-sm text-[#466069]"><MapPin size={16} aria-hidden /> {rentHomePublicLocation(listing.details)}</p>
-        <h3 className="text-xl font-bold leading-tight tracking-tight"><Link href={url} className="hover:underline">{listing.details.title}</Link></h3>
-        <p className="flex items-center gap-2 text-sm text-[#466069]"><Users size={17} aria-hidden /> Hasta {listing.details.capacity} huéspedes</p>
-        <ul className="flex flex-wrap gap-1.5" aria-label="Servicios destacados">
-          {rentHomeServices(listing.details.services).slice(0, 4).map((service) => <li key={service} className="rounded-md bg-[#eef3f0] px-2 py-1 text-sm text-[#28433d]">{service}</li>)}
-        </ul>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e0e7e6] pt-3">
-          <span className="text-sm text-[#466069]">{listing.totalMinor != null ? <><strong className="text-lg text-[#132a34]">{money(listing.totalMinor)}</strong> total</> : "Consulta el precio por fechas"}</span>
-          <Link href={url} className="font-semibold text-[#075749] hover:underline">Ver alojamiento</Link>
+      <div className="space-y-3 p-4 sm:p-5">
+        <h3 className="text-pretty text-lg font-extrabold leading-snug tracking-tight"><Link href={url} className="hover:underline">{listing.details.title}</Link></h3>
+        <p className="flex items-start gap-2 text-sm text-[var(--rh-muted)]"><MapPin size={16} aria-hidden className="mt-0.5 shrink-0" /> {rentHomePublicLocation(listing.details)}</p>
+        <p className="flex items-start gap-2 text-sm text-[var(--rh-muted)]"><Users size={16} aria-hidden className="mt-0.5 shrink-0" /> <span>Hasta {listing.details.capacity} huéspedes{firstService && ` · ${firstService}`}</span></p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--rh-line)] pt-3">
+          <span className="text-sm text-[var(--rh-muted)]">{listing.totalMinor != null ? <><strong className="text-lg tabular-nums text-[var(--rh-ink)]">{money(listing.totalMinor)}</strong> total</> : "Precio según fechas"}</span>
+          <Link href={url} className="inline-flex min-h-10 items-center gap-1.5 text-sm font-extrabold text-[var(--rh-brand)] hover:underline">Ver ficha <ArrowRight size={15} aria-hidden /></Link>
         </div>
       </div>
     </article>
@@ -65,14 +69,21 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   const [query, setQuery] = useState<Dates | null>(dates.checkIn && dates.checkOut ? dates : null);
   const [catalog, setCatalog] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
+  const [groups, setGroups] = useState<RentHomeGroup[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<RentHomeGroup>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [requestError, setRequestError] = useState("");
   const [sending, setSending] = useState(false);
   const [confirmation, setConfirmation] = useState<{ request: StayRequest; message: string }>();
   const [receipt, setReceipt] = useState<{ code: string; whatsapp: string }>();
   const [filter, setFilter] = useState("");
+  const [showMap, setShowMap] = useState(Boolean(query));
   const [activePhoto, setActivePhoto] = useState(0);
   const gallery = useRef<HTMLDialogElement>(null);
+  const resultsHeading = useRef<HTMLHeadingElement>(null);
+  const groupHeading = useRef<HTMLHeadingElement>(null);
+  const jumpToResults = useRef(false);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
   useEffect(() => {
@@ -90,9 +101,10 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
           const options = await responses[1].json();
           if (!responses[1].ok) throw new Error(options.error ?? "No se pudo consultar la disponibilidad.");
           setResults(options.listings);
+          setGroups(options.groups ?? []);
         }
       } catch (err) {
-        if (!controller.signal.aborted) { setResults([]); setError((err as Error).message); }
+        if (!controller.signal.aborted) { setResults([]); setGroups([]); setError((err as Error).message); }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -101,23 +113,38 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
     return () => controller.abort();
   }, [query]);
 
+  useEffect(() => {
+    if (loading || !jumpToResults.current) return;
+    jumpToResults.current = false;
+    resultsHeading.current?.focus();
+  }, [loading]);
+
+  useEffect(() => {
+    if (selectedGroup) groupHeading.current?.focus();
+  }, [selectedGroup, receipt]);
+
   const property = catalog.find((item) => item.id === propertyId);
   const option = results.find((item) => item.id === propertyId);
   const allCards = query ? results : catalog;
   const cards = filter ? allCards.filter((item) => item.details.services.toLowerCase().includes(filter.toLowerCase())) : allCards;
-  const featured = catalog.find((item) => item.details.title.includes("Sky Luxia") && item.photos.length) ?? catalog.find((item) => item.photos.length);
-  const heroPhoto = featured ? photoUrl(featured.id, featured.photos[0]) : "/marketing/short-stay-rooftop-pool.webp";
+  const queryString = query ? new URLSearchParams(query).toString() : "";
+  const catalogHref = `/renthome${queryString ? `?${queryString}` : ""}#departamentos`;
 
   function requestStay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!query || !option?.totalMinor || sending || confirmation) return;
+    if (!query || sending || confirmation) return;
+    const selection = selectedGroup ? {
+      totalMinor: selectedGroup.totalMinor,
+      units: selectedGroup.units.map(({ propertyId, totalMinor }) => ({ propertyId, totalMinor })),
+    } : option?.totalMinor != null ? { propertyId: option.id, totalMinor: option.totalMinor } : null;
+    if (!selection) return;
     const form = new FormData(event.currentTarget);
-    void sendRequest({ ...query, propertyId: option.id, totalMinor: option.totalMinor, guestName: form.get("guestName"), phone: form.get("phone") });
+    void sendRequest({ ...query, ...selection, guestName: form.get("guestName"), phone: form.get("phone") });
   }
 
   async function sendRequest(request: StayRequest, confirmAnother = false) {
     setSending(true);
-    setError("");
+    setRequestError("");
     setConfirmation(undefined);
     try {
       const res = await fetch("/api/renthome", {
@@ -131,81 +158,96 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
       }
       if (!res.ok) throw new Error(data.error ?? "No se pudo registrar la solicitud.");
       setReceipt(data);
-    } catch (err) { setError((err as Error).message); }
+    } catch (err) { setRequestError((err as Error).message); }
     finally { setSending(false); }
   }
 
-  const input = "mt-1 block min-w-0 w-full rounded-lg border border-[#c6d3d1] bg-white px-3 py-2.5 text-[#132a34] focus-visible:outline-2 focus-visible:outline-[#075749]";
-  const button = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#075749] px-4 py-3 font-semibold text-white hover:bg-[#063e35] disabled:opacity-60";
+  const input = "mt-1 block min-w-0 w-full rounded-lg border border-[#c6d3d1] bg-white px-3 py-2.5 text-[var(--rh-ink)] focus-visible:outline-2 focus-visible:outline-[var(--rh-brand)]";
+  const button = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--rh-brand)] px-4 py-3 font-semibold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60";
   const search = <RentHomeSearch dates={dates} today={today} loading={loading || sending} compact={!!propertyId}
-    onChange={setDates} onSearch={() => { setConfirmation(undefined); setError(""); setFilter(""); setLoading(true); setQuery({ ...dates }); }} />;
-  const reservationCard = property && <aside id="reserva-directa" aria-label="Reserva directa" className="min-w-0 scroll-mt-4 space-y-4 rounded-2xl border border-[#dce2e2] bg-white p-5 shadow-[0_12px_28px_#1027290e] lg:sticky lg:top-5">
-    {receipt ? <section className="space-y-3" role="status">
-      <h2 className="text-2xl font-bold">Solicitud recibida</h2>
+    onChange={setDates} onSearch={() => {
+      if (!propertyId) {
+        jumpToResults.current = true;
+        setShowMap(true);
+      }
+      window.history.replaceState(null, "", `${window.location.pathname}?${new URLSearchParams(dates)}`);
+      setSelectedGroup(undefined); setReceipt(undefined); setRequestError("");
+      setConfirmation(undefined); setError(""); setFilter(""); setLoading(true); setQuery({ ...dates });
+    }} />;
+  const receiptView = receipt && <section className="space-y-3" role="status">
+      <h2 ref={groupHeading} tabIndex={-1} className="text-2xl font-bold">Solicitud recibida</h2>
       <p>Código <strong>{receipt.code}</strong></p>
       <p className="text-sm">Te contactaremos por WhatsApp. Las fechas quedan sujetas a disponibilidad hasta que RentHome confirme la reserva.</p>
       <a className={button + " w-full"} href={receipt.whatsapp} target="_blank" rel="noreferrer">Continuar por WhatsApp</a>
-    </section> : <>
-      <div>
-        <h2 className="text-xl font-extrabold">{!loading && option?.totalMinor != null ? money(option.totalMinor) : "Reserva directa"}</h2>
-        <p className="mt-1 text-sm text-[#466069]">{!loading && option?.totalMinor != null && query ? `Total por ${reservationNights(query.checkIn, query.checkOut)} noches` : "Elige fechas para ver el precio total."}</p>
-      </div>
-      {search}
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {!loading && query && !option && !error && <p role="status" className="text-sm text-[#466069]">No hay disponibilidad para las fechas y huéspedes seleccionados.</p>}
-      {!loading && option?.totalMinor != null && <form onSubmit={requestStay} onInput={() => setConfirmation(undefined)} className="space-y-3 border-t border-[#dce2e2] pt-4">
-        <h3 className="font-bold">Solicitar reserva</h3>
+    </section>;
+  const requestForm = <form onSubmit={requestStay} onInput={() => setConfirmation(undefined)} className="space-y-3 border-t border-[var(--rh-line)] pt-4">
+        {!selectedGroup && <h3 className="font-bold">Solicitar reserva</h3>}
         {query && <p className="text-sm">{dateLabel(query.checkIn)} a {dateLabel(query.checkOut)} · {query.guests} huésped(es)</p>}
         <label className="block text-sm font-semibold">Nombre completo<input required disabled={sending} minLength={2} maxLength={120} name="guestName" autoComplete="name" className={input} /></label>
         <label className="block text-sm font-semibold">WhatsApp con código de país<input required disabled={sending} maxLength={24} name="phone" type="tel" autoComplete="tel" className={input} placeholder="+591" /></label>
+        {requestError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{requestError}</p>}
         {confirmation ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
           <p role="alert" className="text-sm text-amber-950">{confirmation.message}</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={button} onClick={() => void sendRequest(confirmation.request, true)}>Enviar otra solicitud</button>
             <button type="button" className="rounded-xl border border-amber-300 px-3 py-2 text-sm font-semibold text-amber-950" onClick={() => setConfirmation(undefined)}>Cancelar</button>
           </div>
-        </div> : <button className={button + " w-full"} disabled={sending}>{sending ? "Enviando…" : "Enviar solicitud"}</button>}
-      </form>}
-      <p className="flex items-start gap-2 border-t border-[#dce2e2] pt-3 text-sm text-[#466069]"><MessageCircle size={17} className="mt-0.5 shrink-0 text-[#075749]" aria-hidden /> RentHome confirma tu solicitud por WhatsApp.</p>
+        </div> : <button className={button + " w-full"} disabled={sending}>{sending ? "Enviando…" : selectedGroup ? "Enviar solicitud grupal" : "Enviar solicitud"}</button>}
+      </form>;
+  const reservationCard = property && <aside id="reserva-directa" aria-label="Reserva directa" className="min-w-0 scroll-mt-4 space-y-4 rounded-2xl border border-[var(--rh-line)] bg-white p-5 shadow-[0_12px_28px_#1027290e] lg:sticky lg:top-5">
+    {receiptView || <>
+      <div>
+        <h2 className="text-2xl font-extrabold tabular-nums">{!loading && option?.totalMinor != null ? money(option.totalMinor) : "Reserva directa"}</h2>
+        <p className="mt-1 text-sm text-[var(--rh-muted)]">{!loading && option?.totalMinor != null && query ? `Total por ${reservationNights(query.checkIn, query.checkOut)} noches` : "Elige fechas para ver el precio total."}</p>
+      </div>
+      {search}
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      {!loading && query && !option && !error && <p role="status" className="text-sm text-[var(--rh-muted)]">No hay disponibilidad para las fechas y huéspedes seleccionados.</p>}
+      {!loading && option?.totalMinor != null && requestForm}
+      <p className="flex items-start gap-2 border-t border-[var(--rh-line)] pt-3 text-sm text-[var(--rh-muted)]"><MessageCircle size={17} className="mt-0.5 shrink-0 text-[var(--rh-brand)]" aria-hidden /> RentHome confirma tu solicitud por WhatsApp.</p>
     </>}
   </aside>;
   return (
-    <main className="min-h-screen bg-[#f7f9f8] text-[#132a34]">
-      <header className="border-b border-[#e2e8e6] bg-white">
-        <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-9">
-          <Link href="/renthome" className="inline-flex items-center gap-2.5" aria-label="RentHome Departamentos, inicio">
-            <Image src="/brand/renthome-mark.png" alt="" width={62} height={62} priority className="h-12 w-12 object-contain sm:h-[62px] sm:w-[62px]" />
+    <div className="min-h-screen">
+      <a href="#renthome-main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3">Saltar al contenido</a>
+      <header className="border-b border-[var(--rh-line)] bg-white">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-8">
+          <Link href="/renthome" className="inline-flex shrink-0 items-center gap-2" aria-label="RentHome Departamentos, inicio">
+            <Image src="/brand/renthome-mark.png" alt="" width={44} height={44} unoptimized className="size-10 rounded-lg sm:size-11" />
             <span className="flex flex-col">
-              <span className="text-[2rem] font-extrabold leading-none tracking-[-.055em] sm:text-[2.4rem]"><span className="text-[#a9520a]">Rent</span>Home</span>
-              <span className="mt-1 text-xs font-bold uppercase tracking-[.17em] text-[#466069]">Departamentos</span>
+              <span className="text-[1.58rem] font-extrabold leading-none tracking-[-.04em]">Rent<span className="text-[#985313]">Home</span></span>
+              <span className="mt-1 text-[10px] font-extrabold uppercase tracking-[.13em] text-[var(--rh-muted)]">Departamentos</span>
             </span>
           </Link>
-          <nav aria-label="Navegación de RentHome" className="flex items-center gap-4 text-sm font-semibold sm:gap-6">
-            <Link href="/renthome#departamentos" className="hidden hover:underline sm:inline">Departamentos</Link>
-            <a href="https://wa.me/59177175497" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-[#b9cbc5] px-3 py-2.5 text-[#075749] hover:bg-[#eef3f0]"><MessageCircle size={18} aria-hidden /> <span className="sr-only sm:not-sr-only">Contacto</span></a>
+          <nav aria-label="Navegación de RentHome" className="flex items-center gap-3 text-sm font-bold sm:gap-6">
+            <Link href={catalogHref} className="hidden hover:underline sm:inline">Alojamientos</Link>
+            <a href="https://wa.me/59177175497" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--rh-line)] px-3 text-[var(--rh-brand)] hover:bg-[var(--rh-tint)]"><MessageCircle size={17} aria-hidden /> WhatsApp</a>
           </nav>
         </div>
       </header>
-      <div className="mx-auto max-w-[1320px] px-5 pb-16 pt-5 sm:px-9 sm:pt-8">
-        {!propertyId && <div className="grid overflow-hidden rounded-[1.6rem] bg-[#102a33] text-white md:grid-cols-[1fr_1.12fr]">
-          <div className="flex flex-col justify-center px-6 pb-8 pt-9 sm:px-10 md:py-12 lg:px-13">
-            <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#f8c48d]"><MapPin size={18} aria-hidden /> Santa Cruz de la Sierra, Bolivia</p>
-            <h1 className="max-w-xl text-[clamp(2.45rem,5vw,4.3rem)] font-extrabold leading-[1.03] tracking-[-.055em]">Tu próximo departamento <span className="text-[#f8c48d]">en Equipetrol.</span></h1>
-            <p className="mt-5 max-w-[29rem] text-lg leading-relaxed text-[#e2eced]">Explora alojamientos amoblados, compara lo que ofrece cada uno y solicita tu reserva directamente con RentHome.</p>
+      <main id="renthome-main" className="mx-auto max-w-[1400px] px-4 pb-16 pt-4 sm:px-8 sm:pt-6">
+        {!propertyId && <>
+          <div className="relative isolate flex min-h-[300px] items-end overflow-hidden rounded-2xl bg-[var(--rh-deep)] text-white sm:min-h-[390px] sm:items-center lg:min-h-[445px]">
+            <Image preload fill sizes="(max-width: 1400px) 100vw, 1340px" src={heroPhoto}
+              alt="Piscina en la terraza de Sky Elite al atardecer" className="object-cover object-[62%_52%] sm:object-[center_49%]" />
+            <div className={"absolute inset-0 " + styles.heroShade} aria-hidden />
+            <div className="relative z-10 px-5 pb-12 pt-32 sm:max-w-2xl sm:px-12 sm:pb-20 sm:pt-12 lg:px-17">
+              <h1 className="max-w-[12ch] text-balance text-[clamp(2.3rem,5vw,4.75rem)] font-extrabold leading-[1.04] tracking-[-.04em]">Tu estadía en Equipetrol</h1>
+              <p className="mt-3 max-w-[38ch] text-pretty text-sm leading-relaxed text-[#edf5ff] sm:mt-5 sm:text-lg">Departamentos amoblados en Santa Cruz de la Sierra. Elige tus fechas y solicita tu reserva con RentHome.</p>
+            </div>
+            <span className="absolute bottom-5 right-6 hidden rounded-md bg-[var(--rh-deep)]/90 px-3 py-1.5 text-xs font-semibold text-white lg:block">Terraza de Sky Elite</span>
           </div>
-          <div className="relative min-h-[245px] bg-[#23404a] md:min-h-[392px]">
-            <Image priority={!!featured} fill unoptimized={!!featured} sizes="(max-width: 767px) 95vw, 55vw" src={heroPhoto}
-              alt={featured ? featured.details.title : ""} className="object-cover object-center" />
-            {featured && <Link href={`/renthome/${featured.id}`} className="absolute bottom-4 right-4 max-w-[calc(100%_-_2rem)] rounded-lg bg-[#102a33]/90 px-3 py-2 text-sm font-semibold text-white hover:underline">{featured.details.title}</Link>}
+          <div id="buscar-estadia" className="relative z-10 mx-auto -mt-6 max-w-5xl scroll-mt-5 rounded-xl bg-white p-3 shadow-[0_10px_32px_#0b233c1e] sm:-mt-10 sm:p-4">
+            {search}
           </div>
-        </div>}
+        </>}
         {property && <>
-          <Link href="/renthome#departamentos" className="mb-5 inline-block text-sm font-semibold text-[#075749] hover:underline">Todos los departamentos</Link>
-          <h1 className="mb-3 text-3xl font-extrabold tracking-tight sm:text-5xl">{property.details.title}</h1>
-          <p className="mb-4 flex items-center gap-2 text-[#466069]"><MapPin size={18} aria-hidden /> {rentHomePublicLocation(property.details)}</p>
-          <a href="#reserva-directa" className="mb-5 inline-block font-semibold text-[#075749] underline lg:hidden">Consultar disponibilidad</a>
+          <Link href={catalogHref} className="mb-4 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-[var(--rh-brand)] hover:underline"><ArrowLeft size={16} aria-hidden /> Volver a alojamientos</Link>
+          <h1 className="mb-3 max-w-5xl text-balance text-3xl font-extrabold leading-tight tracking-[-.035em] sm:text-5xl">{property.details.title}</h1>
+          <p className="mb-4 flex items-center gap-2 text-[var(--rh-muted)]"><MapPin size={18} aria-hidden /> {rentHomePublicLocation(property.details)}</p>
+          <a href="#reserva-directa" className="mb-5 inline-flex min-h-10 items-center gap-2 font-extrabold text-[var(--rh-brand)] underline lg:hidden"><CalendarDays size={17} aria-hidden /> Consultar disponibilidad</a>
           {property.photos.length > 0 && <>
-            <div className="relative mb-7 overflow-hidden rounded-[1.2rem] bg-[#e7eeeb]">
+            <div className="relative mb-7 overflow-hidden rounded-[1.2rem] bg-[var(--rh-tint)]">
               <div className="grid h-[280px] grid-cols-2 gap-1.5 sm:h-[350px] sm:grid-cols-4 sm:grid-rows-2 lg:h-[430px]">
                 {property.photos.length >= 5 ? property.photos.slice(0, 5).map((photo, index) => (
                   <button type="button" key={photo} onClick={() => { setActivePhoto(index); gallery.current?.showModal(); }}
@@ -219,7 +261,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                 </button>}
               </div>
               <button type="button" onClick={() => { setActivePhoto(0); gallery.current?.showModal(); }}
-                className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-lg bg-[#102a33] px-3 py-2 text-sm font-semibold text-white shadow-lg hover:bg-[#075749] sm:bottom-4 sm:right-4">
+                className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-lg bg-[var(--rh-deep)] px-3 py-2 text-sm font-semibold text-white shadow-lg hover:bg-[var(--rh-brand)] sm:bottom-4 sm:right-4">
                 <Grid2X2 size={16} aria-hidden /> Ver las {property.photos.length} fotos
               </button>
             </div>
@@ -228,7 +270,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                 const direction = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
                 if (direction) setActivePhoto((index) => (index + direction + property.photos.length) % property.photos.length);
               }}
-              className="m-auto w-[min(94vw,900px)] max-w-none rounded-2xl border-0 bg-[#102a33] p-3 text-white backdrop:bg-[#09171c]/85 sm:p-5">
+              className="m-auto w-[min(94vw,900px)] max-w-none rounded-2xl border-0 bg-[var(--rh-deep)] p-3 text-white backdrop:bg-[#09171c]/85 sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="font-semibold">{property.details.title} · {activePhoto + 1} de {property.photos.length}</h2>
                 <button type="button" aria-label="Cerrar galería" onClick={() => gallery.current?.close()} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/45 hover:bg-white/10"><X size={20} aria-hidden /></button>
@@ -238,65 +280,111 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                   alt={`${property.details.title}, foto ${activePhoto + 1}`} className="object-contain" />
                 {property.photos.length > 1 && <>
                   <button type="button" aria-label="Foto anterior" onClick={() => setActivePhoto((activePhoto + property.photos.length - 1) % property.photos.length)}
-                    className="absolute left-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[#132a34]"><ChevronLeft aria-hidden /></button>
+                    className="absolute left-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[var(--rh-ink)]"><ChevronLeft aria-hidden /></button>
                   <button type="button" aria-label="Foto siguiente" onClick={() => setActivePhoto((activePhoto + 1) % property.photos.length)}
-                    className="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[#132a34]"><ChevronRight aria-hidden /></button>
+                    className="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[var(--rh-ink)]"><ChevronRight aria-hidden /></button>
                 </>}
               </div>
             </dialog>
           </>}
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:gap-10">
             <div className="min-w-0 space-y-6">
-              <section className="rounded-2xl border border-[#dce2e2] bg-white p-5 sm:p-7">
+              <section className="border-b border-[var(--rh-line)] pb-6 pt-2 sm:pb-7">
                 <h2 className="text-xl font-extrabold">Departamento completo</h2>
-                <p className="mt-2 flex items-start gap-2 text-sm text-[#466069]"><Users size={17} className="mt-0.5 shrink-0" aria-hidden /><span>Hasta {property.details.capacity} huéspedes{property.details.layout && ` · ${property.details.layout}`}</span></p>
-                <p className="mt-5 max-w-3xl whitespace-pre-line leading-relaxed text-[#344d56]">{property.details.description}</p>
+                <p className="mt-2 flex items-start gap-2 text-sm text-[var(--rh-muted)]"><Users size={17} className="mt-0.5 shrink-0" aria-hidden /><span>Hasta {property.details.capacity} huéspedes{property.details.layout && ` · ${property.details.layout}`}</span></p>
+                <p className="mt-5 max-w-3xl whitespace-pre-line leading-relaxed text-[var(--rh-muted)]">{property.details.description}</p>
               </section>
               <RentHomeAmenities services={property.details.services} />
-              <section className="rounded-2xl border border-[#dce2e2] bg-white p-5 sm:p-7">
+              <section className="border-b border-[var(--rh-line)] pb-6 sm:pb-7">
                 <h2 className="mb-3 text-xl font-extrabold">Ubicación</h2>
-                <p className="flex items-start gap-2 text-[#344d56]"><MapPin size={18} className="mt-0.5 shrink-0 text-[#075749]" aria-hidden />{rentHomePublicLocation(property.details)}</p>
-                {property.details.locationNotes && <p className="mt-3 whitespace-pre-line text-[#344d56]">{property.details.locationNotes}</p>}
+                <p className="flex items-start gap-2 text-[var(--rh-muted)]"><MapPin size={18} className="mt-0.5 shrink-0 text-[var(--rh-brand)]" aria-hidden />{rentHomePublicLocation(property.details)}</p>
+                {property.details.locationNotes && <p className="mt-3 whitespace-pre-line text-[var(--rh-muted)]">{property.details.locationNotes}</p>}
               </section>
-              <section className="rounded-2xl border border-[#dce2e2] bg-white p-5 sm:p-7">
+              <section className="pb-4">
                 <h2 className="mb-3 text-xl font-extrabold">Antes de tu estadía</h2>
-                <p className="text-[#344d56]">Ingreso desde {property.checkInTime} · Salida hasta {property.checkOutTime}</p>
-                {property.details.rules && <p className="mt-3 whitespace-pre-line text-[#344d56]">{property.details.rules}</p>}
+                <dl className="grid max-w-md grid-cols-2 gap-3 rounded-xl bg-[var(--rh-tint)] p-4">
+                  <div><dt className="text-sm text-[var(--rh-muted)]">Ingreso desde</dt><dd className="font-bold tabular-nums">{property.checkInTime}</dd></div>
+                  <div><dt className="text-sm text-[var(--rh-muted)]">Salida hasta</dt><dd className="font-bold tabular-nums">{property.checkOutTime}</dd></div>
+                </dl>
+                {property.details.rules && <p className="mt-3 whitespace-pre-line text-[var(--rh-muted)]">{property.details.rules}</p>}
               </section>
             </div>
             {reservationCard}
           </div>
         </>}
-        {!propertyId && <div className="relative z-10 mb-8 mt-4 rounded-2xl border border-[#dce2e2] bg-white p-4 shadow-[0_16px_32px_#10272910] sm:p-5 md:-mt-5 md:mx-6">{search}</div>}
         {!propertyId && error && <p role="alert" className="my-4 rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
-        {loading && <p className="mt-4" role="status">Consultando alojamientos…</p>}
+        {loading && <p className="mt-8 text-sm font-semibold text-[var(--rh-muted)]" role="status">Consultando alojamientos…</p>}
         {!loading && propertyId && !property && <p>Este departamento no está publicado.</p>}
-        {!propertyId && !loading && <section id="departamentos" className="scroll-mt-6">
+        {!propertyId && !loading && <section id="departamentos" className="mt-9 scroll-mt-5 sm:mt-10">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{query ? "Departamentos disponibles" : "Explora los departamentos"}</h2>
-              <p className="mt-2 text-[#466069]">{query && !error ? `${dateLabel(query.checkIn)} a ${dateLabel(query.checkOut)} · ${query.guests} huésped(es)` : "Departamentos completos en Santa Cruz de la Sierra"}</p>
+              <h2 ref={resultsHeading} tabIndex={-1} className="scroll-mt-5 text-balance text-3xl font-extrabold tracking-[-.035em] sm:text-4xl">{query ? "Departamentos disponibles" : "Encuentra tu departamento"}</h2>
+              <p className="mt-1.5 text-sm text-[var(--rh-muted)]">{query && !error ? `${dateLabel(query.checkIn)} a ${dateLabel(query.checkOut)} · ${query.guests} ${query.guests === "1" ? "huésped" : "huéspedes"}` : "Alojamientos amoblados en Santa Cruz de la Sierra"}</p>
             </div>
-            <span className="text-sm font-semibold text-[#466069]">{cards.length} {cards.length === 1 ? "alojamiento" : "alojamientos"}</span>
+            <span role="status" className="text-sm font-bold text-[var(--rh-muted)]">{cards.length} {cards.length === 1 ? "alojamiento individual" : "alojamientos individuales"}{groups.length > 0 && ` · ${groups.length} ${groups.length === 1 ? "opción grupal" : "opciones grupales"}`}</span>
           </div>
-          {allCards.length > 0 && <div className="mb-5 flex flex-wrap gap-2" aria-label="Filtrar por servicios">
+          {groups.length > 0 && <section aria-labelledby="renthome-groups" className="mb-8 space-y-4">
+            <div>
+              <h3 id="renthome-groups" className="text-xl font-extrabold">Departamentos para grupos</h3>
+              <p className="mt-1 text-sm text-[var(--rh-muted)]">Aloja a tu grupo en el mismo edificio con una sola solicitud. Los importes corresponden a toda la estadía.</p>
+            </div>
+            {receiptView || <>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {groups.map((group) => (
+                  <article key={group.units.map((unit) => unit.propertyId).join("-")} className={`flex flex-col gap-3 rounded-xl border bg-white p-4 sm:p-5 ${selectedGroup === group ? "border-[var(--rh-brand)]" : "border-[var(--rh-line)]"}`}>
+                    <h4 className="font-extrabold">{group.units.length} departamentos en {group.building}</h4>
+                    <ul aria-label="Distribución y precios por departamento" className="divide-y divide-[var(--rh-line)] text-sm">
+                      {group.units.map((unit) => <li key={unit.propertyId} className="flex items-start justify-between gap-3 py-2">
+                        <span className="min-w-0">
+                          <Link href={`/renthome/${unit.propertyId}`} className="font-semibold hover:underline">{unit.title}</Link>
+                          <span className="block text-[var(--rh-muted)]">{unit.guests} {unit.guests === 1 ? "huésped" : "huéspedes"}</span>
+                        </span>
+                        <strong className="shrink-0 tabular-nums">{money(unit.totalMinor)}</strong>
+                      </li>)}
+                    </ul>
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[var(--rh-line)] pt-3">
+                      <p className="text-sm">Total <strong className="text-lg tabular-nums">{money(group.totalMinor)}</strong></p>
+                      <button type="button" className={button} aria-pressed={selectedGroup === group} disabled={sending} onClick={() => {
+                        setConfirmation(undefined); setRequestError(""); setSelectedGroup(group);
+                        if (selectedGroup === group) groupHeading.current?.focus();
+                      }}>{selectedGroup === group ? "Ver mi selección" : "Elegir opción"}</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {selectedGroup && <div className="max-w-xl space-y-3 rounded-xl border border-[var(--rh-line)] bg-white p-5">
+                <h4 ref={groupHeading} tabIndex={-1} className="scroll-mt-5 text-xl font-extrabold">Solicitar {selectedGroup.units.length} departamentos</h4>
+                <p className="text-sm text-[var(--rh-muted)]">{selectedGroup.building} · <strong className="tabular-nums">{money(selectedGroup.totalMinor)} total</strong> · Confirmación por WhatsApp</p>
+                {requestForm}
+              </div>}
+            </>}
+          </section>}
+          {allCards.length > 0 && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-y border-[var(--rh-line)] py-3">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por servicios">
             {["", ...filters.filter((option) => allCards.some((item) => item.details.services.toLowerCase().includes(option.toLowerCase())))].map((option) => <button key={option}
               type="button" aria-pressed={filter === option} onClick={() => setFilter(option)}
-              className={`rounded-full border px-3.5 py-2 text-sm font-semibold ${filter === option ? "border-[#075749] bg-[#075749] text-white" : "border-[#cad8d4] bg-white text-[#25454a] hover:bg-[#eef3f0]"}`}>{option || "Todos"}</button>)}
+              className={`min-h-10 rounded-full border px-3.5 text-sm font-bold ${filter === option ? "border-[var(--rh-brand)] bg-[var(--rh-brand)] text-white" : "border-[var(--rh-line)] bg-white text-[var(--rh-ink)] hover:bg-[var(--rh-tint)]"}`}>{option || "Todos"}</button>)}
+            </div>
+            {cards.length > 0 && <button type="button" aria-expanded={showMap} aria-controls={showMap ? "renthome-results-map" : undefined} onClick={() => setShowMap(!showMap)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--rh-line)] bg-white px-3 text-sm font-extrabold text-[var(--rh-brand)] hover:bg-[var(--rh-tint)]">
+              {showMap ? <List size={17} aria-hidden /> : <Map size={17} aria-hidden />} {showMap ? "Solo lista" : "Mostrar mapa"}
+            </button>}
           </div>}
-          {!cards.length && !error && <p>{query ? "No encontramos departamentos para esas fechas y cantidad de huéspedes." : "El catálogo está en preparación."}</p>}
-          {cards.length > 0 && <div className="grid items-start gap-5 lg:grid-cols-2">
-            <RentHomeResultsMap listings={cards} search={query ? new URLSearchParams(query).toString() : ""} />
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:order-first lg:grid-cols-1 xl:grid-cols-2">
+          {!cards.length && !groups.length && !error && <div className="rounded-xl border border-[var(--rh-line)] bg-white px-5 py-8">
+            <p className="font-bold">{query ? "No hay alojamientos disponibles para esa búsqueda." : "El catálogo está en preparación."}</p>
+            {query && <a href="#buscar-estadia" className="mt-3 inline-block text-sm font-bold text-[var(--rh-brand)] underline">Cambiar fechas o huéspedes</a>}
+          </div>}
+          {cards.length > 0 && <div className={`grid items-start gap-5 ${showMap ? "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]" : ""}`}>
+            {showMap && <div id="renthome-results-map" className="min-w-0 lg:sticky lg:top-5"><RentHomeResultsMap listings={cards} search={queryString} /></div>}
+            <div className={`grid min-w-0 gap-4 sm:grid-cols-2 ${showMap ? "lg:order-first lg:grid-cols-1 xl:grid-cols-2" : "lg:grid-cols-3"}`}>
               {cards.map((listing) => <ListingCard key={listing.id} listing={listing} query={query} />)}
             </div>
           </div>}
         </section>}
-      </div>
-      <footer className="border-t border-[#dce2e2] bg-white"><div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-3 px-5 py-6 text-sm text-[#466069] sm:px-9">
-        <p><strong className="text-[#132a34]">RentHome Departamentos</strong> · Santa Cruz de la Sierra</p>
-        <a href="https://wa.me/59177175497" target="_blank" rel="noreferrer" className="font-semibold text-[#075749] hover:underline">Ayuda por WhatsApp</a>
+      </main>
+      <footer className="bg-[var(--rh-deep)] text-white"><div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-4 py-7 text-sm sm:px-8">
+        <p><strong className="block text-base">RentHome Departamentos</strong><span className="text-[#c8dceb]">Santa Cruz de la Sierra, Bolivia</span></p>
+        <a href="https://wa.me/59177175497" target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 font-bold text-[var(--rh-gold)] hover:underline"><MessageCircle size={17} aria-hidden /> Ayuda por WhatsApp</a>
       </div></footer>
-    </main>
+    </div>
   );
 }

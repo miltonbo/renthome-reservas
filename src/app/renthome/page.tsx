@@ -5,6 +5,8 @@ export const metadata = {
   description: "Departamentos amoblados para estadías cortas en Santa Cruz de la Sierra.",
 };
 
-export default function RentHomePage() {
-  return <RentHomeSite />;
+export default async function RentHomePage({ searchParams }: {
+  searchParams: Promise<{ checkIn?: string; checkOut?: string; guests?: string }>;
+}) {
+  return <RentHomeSite initialDates={await searchParams} />;
 }

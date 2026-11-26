@@ -61,7 +61,7 @@ export default function RentHomeResultsMap({ listings, search }: { listings: Map
     DomEvent.disableClickPropagation(content);
     DomEvent.disableScrollPropagation(content);
     const title = document.createElement("strong");
-    title.className = "mx-auto mb-2 block w-fit rounded-full bg-white px-3 py-1 text-xs text-[#132a34] shadow-sm";
+    title.className = "mx-auto mb-2 block w-fit rounded-full bg-white px-3 py-1 text-xs text-[var(--rh-ink)] shadow-sm";
     title.textContent = "Equipetrol";
     content.append(title);
     const list = document.createElement("ul");
@@ -70,10 +70,10 @@ export default function RentHomeResultsMap({ listings, search }: { listings: Map
       const item = document.createElement("li");
       const link = document.createElement("a");
       link.href = `/renthome/${listing.id}${search ? `?${search}` : ""}`;
-      link.className = "block rounded-xl border border-[#d5e2de] bg-white px-2 py-1.5 text-center text-[#132a34]! shadow-md hover:border-[#075749] hover:bg-[#eef6f3] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#075749]";
+      link.className = "block rounded-xl border border-[#d5e2de] bg-white px-2 py-1.5 text-center text-[var(--rh-ink)]! shadow-md hover:border-[var(--rh-brand)] hover:bg-[var(--rh-tint)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--rh-brand)]";
       if (listing.totalMinor !== null) {
         const cost = document.createElement("strong");
-        cost.className = "block whitespace-nowrap text-sm leading-tight text-[#075749]";
+        cost.className = "block whitespace-nowrap text-sm leading-tight text-[var(--rh-brand)]";
         cost.textContent = price(listing.totalMinor);
         link.append(cost);
       }
@@ -93,16 +93,16 @@ export default function RentHomeResultsMap({ listings, search }: { listings: Map
   }, [zoneListings, search]);
 
   return (
-    <aside aria-label="Mapa de alojamientos" className="overflow-hidden rounded-2xl border border-[#dce2e2] bg-white lg:sticky lg:top-5">
-      <div className="border-b border-[#dce2e2] px-4 py-3">
+    <aside aria-label="Mapa de alojamientos" className="overflow-hidden rounded-2xl border border-[var(--rh-line)] bg-white">
+      <div className="border-b border-[var(--rh-line)] px-4 py-3">
         <h3 className="font-bold">Mapa de alojamientos</h3>
-        <p className="text-sm text-[#466069]">{search ? "Ubicación por barrio · Totales en Bs por estadía" : "Ubicación por barrio · Elige fechas para ver precios"}</p>
+        <p className="text-sm text-[var(--rh-muted)]">{search ? "Ubicación por barrio · Totales en Bs por estadía" : "Ubicación por barrio · Elige fechas para ver precios"}</p>
       </div>
-      <div className="relative isolate bg-[#e7eeeb]">
-        <div ref={container} className="h-[330px] w-full bg-[#e7eeeb] lg:h-[clamp(420px,65vh,660px)]" />
+      <div className="relative isolate bg-[var(--rh-tint)]">
+        <div ref={container} className="h-[330px] w-full bg-[var(--rh-tint)] lg:h-[clamp(420px,65vh,660px)]" />
         {mapUnavailable && <p role="status" className="absolute bottom-7 left-3 z-[500] rounded-lg bg-white px-3 py-2 text-sm shadow">No se pudo cargar el mapa base. Puedes consultar los alojamientos de la lista.</p>}
       </div>
-      {unmapped > 0 && <p className="border-t border-[#dce2e2] px-4 py-3 text-xs text-[#466069]">{unmapped === 1 ? "Un alojamiento solo aparece en la lista." : `${unmapped} alojamientos solo aparecen en la lista.`}</p>}
+      {unmapped > 0 && <p className="border-t border-[var(--rh-line)] px-4 py-3 text-xs text-[var(--rh-muted)]">{unmapped === 1 ? "Un alojamiento solo aparece en la lista." : `${unmapped} alojamientos solo aparecen en la lista.`}</p>}
     </aside>
   );
 }

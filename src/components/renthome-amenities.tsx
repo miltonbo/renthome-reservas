@@ -33,22 +33,22 @@ export function RentHomeAmenities({ services }: { services: string }) {
   const remaining = amenities.filter((amenity) => !featured.includes(amenity));
 
   return (
-    <section aria-labelledby="renthome-amenities" className="rounded-2xl border border-[#dce2e2] bg-white p-5 sm:p-7">
+    <section aria-labelledby="renthome-amenities" className="border-b border-[var(--rh-line)] pb-6 sm:pb-7">
       <h2 id="renthome-amenities" className="mb-4 text-xl font-extrabold">Servicios del alojamiento</h2>
       {featured.length > 0 && <ul aria-label="Servicios destacados" className="grid grid-cols-2 gap-2.5 sm:gap-3">
         {featured.map(({ label, Icon, tone }) => (
-          <li key={label} className="flex min-w-0 flex-col items-start gap-2 rounded-xl border border-[#e0e9e5] bg-[#f7f9f8] p-3 min-[420px]:flex-row min-[420px]:items-center">
+          <li key={label} className="flex min-w-0 flex-col items-start gap-2 rounded-xl bg-[var(--rh-tint)] p-3 min-[420px]:flex-row min-[420px]:items-center">
             <span className={`grid size-9 shrink-0 place-items-center rounded-lg ${tone}`}>
               <Icon size={20} aria-hidden />
             </span>
-            <span className="min-w-0 break-words text-sm font-semibold leading-snug text-[#132a34]">{label}</span>
+            <span className="min-w-0 break-words text-sm font-semibold leading-snug text-[var(--rh-ink)]">{label}</span>
           </li>
         ))}
       </ul>}
-      {remaining.length > 0 && <ul aria-label={featured.length ? "Otros servicios" : undefined} className={`grid gap-x-5 gap-y-3 sm:grid-cols-2 ${featured.length ? "mt-5 border-t border-[#e0e9e5] pt-5" : ""}`}>
+      {remaining.length > 0 && <ul aria-label={featured.length ? "Otros servicios" : undefined} className={`grid gap-x-5 gap-y-3 sm:grid-cols-2 ${featured.length ? "mt-5 border-t border-[var(--rh-line)] pt-5" : ""}`}>
         {remaining.map(({ label, Icon }) => (
-          <li key={label} className="flex items-start gap-2.5 text-sm text-[#344d56]">
-            <Icon size={18} className="mt-0.5 shrink-0 text-[#075749]" aria-hidden />
+          <li key={label} className="flex items-start gap-2.5 text-sm text-[var(--rh-muted)]">
+            <Icon size={18} className="mt-0.5 shrink-0 text-[var(--rh-brand)]" aria-hidden />
             <span>{label}</span>
           </li>
         ))}

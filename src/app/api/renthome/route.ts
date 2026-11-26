@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { rentHomeCatalog, rentHomeDates } from "@/lib/renthome";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { boliviaDateString } from "@/lib/messaging-availability";
+import { quoteRentHomeGroup, rentHomeGroups } from "@/lib/renthome-group";
 
 class RequestConflict extends Error {
   constructor(readonly code: "duplicate_request" | "active_request", message: string) {
@@ -36,7 +37,14 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 400 });
   }
-  return NextResponse.json({ listings: await rentHomeCatalog(query) }, { headers: { "Cache-Control": "no-store" } });
+  const guests = query?.guests ?? 0;
+  const options = await rentHomeCatalog(query, guests >= 3);
+  const groups = rentHomeGroups(options, guests);
+  const listings = options.filter((item) => item.details.capacity >= guests).map(({ building, ...listing }) => {
+    void building;
+    return listing;
+  });
+  return NextResponse.json({ listings, groups }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: NextRequest) {
@@ -47,26 +55,44 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const guestName = typeof body?.guestName === "string" ? body.guestName.trim() : "";
   const phone = normalizePhone(body?.phone);
-  if (!body || !Number.isSafeInteger(body.propertyId) || !Number.isSafeInteger(body.totalMinor) ||
+  const groupInput: unknown = body?.units;
+  const isGroup = groupInput !== undefined;
+  if (!body || (!isGroup && !Number.isSafeInteger(body.propertyId)) || !Number.isSafeInteger(body.totalMinor) ||
     guestName.length < 2 || guestName.length > 120 || !phone) {
     return NextResponse.json({ error: "Revisa tu nombre y tu número de WhatsApp." }, { status: 400 });
   }
   let query;
   try { query = rentHomeDates(body); }
   catch (error) { return NextResponse.json({ error: (error as Error).message }, { status: 400 }); }
-  const option = (await rentHomeCatalog(query)).find((item) => item.id === body.propertyId);
-  if (!option || option.totalMinor === null || option.totalMinor !== body.totalMinor) {
+  let requestedUnits: { propertyId: number; totalMinor: number }[] = [];
+  if (isGroup) {
+    if (!Array.isArray(groupInput) || groupInput.length < 2 || groupInput.length > 3 ||
+      groupInput.some((unit) => !Number.isSafeInteger(unit?.propertyId) || !Number.isSafeInteger(unit?.totalMinor))) {
+      return NextResponse.json({ error: "Selecciona dos o tres departamentos válidos." }, { status: 400 });
+    }
+    requestedUnits = groupInput;
+  }
+  const options = await rentHomeCatalog(query, isGroup);
+  const option = options.find((item) => item.id === body.propertyId);
+  const group = isGroup ? quoteRentHomeGroup(requestedUnits.flatMap((unit) => {
+    const match = options.find((item) => item.id === unit.propertyId && item.totalMinor === unit.totalMinor);
+    return match ? [match] : [];
+  }), query.guests ?? 0) : null;
+  const totalMinor = isGroup ? group?.totalMinor : option?.totalMinor;
+  const propertyId = isGroup ? group?.units[0].propertyId : option?.id;
+  if (!propertyId || totalMinor == null || totalMinor !== body.totalMinor ||
+    (isGroup && group?.units.length !== requestedUnits.length)) {
     return NextResponse.json({ error: "La disponibilidad o el precio cambió. Vuelve a buscar para revisar la cotización." }, { status: 409 });
   }
   const code = `RH-${randomBytes(6).toString("hex").toUpperCase()}`;
-  const totalMinor = option.totalMinor;
   const today = boliviaDateString();
   try {
     await prisma.$transaction(async (db) => {
       // Acquire the SQLite write lock before checking for competing submissions.
       const created = await db.rentHomeRequest.create({ data: {
-        code, requestedPropertyId: option.id, checkIn: query.checkIn, checkOut: query.checkOut,
+        code, requestedPropertyId: propertyId, checkIn: query.checkIn, checkOut: query.checkOut,
         guests: query.guests!, guestName, phone, totalMinor,
+        ...(group ? { units: { create: group.units.map(({ propertyId, guests, totalMinor }) => ({ propertyId, guests, totalMinor })) } } : {}),
       }, select: { id: true } });
       const existing = await db.rentHomeRequest.findMany({
         where: {
@@ -74,14 +100,18 @@ export async function POST(request: NextRequest) {
           phone: { in: phoneVariants(phone) },
           OR: [{ state: "pending", checkOut: { gt: today } }, { state: "confirmed", reservationId: { not: null } }],
         },
-        select: { state: true, reservationId: true, requestedPropertyId: true, checkIn: true, checkOut: true },
+        select: { state: true, reservationId: true, requestedPropertyId: true, checkIn: true, checkOut: true,
+          units: { select: { propertyId: true, reservationId: true } } },
       });
       const pending = existing.filter((item) => item.state === "pending");
-      if (pending.some((item) => item.requestedPropertyId === option.id && item.checkIn === query.checkIn && item.checkOut === query.checkOut)) {
+      const propertyIds = group ? group.units.map((unit) => unit.propertyId) : [propertyId];
+      if (pending.some((item) => item.checkIn === query.checkIn && item.checkOut === query.checkOut &&
+        (propertyIds.includes(item.requestedPropertyId) || item.units.some((unit) => propertyIds.includes(unit.propertyId))))) {
         throw new RequestConflict("duplicate_request", "Ya hay una solicitud pendiente con este WhatsApp para el mismo alojamiento y fechas.");
       }
       if (body.confirmAnother === true) return;
-      const confirmedIds = existing.flatMap((item) => item.state === "confirmed" && item.reservationId !== null ? [item.reservationId] : []);
+      const confirmedIds = existing.flatMap((item) => item.state === "confirmed"
+        ? [item.reservationId, ...item.units.map((unit) => unit.reservationId)].filter((id) => id !== null) : []);
       const active = pending.length > 0 || (confirmedIds.length > 0 && await db.reservation.findFirst({
         where: { id: { in: confirmedIds }, status: "confirmed", checkOut: { gt: new Date(`${today}T00:00:00Z`) } },
         select: { id: true },
@@ -94,6 +124,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo registrar la solicitud. Intenta nuevamente." }, { status: 500 });
   }
   const shortDate = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
-  const message = `Hola, quiero confirmar mi reserva ${code}. Mi fecha de ingreso es el ${shortDate(query.checkIn)} y mi fecha de salida es el ${shortDate(query.checkOut)}.`;
+  const message = `Hola, quiero confirmar mi reserva ${code}${group ? ` de ${group.units.length} departamentos para ${query.guests} huéspedes` : ""}. Mi fecha de ingreso es el ${shortDate(query.checkIn)} y mi fecha de salida es el ${shortDate(query.checkOut)}.`;
   return NextResponse.json({ code, whatsapp: `https://wa.me/59177175497?text=${encodeURIComponent(message)}` }, { status: 201 });
 }

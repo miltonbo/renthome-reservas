@@ -7,6 +7,7 @@ type RequestRow = {
   id: number; code: string; state: string; requestedPropertyId: number; assignedPropertyId: number | null;
   reservationId: number | null; checkIn: string; checkOut: string; guestName: string; phone: string;
   guests: number; totalMinor: number;
+  units: { propertyId: number; guests: number; totalMinor: number; reservationId: number | null }[];
 };
 type StaffData = { configured: boolean; requests: RequestRow[]; properties: Property[] };
 const control = "rounded-lg border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-sm";
@@ -57,8 +58,17 @@ export function RentHomeStaffPanel({ onOpen, onConfirmed }: { onOpen: (id: numbe
           <p>{row.guests} huésped(es) · Bs {(row.totalMinor / 100).toLocaleString("es-BO")} · {" "}
             <a className="underline" target="_blank" rel="noreferrer" href={`https://wa.me/${row.phone.startsWith("+") ? row.phone.slice(1) : row.phone.length === 8 ? "591" + row.phone : row.phone}`}>WhatsApp {row.phone}</a>
           </p>
-          <p>Solicitado: {propertyName(row.requestedPropertyId)} · Asignado: {propertyName(row.assignedPropertyId)}</p>
-          {row.state === "pending" && <div className="flex flex-wrap gap-2">
+          {row.units.length > 0 ? <ul className="divide-y divide-[var(--line)] rounded-lg border border-[var(--line)] px-3" aria-label="Departamentos de la solicitud grupal">
+            {row.units.map((unit) => <li key={unit.propertyId} className="flex flex-wrap items-center justify-between gap-2 py-2">
+              <span><strong>{propertyName(unit.propertyId)}</strong> · {unit.guests} huésped(es) · Bs {(unit.totalMinor / 100).toLocaleString("es-BO")}</span>
+              {unit.reservationId && <button type="button" className={button} onClick={() => onOpen(unit.reservationId!)}>Abrir reserva</button>}
+            </li>)}
+          </ul> : <p>Solicitado: {propertyName(row.requestedPropertyId)} · Asignado: {propertyName(row.assignedPropertyId)}</p>}
+          {row.state === "pending" && row.units.length > 0 && <div className="flex flex-wrap gap-2">
+            <button className={button} type="button" disabled={busy !== undefined} onClick={() => void act(row, "confirm")}>Confirmar los {row.units.length} departamentos</button>
+            <button className={button} type="button" disabled={busy !== undefined} onClick={() => void act(row, "discard")}>Descartar</button>
+          </div>}
+          {row.state === "pending" && !row.units.length && <div className="flex flex-wrap gap-2">
             <select className={control} aria-label="Departamento para asignar" value={selected[row.id] ?? String(row.assignedPropertyId ?? row.requestedPropertyId)}
               onChange={(event) => setSelected({ ...selected, [row.id]: event.target.value })}>
               {data.properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
@@ -67,7 +77,7 @@ export function RentHomeStaffPanel({ onOpen, onConfirmed }: { onOpen: (id: numbe
             <button className={button} type="button" disabled={busy !== undefined || !row.assignedPropertyId || (selected[row.id] !== undefined && selected[row.id] !== String(row.assignedPropertyId))} onClick={() => void act(row, "confirm")}>Confirmar {row.assignedPropertyId ? propertyName(row.assignedPropertyId) : ""}</button>
             <button className={button} type="button" disabled={busy !== undefined} onClick={() => void act(row, "discard")}>Descartar</button>
           </div>}
-          {row.reservationId && <button type="button" className={button + " justify-self-start"} onClick={() => onOpen(row.reservationId!)}>Abrir reserva confirmada</button>}
+          {row.reservationId && !row.units.length && <button type="button" className={button + " justify-self-start"} onClick={() => onOpen(row.reservationId!)}>Abrir reserva confirmada</button>}
         </div>
       </details>)}
     </div>

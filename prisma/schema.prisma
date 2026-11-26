@@ -332,8 +332,20 @@ model RentHomeRequest {
   totalMinor Int
   state String @default("pending")
   createdAt DateTime @default(now())
+  units RentHomeRequestUnit[]
 
   @@index([requestedPropertyId, state])
+}
+
+model RentHomeRequestUnit {
+  requestId Int
+  request RentHomeRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  propertyId Int
+  guests Int
+  totalMinor Int
+  reservationId Int? @unique
+
+  @@id([requestId, propertyId])
 }
 
 model Reservation {
