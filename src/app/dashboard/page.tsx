@@ -19,6 +19,8 @@ import { ReportsPanel } from "@/components/reports-panel";
 import { SyncAlertsBanner } from "@/components/sync-alerts-banner";
 import { AnnouncementBanner } from "@/components/announcement-banner";
 import { CleanerApp } from "@/components/cleaner-app";
+import { RentHomeTurnoverBoard } from "@/components/renthome-turnover-board";
+import { RentHomePushControl } from "@/components/renthome-push-control";
 import type { Property, Guest, Reservation } from "@/lib/types";
 
 function CleanerShell({
@@ -418,7 +420,7 @@ function AppContent({
     // check only handles the global case so the Cleaning tab never
     // bounces the user into a forced-property selection.
     if (activeView === "cleaning" && !selectedProperty) {
-      return <GlobalCleaningView properties={operationalProperties} />;
+      return <><RentHomeTurnoverBoard /><GlobalCleaningView properties={operationalProperties} /></>;
     }
 
     // Property views
@@ -541,6 +543,7 @@ function AppContent({
         onLogout={handleLogout}
       />
       <SyncAlertsBanner />
+      {activeView === "booking" && <div className="px-3 pt-3 sm:px-6 lg:px-8"><RentHomePushControl /></div>}
       <main
         className={`min-h-0 flex-1 px-3 pb-3 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8 ${activeView === "dashboard" && !selectedPropertyId ? "overflow-hidden" : "overflow-y-auto"}`}
         style={{ scrollbarGutter: "stable" }}
@@ -567,7 +570,17 @@ export default function DashboardPage() {
     <Suspense fallback={<div className="editorial flex h-screen items-center justify-center bg-[var(--bg)] text-[var(--ink-3)]">Loading...</div>}>
       <AuthGuard>
         {(user) =>
-          user.role === "cleaner" ? (
+          user.role === "cleaning_supervisor" ? (
+            <main className="editorial min-h-screen bg-[var(--bg)] px-3 py-5 text-[var(--ink)] sm:px-6">
+              <div className="mx-auto max-w-3xl">
+                <RentHomeTurnoverBoard supervisor />
+                <button type="button" className="min-h-11 px-2 text-sm underline underline-offset-4" onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  window.location.assign("/login");
+                }}>Cerrar sesión</button>
+              </div>
+            </main>
+          ) : user.role === "cleaner" ? (
             <CleanerShell user={user} />
           ) : (
             <AppContent user={user} />

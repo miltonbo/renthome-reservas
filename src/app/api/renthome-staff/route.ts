@@ -8,7 +8,7 @@ import { logAudit } from "@/lib/audit";
 
 export async function GET() {
   const session = await getSession();
-  if (!session || session.role === "cleaner") return NextResponse.json({ error: "Acceso restringido." }, { status: 403 });
+  if (!session || ["cleaner", "cleaning_supervisor"].includes(session.role)) return NextResponse.json({ error: "Acceso restringido." }, { status: 403 });
   const owner = rentHomeOwner();
   if (!owner) return NextResponse.json({ configured: false, requests: [], properties: [] });
   const ids = await listAccessiblePropertyIds(session.userId, session.role);
@@ -31,7 +31,7 @@ class Conflict extends Error {}
 
 export async function PATCH(request: NextRequest) {
   const session = await getSession();
-  if (!session || session.role === "cleaner") return NextResponse.json({ error: "Acceso restringido." }, { status: 403 });
+  if (!session || ["cleaner", "cleaning_supervisor"].includes(session.role)) return NextResponse.json({ error: "Acceso restringido." }, { status: 403 });
   const body = await request.json().catch(() => null);
   if (!body || !Number.isSafeInteger(body.id) || !["assign", "confirm", "discard"].includes(body.action)) {
     return NextResponse.json({ error: "Acción inválida." }, { status: 400 });

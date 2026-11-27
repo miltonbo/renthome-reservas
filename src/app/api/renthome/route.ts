@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { notifyRentHome, pushConfig } from "@/lib/renthome-push";
 import { prisma } from "@/lib/prisma";
 import { rentHomeCatalog, rentHomeDates } from "@/lib/renthome";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -131,6 +132,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo registrar la solicitud. Intenta nuevamente." }, { status: 500 });
   }
   const shortDate = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+  if (pushConfig()) after(() => notifyRentHome("administrators", {
+    title: "Nueva reserva preconfirmada",
+    body: "Hay una solicitud pendiente de revisión en DeptosBO.",
+    path: "/dashboard?view=booking",
+    tag: "preconfirmada-" + code,
+  }).catch(() => console.warn("No se pudo enviar el aviso de preconfirmación.")));
   const message = `Hola, quiero confirmar mi reserva ${code}${group ? ` de ${group.units.length} departamentos para ${query.guests} huéspedes` : ""}. Mi fecha de ingreso es el ${shortDate(query.checkIn)} y mi fecha de salida es el ${shortDate(query.checkOut)}.`;
   return NextResponse.json({ code, whatsapp: `https://wa.me/59177175497?text=${encodeURIComponent(message)}` }, { status: 201 });
 }

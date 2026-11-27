@@ -2,13 +2,18 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 
-const { db, catalog } = vi.hoisted(() => ({
+const { db, catalog, notify, queue, pushConfigured } = vi.hoisted(() => ({
   db: {
     rentHomeRequest: { create: vi.fn(), findMany: vi.fn() },
     reservation: { findFirst: vi.fn() },
   },
   catalog: vi.fn(),
+  notify: vi.fn(),
+  queue: vi.fn(),
+  pushConfigured: vi.fn(),
 }));
+vi.mock("next/server", async (original) => ({ ...await original<typeof import("next/server")>(), after: queue }));
+vi.mock("@/lib/renthome-push", () => ({ notifyRentHome: notify, pushConfig: pushConfigured }));
 vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: (work: (tx: typeof db) => unknown) => work(db) } }));
 vi.mock("@/lib/renthome", () => ({
   rentHomeCatalog: catalog,
@@ -36,6 +41,21 @@ describe("RentHome direct request WhatsApp confirmation", () => {
     db.rentHomeRequest.create.mockResolvedValue({ id: 2 });
     db.rentHomeRequest.findMany.mockResolvedValue([]);
     db.reservation.findFirst.mockResolvedValue(null);
+    pushConfigured.mockReturnValue(false);
+  });
+
+  it("queues one administrator notification only for a recorded preconfirmation", async () => {
+    pushConfigured.mockReturnValue(true);
+    notify.mockResolvedValue(undefined);
+    expect((await send({ totalMinor: 1 })).status).toBe(409);
+    expect(queue).not.toHaveBeenCalled();
+    expect((await send()).status).toBe(201);
+    expect(queue).toHaveBeenCalledTimes(1);
+    await queue.mock.calls[0][0]();
+    expect(notify).toHaveBeenCalledExactlyOnceWith("administrators", expect.objectContaining({
+      title: "Nueva reserva preconfirmada",
+      path: "/dashboard?view=booking",
+    }));
   });
 
   it("normalizes Bolivian numbers and searches previous formats", async () => {

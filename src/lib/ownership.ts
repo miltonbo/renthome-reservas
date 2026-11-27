@@ -22,6 +22,7 @@ export async function getPropertyAccess(
   userId: number,
   role: string
 ): Promise<AccessLevel> {
+  if (role === "cleaning_supervisor") return "none";
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
     select: { userId: true },
@@ -98,6 +99,7 @@ export async function listAccessiblePropertyIds(
   userId: number,
   role: string
 ): Promise<number[]> {
+  if (role === "cleaning_supervisor") return [];
   const ids = new Set<number>();
 
   // Owned

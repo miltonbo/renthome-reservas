@@ -105,6 +105,22 @@ export default function AdminUsersPage() {
     loadUsers();
   }, []);
 
+  async function setSupervisor(user: User) {
+    const supervisor = user.role !== "cleaning_supervisor";
+    if (!window.confirm(supervisor ? "¿Dar acceso de supervisión de limpieza a " + user.username + "?" :
+      "¿Quitar el acceso de supervisión de limpieza a " + user.username + "?")) return;
+    setError("");
+    try {
+      const response = await fetch("/api/users/" + user.id, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ supervisor }),
+      });
+      if (!response.ok) throw new Error((await response.json()).error);
+      loadUsers();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "No se pudo cambiar el rol.");
+    }
+  }
+
   const addUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -230,7 +246,7 @@ export default function AdminUsersPage() {
                           : "bg-[var(--bg-3)] text-[var(--ink-2)]"
                       }`}
                     >
-                      {u.role}
+                      {u.role === "cleaning_supervisor" ? "Supervisión de limpieza" : u.role}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-[var(--ink-3)]">
@@ -244,6 +260,11 @@ export default function AdminUsersPage() {
                     <td className="px-2 py-3 text-right">
                       {u.role !== "superadmin" && (
                         <div className="flex items-center justify-end gap-0.5">
+                          {(u.role === "user" || u.role === "cleaning_supervisor") && <button
+                            type="button" onClick={() => void setSupervisor(u)}
+                            className="min-h-11 rounded-md px-2 text-xs text-[var(--ink-2)] hover:bg-[var(--bg-3)]">
+                            {u.role === "cleaning_supervisor" ? "Quitar supervisión" : "Asignar supervisión"}
+                          </button>}
                           <button
                             type="button"
                             onClick={() => impersonate(u.id, u.username)}

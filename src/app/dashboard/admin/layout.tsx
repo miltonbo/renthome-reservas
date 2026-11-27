@@ -246,7 +246,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {(user) => {
         // Cleaners have no admin surface. Bounce them to the cleaner-app
         // (dashboard already routes them there based on role).
-        if (user.role === "cleaner") {
+        if (user.role === "cleaner" || user.role === "cleaning_supervisor") {
           if (typeof window !== "undefined") router.replace("/dashboard");
           return null;
         }

@@ -29,6 +29,22 @@ const adapter = new PrismaLibSql({ url: config.url, authToken: config.authToken 
 const prisma = new PrismaClient({ adapter });
 
 const schema = `
+CREATE TABLE IF NOT EXISTS "PushSubscription" (
+    "endpoint" TEXT NOT NULL PRIMARY KEY,
+    "userId" INTEGER NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "p256dh" TEXT NOT NULL,
+    "auth" TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "PushSubscription_userId_idx" ON "PushSubscription"("userId");
+CREATE TABLE IF NOT EXISTS "CleaningTurnover" (
+    "propertyId" INTEGER NOT NULL REFERENCES "Property"("id") ON DELETE CASCADE,
+    "date" TEXT NOT NULL,
+    "checkoutAt" DATETIME NOT NULL,
+    "checkoutBy" INTEGER NOT NULL,
+    "readyAt" DATETIME,
+    "readyBy" INTEGER,
+    PRIMARY KEY ("propertyId", "date")
+);
 CREATE TABLE IF NOT EXISTS "RentHomeListing" (
     "propertyId" INTEGER NOT NULL PRIMARY KEY REFERENCES "Property"("id") ON DELETE CASCADE,
     "published" BOOLEAN NOT NULL DEFAULT false,

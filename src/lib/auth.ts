@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
@@ -155,7 +155,7 @@ async function _getSession(): Promise<{
     try {
       const user = await prisma.user.findUnique({
         where: { id: session.userId },
-        select: { suspendedAt: true },
+        select: { suspendedAt: true, role: true },
       });
       if (!user || user.suspendedAt) {
         // Cookie deletion only works in mutable contexts (route handlers /
@@ -164,6 +164,14 @@ async function _getSession(): Promise<{
           cookieStore.delete(COOKIE_NAME);
         } catch {}
         return null;
+      }
+      session.role = user.role;
+      if (session.role === "cleaning_supervisor") {
+        const pathname = (await headers()).get("x-pathname");
+        if (pathname?.startsWith("/api/") && ![
+          "/api/auth/session", "/api/auth/me", "/api/auth/logout",
+          "/api/renthome-turnovers", "/api/renthome-push",
+        ].includes(pathname)) return null;
       }
     } catch {
       // If the DB check fails, fail closed and treat as no session.
