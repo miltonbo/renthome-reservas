@@ -32,6 +32,30 @@ const RentHomeResultsMap = dynamic(() => import("./renthome-results-map"), {
   loading: () => <div className="h-[330px] rounded-2xl border border-[var(--rh-line)] bg-[var(--rh-tint)] lg:h-[420px]" role="status"><span className="sr-only">Cargando mapa…</span></div>,
 });
 
+function shuffleListings(listings: Listing[]) {
+  const shuffled = [...listings];
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swap]] = [shuffled[swap], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function shuffleCatalog(listings: Listing[]) {
+  const shuffled = shuffleListings(listings);
+  if (shuffled.length < 2) return shuffled;
+  try {
+    const key = "renthome-previous-first-listing";
+    if (sessionStorage.getItem(key) === String(shuffled[0].id)) {
+      [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+    }
+    sessionStorage.setItem(key, String(shuffled[0].id));
+  } catch {
+    // The catalog still shuffles if browser storage is unavailable.
+  }
+  return shuffled;
+}
+
 function LaunchRibbon() {
   return <span className={styles.launchRibbon}>{launchDiscount}</span>;
 }
@@ -118,6 +142,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
     guests: /^(?:[1-9]|[1-4]\d|50)$/.test(initialDates?.guests ?? "") ? initialDates!.guests! : "2",
   }));
   const [query, setQuery] = useState<Dates | null>(dates.checkIn && dates.checkOut ? dates : null);
+  const initialCatalogView = useRef(!propertyId && !query);
   const [catalog, setCatalog] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [groups, setGroups] = useState<RentHomeGroup[]>([]);
@@ -146,7 +171,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
         const response = await fetch("/api/renthome", { signal: controller.signal });
         if (!response.ok) throw new Error("No se pudo cargar el catálogo.");
         const base = await response.json();
-        if (!controller.signal.aborted) setCatalog(base.listings);
+        if (!controller.signal.aborted) setCatalog(initialCatalogView.current ? shuffleCatalog(base.listings) : base.listings);
       } catch {
         if (!controller.signal.aborted) setCatalogError("No se pudo cargar el catálogo.");
       } finally {
@@ -166,12 +191,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
         const options = await response.json();
         if (!response.ok) throw new Error(options.error ?? "No se pudo consultar la disponibilidad.");
         if (controller.signal.aborted) return;
-        const listings: Listing[] = [...options.listings];
-        for (let index = listings.length - 1; index > 0; index--) {
-          const swap = Math.floor(Math.random() * (index + 1));
-          [listings[index], listings[swap]] = [listings[swap], listings[index]];
-        }
-        setResults(listings);
+        setResults(shuffleListings(options.listings));
         setGroups(options.groups);
         setGroupCount(options.groupCount);
       } catch (err) {
