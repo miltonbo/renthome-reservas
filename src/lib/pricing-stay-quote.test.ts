@@ -8,6 +8,7 @@ const direct: QuotePolicy = {
   commissionBps: 0,
   floorBobMinor: 26_500,
   monthlyFloorBobMinor: 505_000,
+  isRentHome: true,
   promotions: [],
 };
 
@@ -28,11 +29,34 @@ describe("calendar stay quotes", () => {
     expect(nightlyFloorBobMinor({ floorCurrency: "BOB", floorMinor: 25_000 }, 11.75, false)).toBe(25_000);
   });
 
-  it("discounts seven nights only where the nightly floor leaves room", () => {
+  it("allows seven nights below the short-stay floor and caps the effective discount", () => {
     expect(quote(6, 30_000).savingsMinor).toBe(0);
-    expect(quote(7, 30_000).savingsMinor).toBeGreaterThan(0);
-    expect(quote(7, 26_500)).toMatchObject({ totalMinor: 185_500, savingsMinor: 0, durationLimited: true });
+    expect(quote(7, 30_000, direct, "alta disponibilidad del portafolio").savingsMinor).toBe(16_800);
+    expect(quote(7, 26_500)).toMatchObject({ totalMinor: 174_370, savingsMinor: 11_130 });
     expect(quote(1, 26_500, direct, "hueco de una noche").totalMinor).toBe(31_500);
+  });
+
+  it("reduces the weekly discount for high-demand dates and units with tighter economics", () => {
+    expect(quote(8, 26_500, direct, "feriado o evento de mercado").savingsMinor).toBe(6_360);
+    expect(quote(8, 26_500, direct, "inventario casi agotado de propiedades comparables").savingsMinor).toBe(6_360);
+    const tighter = { ...direct, monthlyFloorBobMinor: 715_000 };
+    expect(quote(7, 26_500, tighter, "alta disponibilidad del portafolio").savingsMinor)
+      .toBeLessThan(quote(7, 26_500, direct, "alta disponibilidad del portafolio").savingsMinor);
+  });
+
+  it("can quote the eight-night Sky Elite 406 selection below Bs 265 per night", () => {
+    const result = calculateStayQuote({
+      policy: direct,
+      nightly: Array.from({ length: 8 }, (_, index) => ({
+        date: "2026-11-29",
+        priceMinor: index === 6 ? 27_695 : 26_500,
+        reasons: index === 6 ? "feriado o evento de mercado" : "alta disponibilidad del portafolio",
+      })),
+      today: "2026-11-27",
+      bobPerUsd: 11.75,
+      gapPremiumBobMinor: 5_000,
+    });
+    expect(result).toMatchObject({ totalMinor: 206_800, savingsMinor: 6_395 });
   });
 
   it("uses the monthly floor from the 28th night and protects event dates", () => {
@@ -55,6 +79,7 @@ describe("calendar stay quotes", () => {
     expect(quote(6, 4_000, booking).savingsMinor).toBe(0);
     const week = quote(7, 3_500, booking);
     expect(netMinorAfterDeductions(week.totalMinor, [1_500])).toBeGreaterThanOrEqual(Math.ceil(week.floorBobMinor / 11.75));
+    expect(quote(7, 5_000, booking, "alta disponibilidad del portafolio").savingsMinor).toBe(2_240);
     expect(quote(28, 4_000, booking).totalMinor).toBe(76_160);
   });
 });

@@ -2,6 +2,7 @@ import { combinedPromotionBps } from "./pricing-engine";
 import { BASIS_POINTS, discountedMinorWithFloor, grossMinorForNetFloor } from "./pricing";
 
 export const RENTHOME_NIGHTLY_FLOOR_BOB_MINOR = 26_500;
+const RENTHOME_MAX_WEEKLY_DISCOUNT_BPS = 800;
 
 // Low-season floors from docs/PRICING-MONTHLY-LOW-SEASON-FLOORS-2026-11-18.md.
 const monthlyFloorsBob: Record<string, number> = {
@@ -43,11 +44,18 @@ export type QuotePolicy = {
   commissionBps: number;
   floorBobMinor: number;
   monthlyFloorBobMinor: number | null;
+  isRentHome: boolean;
   promotions: QuotePromotion[];
 };
 
 export function isDurationPromotion(promotion: Pick<QuotePromotion, "promotionType" | "minNights">) {
   return promotion.minNights > 1 || promotion.promotionType === "weekly" || promotion.promotionType === "monthly";
+}
+
+function weeklyDiscountLimit(nightly: ReadonlyArray<{ reasons: string }>, festive: boolean): number {
+  if (festive || nightly.some(({ reasons }) => /baja disponibilidad|inventario casi agotado/.test(reasons))) return 300;
+  const wellSuppliedNights = nightly.filter(({ reasons }) => /alta disponibilidad|disponibilidad amplia/.test(reasons)).length;
+  return wellSuppliedNights * 2 >= nightly.length ? RENTHOME_MAX_WEEKLY_DISCOUNT_BPS : 600;
 }
 
 export function calculateStayQuote(input: {
@@ -64,15 +72,18 @@ export function calculateStayQuote(input: {
   const normalFloor = policy.floorBobMinor * nights;
   const monthlyFloor = policy.monthlyFloorBobMinor;
   const fraction = Math.min(nights / 28, 1);
+  const weeklyStay = policy.isRentHome && nights >= 7 && nights < 28;
+  const weeklyLimit = weeklyDiscountLimit(nightly, festive);
   let floorBobMinor = normalFloor;
   if (nights === 1 && nightly[0].reasons.includes("hueco de una noche")) {
     floorBobMinor += gapPremiumBobMinor;
   } else if (monthlyFloor != null && nights >= 28) {
     const floor = Math.ceil(monthlyFloor * Math.max(nights - 2, 28) / 28);
     floorBobMinor = festive ? Math.max(normalFloor, floor) : floor;
-  } else if (monthlyFloor != null && nights > 7 && !festive) {
-    const reduction = Math.max(0, policy.floorBobMinor - monthlyFloor / 28);
-    floorBobMinor = Math.ceil(normalFloor - reduction * nights * fraction);
+  } else if (weeklyStay && monthlyFloor != null) {
+    const referenceLimit = Math.max(0, 1 - monthlyFloor / (policy.floorBobMinor * 28));
+    const floorReductionBps = Math.min(weeklyLimit, Math.floor(referenceLimit * fraction * BASIS_POINTS));
+    floorBobMinor = discountedMinorWithFloor(normalFloor, floorReductionBps, 0);
   }
 
   const leadDays = Math.round((Date.parse(nightly[0].date) - Date.parse(today)) / 86_400_000);
@@ -82,7 +93,11 @@ export function calculateStayQuote(input: {
   const duration = eligible.filter((p) => isDurationPromotion(p) &&
     nights >= Math.max(p.minNights, p.promotionType === "monthly" ? 28 : p.promotionType === "weekly" ? 7 : 1));
   const hasMonthly = duration.some((p) => p.promotionType === "monthly");
-  const applicable = hasMonthly ? duration.filter((p) => p.promotionType !== "weekly") : duration;
+  const useMonthly = hasMonthly || (isDirect && nights >= 28 && monthlyFloor != null);
+  const applicable = (useMonthly ? duration.filter((p) => p.promotionType !== "weekly") : duration)
+    .map((promotion) => policy.isRentHome && (weeklyStay || promotion.promotionType === "weekly")
+      ? { ...promotion, discountBps: Math.min(promotion.discountBps, weeklyLimit) }
+      : promotion);
   const commission = Math.max(0, Math.min(BASIS_POINTS - 1, policy.commissionBps));
   const floorInCurrency = isDirect ? floorBobMinor : Math.ceil(floorBobMinor / bobPerUsd);
   const gross = nightly.reduce((sum, row) => sum + row.priceMinor, 0);
@@ -96,7 +111,12 @@ export function calculateStayQuote(input: {
       : 0;
   }
   if (festive && isDirect) requestedBps = Math.min(requestedBps, 500);
-  const totalMinor = discountedMinorWithFloor(gross, requestedBps, grossMinorForNetFloor(floorInCurrency, [commission]));
+  const weeklyMinimum = weeklyStay ? discountedMinorWithFloor(baseline, weeklyLimit, 0) : 0;
+  const totalMinor = discountedMinorWithFloor(
+    gross,
+    requestedBps,
+    Math.max(weeklyMinimum, grossMinorForNetFloor(floorInCurrency, [commission])),
+  );
   return {
     totalMinor,
     floorBobMinor,

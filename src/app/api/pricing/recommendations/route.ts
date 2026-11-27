@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
       commissionBps: policy.commissionBps,
       floorBobMinor: nightlyFloorBobMinor(policy, exchange.bobPerUsd, isRentHome),
       monthlyFloorBobMinor: isRentHome ? rentHomeMonthlyFloorBobMinor(policy.property.name) : null,
+      isRentHome,
       promotions: promotions.filter((promotion) => promotion.propertyId === policy.propertyId && promotion.channel === policy.channel),
     };
   });
