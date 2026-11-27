@@ -16,6 +16,7 @@ import { rentHomePublicLocation, rentHomeServices, type RentHomeDetails } from "
 
 type Listing = {
   id: number; details: RentHomeDetails; photos: string[];
+  mapLocation: [number, number] | null;
   checkInTime: string; checkOutTime: string; totalMinor: number | null;
 };
 const money = (amount: number) => `Bs ${(amount / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}`;
@@ -67,6 +68,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   const [catalog, setCatalog] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [groups, setGroups] = useState<RentHomeGroup[]>([]);
+  const [groupLimit, setGroupLimit] = useState(3);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
@@ -91,7 +93,12 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
         if (responses[1]) {
           const options = await responses[1].json();
           if (!responses[1].ok) throw new Error(options.error ?? "No se pudo consultar la disponibilidad.");
-          setResults(options.listings);
+          const listings: Listing[] = [...options.listings];
+          for (let index = listings.length - 1; index > 0; index--) {
+            const swap = Math.floor(Math.random() * (index + 1));
+            [listings[index], listings[swap]] = [listings[swap], listings[index]];
+          }
+          setResults(listings);
           setGroups(options.groups ?? []);
         }
       } catch (err) {
@@ -116,8 +123,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   const hasQuote = !!query && !loading && option && quotedTotal != null &&
     dates.checkIn === query.checkIn && dates.checkOut === query.checkOut && dates.guests === query.guests;
   const allCards = query ? results : catalog;
-  const filteredCards = filter ? allCards.filter((item) => item.details.services.toLowerCase().includes(filter.toLowerCase())) : allCards;
-  const cards = query ? [...filteredCards].sort((a, b) => a.totalMinor! - b.totalMinor!).slice(0, 3) : filteredCards;
+  const cards = filter ? allCards.filter((item) => item.details.services.toLowerCase().includes(filter.toLowerCase())) : allCards;
   const queryString = query ? new URLSearchParams(query).toString() : "";
   const catalogHref = `/renthome${queryString ? `?${queryString}` : ""}#departamentos`;
 
@@ -129,7 +135,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
         setShowMap(true);
       }
       window.history.replaceState(null, "", `${window.location.pathname}?${new URLSearchParams(dates)}`);
-      setError(""); setFilter(""); setLoading(true); setQuery({ ...dates });
+      setError(""); setFilter(""); setGroupLimit(3); setLoading(true); setQuery({ ...dates });
     }} />;
   const reservationCard = property && <aside id="reserva-directa" aria-label="Reserva directa" className="min-w-0 scroll-mt-4 space-y-4 rounded-2xl border border-[var(--rh-line)] bg-white p-5 shadow-[0_12px_28px_#1027290e] lg:sticky lg:top-5">
       <div>
@@ -273,20 +279,27 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
             {query && <a href="#buscar-estadia" className="mt-3 inline-block text-sm font-bold text-[var(--rh-brand)] underline">Cambiar fechas o huéspedes</a>}
           </div>}
           {cards.length > 0 && <div className={`grid items-start gap-5 ${showMap ? "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]" : ""}`}>
-            <div className={`grid min-w-0 gap-4 sm:grid-cols-2 ${showMap ? "lg:grid-cols-1 xl:grid-cols-2" : "lg:grid-cols-3"}`}>
+            {showMap && <div id="renthome-results-map" className="min-w-0 lg:sticky lg:top-5"><RentHomeResultsMap listings={cards} search={queryString} /></div>}
+            <div className={`grid min-w-0 gap-4 sm:grid-cols-2 ${showMap ? "lg:order-first lg:grid-cols-1 xl:grid-cols-2" : "lg:grid-cols-3"}`}>
               {cards.map((listing) => <ListingCard key={listing.id} listing={listing} query={query} />)}
             </div>
-            {showMap && <div id="renthome-results-map" className="min-w-0 lg:sticky lg:top-5"><RentHomeResultsMap listings={cards} search={queryString} /></div>}
           </div>}
           {groups.length > 0 && <section aria-labelledby="renthome-groups" className="mt-8 space-y-4">
             <div>
               <h3 id="renthome-groups" className="text-xl font-extrabold">Departamentos para grupos</h3>
-              <p className="mt-1 text-sm text-[var(--rh-muted)]">Aloja a tu grupo en el mismo edificio con una sola solicitud. Los importes corresponden a toda la estadía.</p>
+              <p className="mt-1 text-sm text-[var(--rh-muted)]">{groups[0].distanceMeters === 0
+                ? "Aloja a tu grupo en el mismo edificio con una sola solicitud. Los importes corresponden a toda la estadía."
+                : "Opciones en edificios distintos, ordenadas por cercanía. Puedes solicitarlas juntas."}</p>
             </div>
               <div className="grid gap-3 lg:grid-cols-2">
-                {groups.map((group) => (
+                {groups.slice(0, groupLimit).map((group) => (
                   <article key={group.units.map((unit) => unit.propertyId).join("-")} className="flex flex-col gap-3 rounded-xl border border-[var(--rh-line)] bg-white p-4 sm:p-5">
-                    <h4 className="font-extrabold">{group.units.length} departamentos en {group.building}</h4>
+                    <div>
+                      <h4 className="font-extrabold">{group.units.length} departamentos {group.distanceMeters === 0 ? `en ${group.building}` : "en edificios distintos"}</h4>
+                      {group.distanceMeters > 0 && <p className="mt-1 text-sm text-[var(--rh-muted)]">
+                        Hasta {group.distanceMeters.toLocaleString("es-BO")} m entre edificios, en línea recta
+                      </p>}
+                    </div>
                     <ul aria-label="Distribución y precios por departamento" className="divide-y divide-[var(--rh-line)] text-sm">
                       {group.units.map((unit) => {
                         const photo = catalog.find((listing) => listing.id === unit.propertyId)?.photos[0];
@@ -294,6 +307,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                           {photo && <Image width={112} height={75} unoptimized loading="lazy" src={photoUrl(unit.propertyId, photo)} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover sm:h-[75px] sm:w-28" />}
                           <span className="min-w-0 flex-1">
                             <Link href={`/renthome/${unit.propertyId}`} className="font-semibold hover:underline">{unit.title}</Link>
+                            {group.distanceMeters > 0 && <span className="block text-[var(--rh-muted)]">{unit.building}</span>}
                             <span className="block text-[var(--rh-muted)]">{unit.guests} {unit.guests === 1 ? "huésped" : "huéspedes"}</span>
                           </span>
                           <strong className="shrink-0 tabular-nums">{money(unit.totalMinor)}</strong>
@@ -307,6 +321,11 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                   </article>
                 ))}
               </div>
+              {groups.length > 3 && <div className="flex flex-wrap items-center gap-3">
+                <span role="status" className="text-sm text-[var(--rh-muted)]">{Math.min(groupLimit, groups.length)} de {groups.length} alternativas</span>
+                {groupLimit < groups.length && <button type="button" className="min-h-11 rounded-lg border border-[var(--rh-line)] bg-white px-4 text-sm font-bold text-[var(--rh-brand)] hover:bg-[var(--rh-tint)]"
+                  onClick={() => setGroupLimit((limit) => limit + 12)}>{groupLimit === 3 ? "Ver todas las alternativas" : "Ver más alternativas"}</button>}
+              </div>}
           </section>}
         </section>}
       </main>

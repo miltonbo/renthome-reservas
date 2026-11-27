@@ -1,7 +1,8 @@
 import { priceForGuests } from "@/lib/pricing";
+import { rentHomeBuildingDistance } from "@/lib/renthome-building-locations";
 
-export type RentHomeGroupUnit = { propertyId: number; title: string; guests: number; totalMinor: number };
-export type RentHomeGroup = { building: string; units: RentHomeGroupUnit[]; totalMinor: number };
+export type RentHomeGroupUnit = { propertyId: number; title: string; building: string; guests: number; totalMinor: number };
+export type RentHomeGroup = { building: string; distanceMeters: number; units: RentHomeGroupUnit[]; totalMinor: number };
 type Candidate = { id: number; building: string; details: { capacity: number; title: string }; totalMinor: number | null };
 
 const knownBuildings = ["Sky Elite", "Luxe Suites", "Sky Eclipse", "Sky Moon", "Sky Luxia", "UpTown Nuu", "Stanza"];
@@ -12,14 +13,23 @@ export function rentHomeBuilding(name: string, configured?: string) {
 }
 
 export function quoteRentHomeGroup(selected: Candidate[], guests: number): RentHomeGroup | null {
-  const building = selected[0]?.building;
-  if (guests < 3 || selected.length < 2 || selected.length > 3 || !building ||
-    selected.some((item) => item.building.toLowerCase() !== building.toLowerCase() || item.totalMinor === null || item.details.capacity < 1) ||
+  if (guests < 3 || selected.length < 2 || selected.length > 3 ||
+    selected.some((item) => !item.building || item.totalMinor === null || item.details.capacity < 1) ||
     new Set(selected.map((item) => item.id)).size !== selected.length ||
     selected.reduce((capacity, item) => capacity + item.details.capacity, 0) < guests) return null;
 
+  const buildings = [...new Map(selected.map((item) => [item.building.toLowerCase(), item.building])).values()];
+  let distanceMeters = 0;
+  for (const [index, building] of buildings.entries()) {
+    for (const other of buildings.slice(index + 1)) {
+      const distance = rentHomeBuildingDistance(building, other);
+      if (distance === null) return null;
+      distanceMeters = Math.max(distanceMeters, distance);
+    }
+  }
+
   const units = selected.map((item): RentHomeGroupUnit => ({
-    propertyId: item.id, title: item.details.title, guests: 1, totalMinor: item.totalMinor!,
+    propertyId: item.id, title: item.details.title, building: item.building, guests: 1, totalMinor: item.totalMinor!,
   }));
   let remaining = guests - units.length;
   for (let occupancy = 2; remaining > 0; occupancy++) {
@@ -32,7 +42,10 @@ export function quoteRentHomeGroup(selected: Candidate[], guests: number): RentH
   for (const unit of units) {
     unit.totalMinor = priceForGuests(unit.totalMinor, unit.guests);
   }
-  return { building, units, totalMinor: units.reduce((total, item) => total + item.totalMinor, 0) };
+  return {
+    building: buildings.join(" · "), distanceMeters, units,
+    totalMinor: units.reduce((total, item) => total + item.totalMinor, 0),
+  };
 }
 
 export function rentHomeGroups(options: Candidate[], guests: number): RentHomeGroup[] {
@@ -45,25 +58,21 @@ export function rentHomeGroups(options: Candidate[], guests: number): RentHomeGr
     units.push(item);
     byBuilding.set(key, units);
   }
-  const groups: RentHomeGroup[] = [];
-  for (const options of byBuilding.values()) {
-    const pairs: RentHomeGroup[] = [];
-    const triples: RentHomeGroup[] = [];
+  function combinations(options: Candidate[]) {
+    const groups: RentHomeGroup[] = [];
     for (const [first, unit] of options.entries()) {
       for (const [offset, next] of options.slice(first + 1).entries()) {
         const pair = quoteRentHomeGroup([unit, next], guests);
-        if (pair) pairs.push(pair);
+        if (pair) groups.push(pair);
         for (const last of options.slice(first + offset + 2)) {
           const triple = quoteRentHomeGroup([unit, next, last], guests);
-          if (triple) triples.push(triple);
+          if (triple) groups.push(triple);
         }
       }
     }
-    const byPrice = (a: RentHomeGroup, b: RentHomeGroup) => a.totalMinor - b.totalMinor;
-    groups.push(...pairs.sort(byPrice).slice(0, 2), ...triples.sort(byPrice).slice(0, 2));
+    return groups;
   }
-  const ranked = groups.sort((a, b) => a.units.length - b.units.length || a.totalMinor - b.totalMinor);
-  const threeUnits = ranked.find((group) => group.units.length === 3);
-  const top = ranked.slice(0, 3);
-  return threeUnits && !top.includes(threeUnits) ? [...top.slice(0, 2), threeUnits] : top;
+  const sameBuilding = [...byBuilding.values()].flatMap(combinations);
+  const groups = sameBuilding.length ? sameBuilding : combinations([...byBuilding.values()].flat());
+  return groups.sort((a, b) => a.distanceMeters - b.distanceMeters || a.units.length - b.units.length || a.totalMinor - b.totalMinor);
 }

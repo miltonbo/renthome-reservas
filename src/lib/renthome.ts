@@ -56,7 +56,8 @@ export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>, 
   const byId = new Map(listings.map((item) => [item.propertyId, item]));
   return (await Promise.all(properties.map(async ({ name, pricingProfile, ...property }) => {
     const listing = readListing(byId.get(property.id)!);
-    if (!query) return { ...property, ...listing, totalMinor: null, building: "" };
+    const building = rentHomeBuilding(name, pricingProfile?.building);
+    if (!query) return { ...property, ...listing, totalMinor: null, building };
     if ((!includeSmaller && listing.details.capacity < (query.guests ?? 1)) || !(await rentHomeAvailability(prisma, property.id, query))) return null;
     const prices = await prisma.dailyPrice.findMany({
       where: { propertyId: property.id, date: { gte: query.checkIn, lt: query.checkOut } },
@@ -69,6 +70,6 @@ export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>, 
       if (!amount || amount < 1) return null;
       totalMinor += amount;
     }
-    return { ...property, ...listing, totalMinor, building: includeSmaller ? rentHomeBuilding(name, pricingProfile?.building) : "" };
+    return { ...property, ...listing, totalMinor, building };
   }))).filter((property) => property !== null);
 }

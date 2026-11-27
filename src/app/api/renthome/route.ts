@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { boliviaDateString } from "@/lib/messaging-availability";
 import { quoteRentHomeGroup, rentHomeGroups } from "@/lib/renthome-group";
 import { priceForGuests } from "@/lib/pricing";
+import { rentHomePublicMapLocation } from "@/lib/renthome-building-locations";
 
 class RequestConflict extends Error {
   constructor(readonly code: "duplicate_request" | "active_request", message: string) {
@@ -40,10 +41,11 @@ export async function GET(request: NextRequest) {
   }
   const guests = query?.guests ?? 0;
   const options = await rentHomeCatalog(query, guests >= 3);
-  const groups = rentHomeGroups(options, guests);
+  const groups = rentHomeGroups(options, guests).map((group) => ({
+    ...group, distanceMeters: group.distanceMeters > 0 ? Math.max(10, Math.round(group.distanceMeters / 10) * 10) : 0,
+  }));
   const listings = options.filter((item) => item.details.capacity >= guests).map(({ building, totalMinor, ...listing }) => {
-    void building;
-    return { ...listing, totalMinor: totalMinor == null ? null : priceForGuests(totalMinor, guests) };
+    return { ...listing, mapLocation: rentHomePublicMapLocation(building), totalMinor: totalMinor == null ? null : priceForGuests(totalMinor, guests) };
   });
   return NextResponse.json({ listings, groups }, { headers: { "Cache-Control": "no-store" } });
 }

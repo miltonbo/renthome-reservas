@@ -25,7 +25,7 @@ export default async function RentHomeCheckoutPage({ searchParams }: {
     const single = matches[0];
     const group = ids.length > 1 && matches.length === ids.length ? quoteRentHomeGroup(matches, query.guests!) : null;
     const units = group?.units ?? (ids.length === 1 && single?.totalMinor != null
-      ? [{ propertyId: single.id, title: single.details.title, guests: query.guests!, totalMinor: priceForGuests(single.totalMinor, query.guests!) }] : []);
+      ? [{ propertyId: single.id, title: single.details.title, building: "", guests: query.guests!, totalMinor: priceForGuests(single.totalMinor, query.guests!) }] : []);
     if (units.length) return <RentHomeCheckout dates={dates} units={units.map((unit) => ({
       ...unit, photos: matches.find((match) => match.id === unit.propertyId)?.photos.slice(0, 3) ?? [],
     }))} building={group?.building} />;

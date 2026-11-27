@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 
 const { db, catalog } = vi.hoisted(() => ({
@@ -28,6 +28,8 @@ function send(extra = {}) {
 }
 
 describe("RentHome direct request WhatsApp confirmation", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   beforeEach(() => {
     vi.clearAllMocks();
     catalog.mockResolvedValue([{ id: 5, details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 }]);
@@ -98,6 +100,53 @@ describe("RentHome direct request WhatsApp confirmation", () => {
     const result = await response.json();
     expect(result.groups).toHaveLength(1);
     expect(result.groups[0].units.map((unit: { guests: number }) => unit.guests)).toEqual([2, 2, 1]);
+  });
+
+  it("returns every valid same-building combination before considering other buildings", async () => {
+    vi.stubEnv("RENTHOME_BUILDING_LOCATIONS", JSON.stringify({ "Sky Elite": [0, 0], "Sky Moon": [0, 0.01] }));
+    catalog.mockResolvedValue([5, 6, 7, 8].map((id) => ({
+      id, building: id === 8 ? "Sky Moon" : "Sky Elite", details: { title: "Departamento", capacity: 2 }, totalMinor: 50_000,
+    })));
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=3"));
+    const { groups } = await response.json();
+    expect(groups).toHaveLength(4);
+    expect(groups.every((group: { building: string; distanceMeters: number }) => group.building === "Sky Elite" && group.distanceMeters === 0)).toBe(true);
+  });
+
+  it("ranks nearby buildings first when no building fits and records the chosen units", async () => {
+    vi.stubEnv("RENTHOME_BUILDING_LOCATIONS", JSON.stringify({
+      "Sky Elite": [0, 0], "Sky Luxia": [0, 0.001], "Sky Moon": [0, 0.01],
+    }));
+    catalog.mockResolvedValue(["Sky Moon", "Sky Elite", "Sky Luxia"].map((building, index) => ({
+      id: index + 5, building, details: { title: building, capacity: 2 }, totalMinor: 50_000,
+    })));
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=4"));
+    const { groups } = await response.json();
+    expect(groups).toHaveLength(4);
+    const distances = groups.map((group: { distanceMeters: number }) => group.distanceMeters);
+    expect(distances).toEqual([...distances].sort((a, b) => a - b));
+    expect(distances[0]).toBe(110);
+    const firstUnits = [
+      { propertyId: 6, guests: 2, totalMinor: 50_000 }, { propertyId: 7, guests: 2, totalMinor: 50_000 },
+    ];
+    expect(groups[0].units).toMatchObject(firstUnits);
+    expect((await send({ guests: "4", units: firstUnits, totalMinor: 100_000 })).status).toBe(201);
+    expect(db.rentHomeRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ units: { create: firstUnits } }),
+    }));
+  });
+
+  it("returns the property's approximate map position without exposing the building pin", async () => {
+    vi.stubEnv("RENTHOME_BUILDING_LOCATIONS", JSON.stringify({ "Sky Elite": [-17.70041, -63.10062] }));
+    catalog.mockResolvedValue([
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 },
+      { id: 6, building: "Por ubicar", details: { title: "Departamento B", capacity: 2 }, totalMinor: 55_000 },
+    ]);
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=2"));
+    const { listings } = await response.json();
+    expect(listings.map((listing: { mapLocation: [number, number] | null }) => listing.mapLocation))
+      .toEqual([[-17.7, -63.101], null]);
+    expect(listings[0]).not.toHaveProperty("building");
   });
 
   it("quotes and stores two guests per unit when both can hold two", async () => {
