@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Grid2X2, List, Map, MapPin, MessageCircle, Users, X } from "lucide-react";
 import heroPhoto from "@/app/renthome/sky-elite-rooftop.webp";
 import styles from "@/app/renthome/storefront.module.css";
+import { rentHomeBookingLink } from "@/lib/renthome-booking-links";
 import type { RentHomeGroup } from "@/lib/renthome-group";
 import { RentHomeAmenities } from "./renthome-amenities";
 import { RentHomeSearch, rentHomeDateLabel as dateLabel, type RentHomeDates as Dates } from "./renthome-search";
@@ -16,10 +17,6 @@ import { rentHomePublicLocation, rentHomeServices, type RentHomeDetails } from "
 type Listing = {
   id: number; details: RentHomeDetails; photos: string[];
   checkInTime: string; checkOutTime: string; totalMinor: number | null;
-};
-type StayRequest = Dates & {
-  propertyId?: number; units?: { propertyId: number; totalMinor: number }[];
-  totalMinor: number; guestName: FormDataEntryValue | null; phone: FormDataEntryValue | null;
 };
 const money = (amount: number) => `Bs ${(amount / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}`;
 const photoUrl = (id: number, photo: string) => `/api/renthome/photos/${id}/${photo}`;
@@ -53,7 +50,7 @@ function ListingCard({ listing, query }: { listing: Listing; query: Dates | null
         <p className="flex items-start gap-2 text-sm text-[var(--rh-muted)]"><Users size={16} aria-hidden className="mt-0.5 shrink-0" /> <span>Hasta {listing.details.capacity} huéspedes{firstService && ` · ${firstService}`}</span></p>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--rh-line)] pt-3">
           <span className="text-sm text-[var(--rh-muted)]">{listing.totalMinor != null ? <><strong className="text-lg tabular-nums text-[var(--rh-ink)]">{money(listing.totalMinor)}</strong> total</> : "Precio según fechas"}</span>
-          <Link href={url} className="inline-flex min-h-10 items-center gap-1.5 text-sm font-extrabold text-[var(--rh-brand)] hover:underline">Ver ficha <ArrowRight size={15} aria-hidden /></Link>
+          {query && listing.totalMinor !== null ? <Link href={rentHomeBookingLink(query,[listing.id])} className="inline-flex min-h-10 items-center rounded-lg bg-[var(--rh-brand)] px-3 text-sm font-extrabold text-white hover:bg-[var(--rh-deep)]">Reservar</Link> : <Link href={url} className="inline-flex min-h-10 items-center gap-1.5 text-sm font-extrabold text-[var(--rh-brand)] hover:underline">Ver ficha <ArrowRight size={15} aria-hidden /></Link>}
         </div>
       </div>
     </article>
@@ -70,19 +67,13 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   const [catalog, setCatalog] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [groups, setGroups] = useState<RentHomeGroup[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<RentHomeGroup>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [requestError, setRequestError] = useState("");
-  const [sending, setSending] = useState(false);
-  const [confirmation, setConfirmation] = useState<{ request: StayRequest; message: string }>();
-  const [receipt, setReceipt] = useState<{ code: string; whatsapp: string }>();
   const [filter, setFilter] = useState("");
   const [showMap, setShowMap] = useState(Boolean(query));
   const [activePhoto, setActivePhoto] = useState(0);
   const gallery = useRef<HTMLDialogElement>(null);
   const resultsHeading = useRef<HTMLHeadingElement>(null);
-  const groupHeading = useRef<HTMLHeadingElement>(null);
   const jumpToResults = useRef(false);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
@@ -119,93 +110,37 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
     resultsHeading.current?.focus();
   }, [loading]);
 
-  useEffect(() => {
-    if (selectedGroup) groupHeading.current?.focus();
-  }, [selectedGroup, receipt]);
-
   const property = catalog.find((item) => item.id === propertyId);
   const option = results.find((item) => item.id === propertyId);
+  const quotedTotal = option?.totalMinor;
+  const hasQuote = !!query && !loading && option && quotedTotal != null &&
+    dates.checkIn === query.checkIn && dates.checkOut === query.checkOut && dates.guests === query.guests;
   const allCards = query ? results : catalog;
-  const cards = filter ? allCards.filter((item) => item.details.services.toLowerCase().includes(filter.toLowerCase())) : allCards;
+  const filteredCards = filter ? allCards.filter((item) => item.details.services.toLowerCase().includes(filter.toLowerCase())) : allCards;
+  const cards = query ? [...filteredCards].sort((a, b) => a.totalMinor! - b.totalMinor!).slice(0, 3) : filteredCards;
   const queryString = query ? new URLSearchParams(query).toString() : "";
   const catalogHref = `/renthome${queryString ? `?${queryString}` : ""}#departamentos`;
 
-  function requestStay(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!query || sending || confirmation) return;
-    const selection = selectedGroup ? {
-      totalMinor: selectedGroup.totalMinor,
-      units: selectedGroup.units.map(({ propertyId, totalMinor }) => ({ propertyId, totalMinor })),
-    } : option?.totalMinor != null ? { propertyId: option.id, totalMinor: option.totalMinor } : null;
-    if (!selection) return;
-    const form = new FormData(event.currentTarget);
-    void sendRequest({ ...query, ...selection, guestName: form.get("guestName"), phone: form.get("phone") });
-  }
-
-  async function sendRequest(request: StayRequest, confirmAnother = false) {
-    setSending(true);
-    setRequestError("");
-    setConfirmation(undefined);
-    try {
-      const res = await fetch("/api/renthome", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...request, confirmAnother }),
-      });
-      const data = await res.json();
-      if (res.status === 409 && data.code === "active_request") {
-        setConfirmation({ request, message: data.error });
-        return;
-      }
-      if (!res.ok) throw new Error(data.error ?? "No se pudo registrar la solicitud.");
-      setReceipt(data);
-    } catch (err) { setRequestError((err as Error).message); }
-    finally { setSending(false); }
-  }
-
-  const input = "mt-1 block min-w-0 w-full rounded-lg border border-[#c6d3d1] bg-white px-3 py-2.5 text-[var(--rh-ink)] focus-visible:outline-2 focus-visible:outline-[var(--rh-brand)]";
   const button = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--rh-brand)] px-4 py-3 font-semibold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60";
-  const search = <RentHomeSearch dates={dates} today={today} loading={loading || sending} compact={!!propertyId}
+  const search = <RentHomeSearch dates={dates} today={today} loading={loading} compact={!!propertyId} hasQuote={hasQuote}
     onChange={setDates} onSearch={() => {
       if (!propertyId) {
         jumpToResults.current = true;
         setShowMap(true);
       }
       window.history.replaceState(null, "", `${window.location.pathname}?${new URLSearchParams(dates)}`);
-      setSelectedGroup(undefined); setReceipt(undefined); setRequestError("");
-      setConfirmation(undefined); setError(""); setFilter(""); setLoading(true); setQuery({ ...dates });
+      setError(""); setFilter(""); setLoading(true); setQuery({ ...dates });
     }} />;
-  const receiptView = receipt && <section className="space-y-3" role="status">
-      <h2 ref={groupHeading} tabIndex={-1} className="text-2xl font-bold">Solicitud recibida</h2>
-      <p>Código <strong>{receipt.code}</strong></p>
-      <p className="text-sm">Te contactaremos por WhatsApp. Las fechas quedan sujetas a disponibilidad hasta que RentHome confirme la reserva.</p>
-      <a className={button + " w-full"} href={receipt.whatsapp} target="_blank" rel="noreferrer">Continuar por WhatsApp</a>
-    </section>;
-  const requestForm = <form onSubmit={requestStay} onInput={() => setConfirmation(undefined)} className="space-y-3 border-t border-[var(--rh-line)] pt-4">
-        {!selectedGroup && <h3 className="font-bold">Solicitar reserva</h3>}
-        {query && <p className="text-sm">{dateLabel(query.checkIn)} a {dateLabel(query.checkOut)} · {query.guests} huésped(es)</p>}
-        <label className="block text-sm font-semibold">Nombre completo<input required disabled={sending} minLength={2} maxLength={120} name="guestName" autoComplete="name" className={input} /></label>
-        <label className="block text-sm font-semibold">WhatsApp con código de país<input required disabled={sending} maxLength={24} name="phone" type="tel" autoComplete="tel" className={input} placeholder="+591" /></label>
-        {requestError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{requestError}</p>}
-        {confirmation ? <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
-          <p role="alert" className="text-sm text-amber-950">{confirmation.message}</p>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className={button} onClick={() => void sendRequest(confirmation.request, true)}>Enviar otra solicitud</button>
-            <button type="button" className="rounded-xl border border-amber-300 px-3 py-2 text-sm font-semibold text-amber-950" onClick={() => setConfirmation(undefined)}>Cancelar</button>
-          </div>
-        </div> : <button className={button + " w-full"} disabled={sending}>{sending ? "Enviando…" : selectedGroup ? "Enviar solicitud grupal" : "Enviar solicitud"}</button>}
-      </form>;
   const reservationCard = property && <aside id="reserva-directa" aria-label="Reserva directa" className="min-w-0 scroll-mt-4 space-y-4 rounded-2xl border border-[var(--rh-line)] bg-white p-5 shadow-[0_12px_28px_#1027290e] lg:sticky lg:top-5">
-    {receiptView || <>
       <div>
-        <h2 className="text-2xl font-extrabold tabular-nums">{!loading && option?.totalMinor != null ? money(option.totalMinor) : "Reserva directa"}</h2>
-        <p className="mt-1 text-sm text-[var(--rh-muted)]">{!loading && option?.totalMinor != null && query ? `Total por ${reservationNights(query.checkIn, query.checkOut)} noches` : "Elige fechas para ver el precio total."}</p>
+        <h2 className="text-2xl font-extrabold tabular-nums">{hasQuote ? money(quotedTotal) : "Reserva directa"}</h2>
+        <p className="mt-1 text-sm text-[var(--rh-muted)]">{hasQuote ? `Total por ${reservationNights(query.checkIn, query.checkOut)} noches` : "Consulta tus fechas para ver el precio total."}</p>
       </div>
       {search}
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {!loading && query && !option && !error && <p role="status" className="text-sm text-[var(--rh-muted)]">No hay disponibilidad para las fechas y huéspedes seleccionados.</p>}
-      {!loading && option?.totalMinor != null && requestForm}
+      {hasQuote && <Link href={rentHomeBookingLink(query,[option.id])} className={button + " w-full"}>Reservar</Link>}
       <p className="flex items-start gap-2 border-t border-[var(--rh-line)] pt-3 text-sm text-[var(--rh-muted)]"><MessageCircle size={17} className="mt-0.5 shrink-0 text-[var(--rh-brand)]" aria-hidden /> RentHome confirma tu solicitud por WhatsApp.</p>
-    </>}
   </aside>;
   return (
     <div className="min-h-screen">
@@ -323,49 +258,13 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
             </div>
             <span role="status" className="text-sm font-bold text-[var(--rh-muted)]">{cards.length} {cards.length === 1 ? "alojamiento individual" : "alojamientos individuales"}{groups.length > 0 && ` · ${groups.length} ${groups.length === 1 ? "opción grupal" : "opciones grupales"}`}</span>
           </div>
-          {groups.length > 0 && <section aria-labelledby="renthome-groups" className="mb-8 space-y-4">
-            <div>
-              <h3 id="renthome-groups" className="text-xl font-extrabold">Departamentos para grupos</h3>
-              <p className="mt-1 text-sm text-[var(--rh-muted)]">Aloja a tu grupo en el mismo edificio con una sola solicitud. Los importes corresponden a toda la estadía.</p>
-            </div>
-            {receiptView || <>
-              <div className="grid gap-3 lg:grid-cols-2">
-                {groups.map((group) => (
-                  <article key={group.units.map((unit) => unit.propertyId).join("-")} className={`flex flex-col gap-3 rounded-xl border bg-white p-4 sm:p-5 ${selectedGroup === group ? "border-[var(--rh-brand)]" : "border-[var(--rh-line)]"}`}>
-                    <h4 className="font-extrabold">{group.units.length} departamentos en {group.building}</h4>
-                    <ul aria-label="Distribución y precios por departamento" className="divide-y divide-[var(--rh-line)] text-sm">
-                      {group.units.map((unit) => <li key={unit.propertyId} className="flex items-start justify-between gap-3 py-2">
-                        <span className="min-w-0">
-                          <Link href={`/renthome/${unit.propertyId}`} className="font-semibold hover:underline">{unit.title}</Link>
-                          <span className="block text-[var(--rh-muted)]">{unit.guests} {unit.guests === 1 ? "huésped" : "huéspedes"}</span>
-                        </span>
-                        <strong className="shrink-0 tabular-nums">{money(unit.totalMinor)}</strong>
-                      </li>)}
-                    </ul>
-                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[var(--rh-line)] pt-3">
-                      <p className="text-sm">Total <strong className="text-lg tabular-nums">{money(group.totalMinor)}</strong></p>
-                      <button type="button" className={button} aria-pressed={selectedGroup === group} disabled={sending} onClick={() => {
-                        setConfirmation(undefined); setRequestError(""); setSelectedGroup(group);
-                        if (selectedGroup === group) groupHeading.current?.focus();
-                      }}>{selectedGroup === group ? "Ver mi selección" : "Elegir opción"}</button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              {selectedGroup && <div className="max-w-xl space-y-3 rounded-xl border border-[var(--rh-line)] bg-white p-5">
-                <h4 ref={groupHeading} tabIndex={-1} className="scroll-mt-5 text-xl font-extrabold">Solicitar {selectedGroup.units.length} departamentos</h4>
-                <p className="text-sm text-[var(--rh-muted)]">{selectedGroup.building} · <strong className="tabular-nums">{money(selectedGroup.totalMinor)} total</strong> · Confirmación por WhatsApp</p>
-                {requestForm}
-              </div>}
-            </>}
-          </section>}
           {allCards.length > 0 && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-y border-[var(--rh-line)] py-3">
             <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por servicios">
             {["", ...filters.filter((option) => allCards.some((item) => item.details.services.toLowerCase().includes(option.toLowerCase())))].map((option) => <button key={option}
               type="button" aria-pressed={filter === option} onClick={() => setFilter(option)}
               className={`min-h-10 rounded-full border px-3.5 text-sm font-bold ${filter === option ? "border-[var(--rh-brand)] bg-[var(--rh-brand)] text-white" : "border-[var(--rh-line)] bg-white text-[var(--rh-ink)] hover:bg-[var(--rh-tint)]"}`}>{option || "Todos"}</button>)}
             </div>
-            {cards.length > 0 && <button type="button" aria-expanded={showMap} aria-controls={showMap ? "renthome-results-map" : undefined} onClick={() => setShowMap(!showMap)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--rh-line)] bg-white px-3 text-sm font-extrabold text-[var(--rh-brand)] hover:bg-[var(--rh-tint)]">
+            {query && cards.length > 0 && <button type="button" aria-expanded={showMap} aria-controls={showMap ? "renthome-results-map" : undefined} onClick={() => setShowMap(!showMap)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[var(--rh-line)] bg-white px-3 text-sm font-extrabold text-[var(--rh-brand)] hover:bg-[var(--rh-tint)]">
               {showMap ? <List size={17} aria-hidden /> : <Map size={17} aria-hidden />} {showMap ? "Solo lista" : "Mostrar mapa"}
             </button>}
           </div>}
@@ -374,11 +273,41 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
             {query && <a href="#buscar-estadia" className="mt-3 inline-block text-sm font-bold text-[var(--rh-brand)] underline">Cambiar fechas o huéspedes</a>}
           </div>}
           {cards.length > 0 && <div className={`grid items-start gap-5 ${showMap ? "lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]" : ""}`}>
-            {showMap && <div id="renthome-results-map" className="min-w-0 lg:sticky lg:top-5"><RentHomeResultsMap listings={cards} search={queryString} /></div>}
-            <div className={`grid min-w-0 gap-4 sm:grid-cols-2 ${showMap ? "lg:order-first lg:grid-cols-1 xl:grid-cols-2" : "lg:grid-cols-3"}`}>
+            <div className={`grid min-w-0 gap-4 sm:grid-cols-2 ${showMap ? "lg:grid-cols-1 xl:grid-cols-2" : "lg:grid-cols-3"}`}>
               {cards.map((listing) => <ListingCard key={listing.id} listing={listing} query={query} />)}
             </div>
+            {showMap && <div id="renthome-results-map" className="min-w-0 lg:sticky lg:top-5"><RentHomeResultsMap listings={cards} search={queryString} /></div>}
           </div>}
+          {groups.length > 0 && <section aria-labelledby="renthome-groups" className="mt-8 space-y-4">
+            <div>
+              <h3 id="renthome-groups" className="text-xl font-extrabold">Departamentos para grupos</h3>
+              <p className="mt-1 text-sm text-[var(--rh-muted)]">Aloja a tu grupo en el mismo edificio con una sola solicitud. Los importes corresponden a toda la estadía.</p>
+            </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {groups.map((group) => (
+                  <article key={group.units.map((unit) => unit.propertyId).join("-")} className="flex flex-col gap-3 rounded-xl border border-[var(--rh-line)] bg-white p-4 sm:p-5">
+                    <h4 className="font-extrabold">{group.units.length} departamentos en {group.building}</h4>
+                    <ul aria-label="Distribución y precios por departamento" className="divide-y divide-[var(--rh-line)] text-sm">
+                      {group.units.map((unit) => {
+                        const photo = catalog.find((listing) => listing.id === unit.propertyId)?.photos[0];
+                        return <li key={unit.propertyId} className="flex items-center gap-3 py-2.5">
+                          {photo && <Image width={112} height={75} unoptimized loading="lazy" src={photoUrl(unit.propertyId, photo)} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover sm:h-[75px] sm:w-28" />}
+                          <span className="min-w-0 flex-1">
+                            <Link href={`/renthome/${unit.propertyId}`} className="font-semibold hover:underline">{unit.title}</Link>
+                            <span className="block text-[var(--rh-muted)]">{unit.guests} {unit.guests === 1 ? "huésped" : "huéspedes"}</span>
+                          </span>
+                          <strong className="shrink-0 tabular-nums">{money(unit.totalMinor)}</strong>
+                        </li>;
+                      })}
+                    </ul>
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[var(--rh-line)] pt-3">
+                      <p className="text-sm">Total <strong className="text-lg tabular-nums">{money(group.totalMinor)}</strong></p>
+                      {query && <Link className={button} href={rentHomeBookingLink(query,group.units.map((unit) => unit.propertyId))}>Reservar</Link>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+          </section>}
         </section>}
       </main>
       <footer className="bg-[var(--rh-deep)] text-white"><div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-4 py-7 text-sm sm:px-8">

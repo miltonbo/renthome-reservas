@@ -85,8 +85,8 @@ describe("RentHome direct request WhatsApp confirmation", () => {
     ]);
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=5"));
     expect(await response.json()).toMatchObject({ listings: [], groups: [{
-      building: "Sky Elite", totalMinor: 110_000,
-      units: [{ propertyId: 5, guests: 2, totalMinor: 50_000 }, { propertyId: 6, guests: 3, totalMinor: 60_000 }],
+      building: "Sky Elite", totalMinor: 122_000,
+      units: [{ propertyId: 5, guests: 2, totalMinor: 50_000 }, { propertyId: 6, guests: 3, totalMinor: 72_000 }],
     }] });
   });
 
@@ -100,20 +100,57 @@ describe("RentHome direct request WhatsApp confirmation", () => {
     expect(result.groups[0].units.map((unit: { guests: number }) => unit.guests)).toEqual([2, 2, 1]);
   });
 
+  it("quotes and stores two guests per unit when both can hold two", async () => {
+    catalog.mockResolvedValue([
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 3 }, totalMinor: 50_000 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 2 }, totalMinor: 60_000 },
+    ]);
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=4"));
+    const result = await response.json();
+    const units = [
+      { propertyId: 5, guests: 2, totalMinor: 50_000 },
+      { propertyId: 6, guests: 2, totalMinor: 60_000 },
+    ];
+    expect(result.groups).toMatchObject([{ units, totalMinor: 110_000 }]);
+    expect((await send({ guests: "4", units, totalMinor: 110_000 })).status).toBe(201);
+    expect(db.rentHomeRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ units: { create: units } }),
+    }));
+  });
+
+  it("charges the third guest only when all three stay in one unit", async () => {
+    catalog.mockResolvedValue([
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 3 }, totalMinor: 50_000 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 2 }, totalMinor: 60_000 },
+    ]);
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=3"));
+    expect(await response.json()).toMatchObject({
+      listings: [{ id: 5, totalMinor: 60_000 }],
+      groups: [{ totalMinor: 110_000, units: [
+        { propertyId: 5, guests: 2, totalMinor: 50_000 }, { propertyId: 6, guests: 1, totalMinor: 60_000 },
+      ] }],
+    });
+    expect((await send({ guests: "3" })).status).toBe(409);
+    expect((await send({ guests: "3", totalMinor: 60_000 })).status).toBe(201);
+    expect(db.rentHomeRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ guests: 3, totalMinor: 60_000 }),
+    }));
+  });
+
   it("stores the price and occupancy of both units and rejects stale per-unit prices", async () => {
     catalog.mockResolvedValue([
       { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 },
       { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 3 }, totalMinor: 60_000 },
     ]);
-    const units = [{ propertyId: 5, totalMinor: 50_000 }, { propertyId: 6, totalMinor: 60_000 }];
-    const response = await send({ guests: "5", units, totalMinor: 110_000 });
+    const units = [{ propertyId: 5, totalMinor: 50_000 }, { propertyId: 6, totalMinor: 72_000 }];
+    const response = await send({ guests: "5", units, totalMinor: 122_000 });
     expect(response.status).toBe(201);
     expect(db.rentHomeRequest.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
-      guests: 5, totalMinor: 110_000, units: { create: [
+      guests: 5, totalMinor: 122_000, units: { create: [
         { ...units[0], guests: 2 }, { ...units[1], guests: 3 },
       ] },
     }) }));
-    expect((await send({ guests: "5", units: [{ propertyId: 5, totalMinor: 49_000 }, { propertyId: 6, totalMinor: 61_000 }], totalMinor: 110_000 })).status).toBe(409);
+    expect((await send({ guests: "5", units: [{ propertyId: 5, totalMinor: 49_000 }, { propertyId: 6, totalMinor: 73_000 }], totalMinor: 122_000 })).status).toBe(409);
     expect(db.rentHomeRequest.create).toHaveBeenCalledTimes(1);
   });
 });

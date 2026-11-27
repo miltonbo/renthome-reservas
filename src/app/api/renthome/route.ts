@@ -5,6 +5,7 @@ import { rentHomeCatalog, rentHomeDates } from "@/lib/renthome";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { boliviaDateString } from "@/lib/messaging-availability";
 import { quoteRentHomeGroup, rentHomeGroups } from "@/lib/renthome-group";
+import { priceForGuests } from "@/lib/pricing";
 
 class RequestConflict extends Error {
   constructor(readonly code: "duplicate_request" | "active_request", message: string) {
@@ -40,9 +41,9 @@ export async function GET(request: NextRequest) {
   const guests = query?.guests ?? 0;
   const options = await rentHomeCatalog(query, guests >= 3);
   const groups = rentHomeGroups(options, guests);
-  const listings = options.filter((item) => item.details.capacity >= guests).map(({ building, ...listing }) => {
+  const listings = options.filter((item) => item.details.capacity >= guests).map(({ building, totalMinor, ...listing }) => {
     void building;
-    return listing;
+    return { ...listing, totalMinor: totalMinor == null ? null : priceForGuests(totalMinor, guests) };
   });
   return NextResponse.json({ listings, groups }, { headers: { "Cache-Control": "no-store" } });
 }
@@ -75,13 +76,15 @@ export async function POST(request: NextRequest) {
   const options = await rentHomeCatalog(query, isGroup);
   const option = options.find((item) => item.id === body.propertyId);
   const group = isGroup ? quoteRentHomeGroup(requestedUnits.flatMap((unit) => {
-    const match = options.find((item) => item.id === unit.propertyId && item.totalMinor === unit.totalMinor);
+    const match = options.find((item) => item.id === unit.propertyId);
     return match ? [match] : [];
   }), query.guests ?? 0) : null;
-  const totalMinor = isGroup ? group?.totalMinor : option?.totalMinor;
+  const singleTotal = option?.totalMinor == null ? null : priceForGuests(option.totalMinor, query.guests!);
+  const totalMinor = isGroup ? group?.totalMinor : singleTotal;
   const propertyId = isGroup ? group?.units[0].propertyId : option?.id;
   if (!propertyId || totalMinor == null || totalMinor !== body.totalMinor ||
-    (isGroup && group?.units.length !== requestedUnits.length)) {
+    (isGroup && (group?.units.length !== requestedUnits.length ||
+      group.units.some((unit, index) => unit.totalMinor !== requestedUnits[index].totalMinor)))) {
     return NextResponse.json({ error: "La disponibilidad o el precio cambió. Vuelve a buscar para revisar la cotización." }, { status: 409 });
   }
   const code = `RH-${randomBytes(6).toString("hex").toUpperCase()}`;

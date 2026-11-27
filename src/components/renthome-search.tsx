@@ -13,8 +13,8 @@ const calendarMonth = new Intl.DateTimeFormat("es-BO", { month: "long", year: "n
 const fullDate = new Intl.DateTimeFormat("es-BO", { dateStyle: "full", timeZone: "UTC" });
 export const rentHomeDateLabel = (value: string) => new Intl.DateTimeFormat("es-BO", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(value + "T12:00:00Z"));
 
-export function RentHomeSearch({ dates, today, loading, compact, onChange, onSearch }: {
-  dates: RentHomeDates; today: string; loading: boolean; compact?: boolean;
+export function RentHomeSearch({ dates, today, loading, compact, hasQuote, onChange, onSearch }: {
+  dates: RentHomeDates; today: string; loading: boolean; compact?: boolean; hasQuote?: boolean;
   onChange: (dates: RentHomeDates) => void; onSearch: () => void;
 }) {
   const [open, setOpen] = useState<"dates" | "guests" | null>(null);
@@ -109,9 +109,9 @@ export function RentHomeSearch({ dates, today, loading, compact, onChange, onSea
         <Users size={19} aria-hidden className="shrink-0 text-[var(--rh-brand)]" />
         <span><span className="block text-sm font-extrabold">Huéspedes</span><span className="block text-xs text-[var(--rh-muted)] sm:text-sm">{total} {total === 1 ? "huésped" : "huéspedes"}</span></span>
       </button>
-      <button disabled={loading} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--rh-brand)] px-5 py-3 font-extrabold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60 ${compact ? "" : "col-span-2 sm:col-span-1 sm:px-7"}`}><Search size={18} aria-hidden /> {compact ? "Consultar disponibilidad" : "Buscar alojamiento"}</button>
+      {!hasQuote && <button disabled={loading} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--rh-brand)] px-5 py-3 font-extrabold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60 ${compact ? "" : "col-span-2 sm:col-span-1 sm:px-7"}`}><Search size={18} aria-hidden /> {compact ? "Consultar disponibilidad" : "Buscar alojamiento"}</button>}
     </div>
-    <p className="mt-2 text-sm text-[var(--rh-muted)]">{nights >= 2 ? `${nights} noches seleccionadas` : "Estadía mínima de 2 noches."}</p>
+    {!hasQuote && <p className="mt-2 text-sm text-[var(--rh-muted)]">{nights >= 2 ? `${nights} noches seleccionadas` : "Estadía mínima de 2 noches."}</p>}
     {open === "dates" && <div id={dateId} className={`z-30 mt-2 w-full rounded-2xl border border-[var(--rh-line)] bg-white p-3 shadow-xl sm:p-4 ${compact ? "relative" : "absolute left-0 top-[3.65rem] max-w-[620px]"}`}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <button type="button" className={round} aria-label="Mes anterior" disabled={month <= today.slice(0, 7)} onClick={() => setMonth(dateForMonth(month, -1))}><ChevronLeft size={18} aria-hidden /></button>

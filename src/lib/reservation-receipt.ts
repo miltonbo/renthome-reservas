@@ -1,3 +1,5 @@
+import type { RentHomeReceipt } from "@/lib/renthome-booking-links";
+
 export interface ReservationReceiptData {
   guestName: string;
   propertyName: string;
@@ -152,11 +154,51 @@ export async function downloadReservationReceipt(data: ReservationReceiptData) {
   context.font = "600 17px Arial, sans-serif";
   context.fillText("Gracias por elegirnos", 637.5, 1620);
 
+  await downloadReceiptImage(canvas, `comprobante-reserva-${safeFilename(data.guestName)}-${safeFilename(data.propertyName)}.png`);
+}
+
+export async function downloadRentHomeReceipt(code: string, stay: NonNullable<RentHomeReceipt["stay"]>) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 960;
+  canvas.height = 744 + (stay.propertyTitles.length - 1) * 42;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("El navegador no pudo generar el comprobante.");
+  const logo = await loadImage("/brand/renthome-reservation-logo.jpg");
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(logo, 48, 42, 110, 110);
+  context.fillStyle = "#102630";
+  context.font = "700 36px Arial, sans-serif";
+  context.fillText("Comprobante de reserva", 184, 92, 728);
+  context.fillStyle = "#806015";
+  context.font = "600 24px Arial, sans-serif";
+  context.fillText("Reserva preconfirmada", 184, 130);
+  context.fillStyle = "#f28c28";
+  context.fillRect(48, 175, 864, 4);
+
+  drawField(context, "Número de reserva", code, 48, 231, 510);
+  drawField(context, "Huéspedes", stay.guests, 620, 231, 292);
+  drawField(context, "Nombre del huésped", stay.guestName, 48, 338, 864);
+  drawField(context, "Ingreso", dateLabel(stay.checkIn), 48, 445, 413, 28);
+  drawField(context, "Salida", dateLabel(stay.checkOut), 499, 445, 413, 28);
+  drawField(context, stay.propertyTitles.length === 1 ? "Departamento" : "Departamentos", stay.propertyTitles[0], 48, 552, 864, 28);
+  stay.propertyTitles.slice(1).forEach((title, index) => {
+    context.fillText(title, 48, 638 + index * 42, 864);
+  });
+  context.fillStyle = "#56676e";
+  context.font = "500 20px Arial, sans-serif";
+  context.fillText("RentHome Departamentos · Santa Cruz de la Sierra, Bolivia", 48, canvas.height - 48);
+
+  await downloadReceiptImage(canvas, `comprobante-reserva-${safeFilename(code)}.png`);
+}
+
+async function downloadReceiptImage(canvas: HTMLCanvasElement, filename: string) {
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("No se pudo generar la imagen.")), "image/png"));
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `comprobante-reserva-${safeFilename(data.guestName)}-${safeFilename(data.propertyName)}.png`;
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
 }

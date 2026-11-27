@@ -51,7 +51,8 @@ export async function PATCH(request: NextRequest) {
     if (properties !== lead.units.length) return NextResponse.json({ error: "Solicitud no encontrada." }, { status: 404 });
     if (body.action === "assign") return NextResponse.json({ error: "La solicitud grupal ya especifica los departamentos." }, { status: 400 });
   }
-  const target = body.action === "assign" ? body.propertyId : lead.assignedPropertyId;
+  const target = body.action === "assign" ? body.propertyId
+    : body.propertyId === undefined ? lead.assignedPropertyId : body.propertyId;
   if (!group && body.action !== "discard" && (!Number.isSafeInteger(target) || !target ||
     !(await canManageProperty(target, session.userId, session.role)) ||
     !(await prisma.property.findFirst({ where: { id: target, userId: owner }, select: { id: true } })))) {
@@ -64,7 +65,8 @@ export async function PATCH(request: NextRequest) {
       const change = await db.rentHomeRequest.updateMany({
         where: { id: lead.id, state: "pending", assignedPropertyId: lead.assignedPropertyId },
         data: body.action === "assign" ? { assignedPropertyId: target } :
-          { state: body.action === "confirm" ? "confirmed" : "discarded" },
+          body.action === "confirm" ? { state: "confirmed", ...(!group && { assignedPropertyId: target }) } :
+          { state: "discarded" },
       });
       if (!change.count) throw new Conflict("La solicitud cambió. Actualiza el panel.");
       if (body.action !== "confirm") return [];
@@ -86,6 +88,7 @@ export async function PATCH(request: NextRequest) {
           propertyId: unit.propertyId, name: lead.guestName, phone: lead.phone,
           checkIn: new Date(`${lead.checkIn}T00:00:00Z`), checkOut: new Date(`${lead.checkOut}T00:00:00Z`),
           platform: "direct", status: "confirmed", totalPrice: unit.totalMinor / 100, priceCurrency: "BOB",
+          nightlyPrice: Math.round(unit.totalMinor / query.nights) / 100,
           note: `Web RentHome · ${lead.code} · ${unit.guests} huésped(es)`,
         } });
         await db.dateOverride.deleteMany({

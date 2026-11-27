@@ -1,3 +1,5 @@
+import { priceForGuests } from "@/lib/pricing";
+
 export type RentHomeGroupUnit = { propertyId: number; title: string; guests: number; totalMinor: number };
 export type RentHomeGroup = { building: string; units: RentHomeGroupUnit[]; totalMinor: number };
 type Candidate = { id: number; building: string; details: { capacity: number; title: string }; totalMinor: number | null };
@@ -16,12 +18,20 @@ export function quoteRentHomeGroup(selected: Candidate[], guests: number): RentH
     new Set(selected.map((item) => item.id)).size !== selected.length ||
     selected.reduce((capacity, item) => capacity + item.details.capacity, 0) < guests) return null;
 
-  let remaining = guests;
-  const units = selected.map((item, index): RentHomeGroupUnit => {
-    const count = Math.min(item.details.capacity, remaining - (selected.length - index - 1));
-    remaining -= count;
-    return { propertyId: item.id, title: item.details.title, guests: count, totalMinor: item.totalMinor! };
-  });
+  const units = selected.map((item): RentHomeGroupUnit => ({
+    propertyId: item.id, title: item.details.title, guests: 1, totalMinor: item.totalMinor!,
+  }));
+  let remaining = guests - units.length;
+  for (let occupancy = 2; remaining > 0; occupancy++) {
+    for (const [index, unit] of units.entries()) {
+      if (selected[index].details.capacity < occupancy) continue;
+      unit.guests = occupancy;
+      if (--remaining === 0) break;
+    }
+  }
+  for (const unit of units) {
+    unit.totalMinor = priceForGuests(unit.totalMinor, unit.guests);
+  }
   return { building, units, totalMinor: units.reduce((total, item) => total + item.totalMinor, 0) };
 }
 
@@ -52,5 +62,8 @@ export function rentHomeGroups(options: Candidate[], guests: number): RentHomeGr
     const byPrice = (a: RentHomeGroup, b: RentHomeGroup) => a.totalMinor - b.totalMinor;
     groups.push(...pairs.sort(byPrice).slice(0, 2), ...triples.sort(byPrice).slice(0, 2));
   }
-  return groups.sort((a, b) => a.units.length - b.units.length || a.totalMinor - b.totalMinor);
+  const ranked = groups.sort((a, b) => a.units.length - b.units.length || a.totalMinor - b.totalMinor);
+  const threeUnits = ranked.find((group) => group.units.length === 3);
+  const top = ranked.slice(0, 3);
+  return threeUnits && !top.includes(threeUnits) ? [...top.slice(0, 2), threeUnits] : top;
 }

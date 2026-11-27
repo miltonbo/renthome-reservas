@@ -8,6 +8,7 @@ import { DashboardOnboarding } from "@/components/dashboard-onboarding";
 import { MasterCalendar, type MasterCalendarStay } from "@/components/master-calendar";
 import { BookingAlertsPanel, type BookingAlert } from "@/components/booking-alerts-panel";
 import { RentHomeStaffPanel } from "@/components/renthome-staff-panel";
+import { ReservationFormDialog, ReservationFormTotal, reservationFieldControl, reservationFieldLabel } from "@/components/reservation-form-dialog";
 import { useI18n } from "@/lib/i18n/context";
 import type { Locale } from "@/lib/i18n/translations";
 import type { Property, Reservation, CalendarLink, DateOverride } from "@/lib/types";
@@ -17,6 +18,7 @@ import { downloadReservationReceipt } from "@/lib/reservation-receipt";
 import { PaymentReceiptButton } from "@/components/payment-receipt-button";
 import { groupClosedDateOverrides } from "@/lib/date-overrides";
 import { useOfficialExchangeRate } from "@/lib/use-official-exchange-rate";
+import { reservationNights } from "@/lib/reservation-dates";
 
 interface CopyShape {
   dateLocale: string;
@@ -1331,7 +1333,10 @@ export function Dashboard({
       const lodgingTotal = family.reduce((totals, item) => {
         totals[item.priceCurrency || "BOB"] += item.totalPrice || 0; return totals;
       }, { BOB: 0, USD: 0 });
-      return { property, selected, root, rootId, family, initialCheckIn, finalCheckOut, lodgingTotal, selectedFinancials: segmentFinancials(selected) };
+      const selectedNights = reservationNights(selected.checkIn, selected.checkOut);
+      const selectedNightlyPrice = selected.nightlyPrice ??
+        (selected.totalPrice != null && selectedNights > 0 ? selected.totalPrice / selectedNights : null);
+      return { property, selected, root, rootId, family, initialCheckIn, finalCheckOut, lodgingTotal, selectedNights, selectedNightlyPrice, selectedFinancials: segmentFinancials(selected) };
     }
     return null;
   }, [inspectedReservationId, properties]);
@@ -2364,7 +2369,7 @@ export function Dashboard({
                 <div className="grid grid-cols-3 gap-x-2">
                   <div><div className="text-xs text-[var(--ink-4)]">Ingreso</div><div className="font-semibold text-[var(--ink)]">{new Date(`${reservationDateKey(inspectedContext.selected.checkIn)}T12:00:00`).toLocaleDateString("es-BO")}</div></div>
                   <div><div className="text-xs text-[var(--ink-4)]">Salida</div><div className="font-semibold text-[var(--ink)]">{new Date(`${reservationDateKey(inspectedContext.selected.checkOut)}T12:00:00`).toLocaleDateString("es-BO")}</div></div>
-                  <div><div className="text-xs text-[var(--ink-4)]">Noches</div><div className="font-semibold text-[var(--ink)]">{Math.max(0, dayCount(inspectedContext.selected.checkIn, inspectedContext.selected.checkOut) - 1)}</div></div>
+                  <div><div className="text-xs text-[var(--ink-4)]">Noches</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selectedNights}</div></div>
                 </div>
               </section>
 
@@ -2372,7 +2377,7 @@ export function Dashboard({
                 <h3 id="reservation-amounts-heading" className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-4)]">Importes de la reserva</h3>
                 <div className="grid grid-cols-3 gap-x-2">
                   <div><div className="text-xs text-[var(--ink-4)]">Hospedaje</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.totalPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.totalPrice}` : "Sin monto"}</div></div>
-                  <div><div className="text-xs text-[var(--ink-4)]">Precio por noche</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.nightlyPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.nightlyPrice}` : "Sin monto"}</div></div>
+                  <div><div className="text-xs text-[var(--ink-4)]">Precio por noche</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selectedNightlyPrice != null ? `${inspectedContext.selected.priceCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selectedNightlyPrice.toLocaleString("es-BO", { maximumFractionDigits: 2 })}` : "Sin monto"}</div></div>
                   <div><div className="text-xs text-[var(--ink-4)]">Garantía</div><div className="font-semibold text-[var(--ink)]">{inspectedContext.selected.extensionOfId ? "Se mantiene la garantía inicial" : `${inspectedContext.selected.guaranteeCurrency === "USD" ? "USD" : "Bs"} ${inspectedContext.selected.guaranteeAmount ?? 0}`}</div></div>
                 </div>
                 {inspectedContext.selected.extensionOfId && <p className="mt-2 text-[11px] text-[var(--ink-4)]">La garantía no se cobra nuevamente en esta extensión.</p>}
@@ -2493,20 +2498,20 @@ export function Dashboard({
       )}
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" role="dialog" aria-modal="true" aria-label={formEditingId ? "Modificar reserva" : "Nueva reserva"}>
-          <form onSubmit={handleSubmit} className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-5 shadow-2xl">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-[var(--ink)]">{formEditingId ? "Modificar reserva" : formExtensionOfId ? "Extender estadía" : "Nueva reserva confirmada"}</h2>
-                <p className="mt-1 text-xs text-[var(--ink-4)]">{formEditingId ? "Actualice únicamente los datos que necesite cambiar." : formExtensionOfId ? "Puede usar otro canal y otra tarifa; la garantía se mantiene." : "La unidad seleccionada será la asignación física real."}</p>
-              </div>
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1.5 text-[var(--ink-4)] hover:bg-[var(--bg-3)] hover:text-[var(--ink)]" aria-label="Cerrar">✕</button>
-            </div>
-
+        <ReservationFormDialog
+          title={formEditingId ? "Modificar reserva" : formExtensionOfId ? "Extender estadía" : "Nueva reserva confirmada"}
+          description={formEditingId ? "Actualice únicamente los datos que necesite cambiar." : formExtensionOfId ? "Puede usar otro canal y otra tarifa; la garantía se mantiene." : "La unidad seleccionada será la asignación física real."}
+          error={reservationSaveError}
+          saving={savingReservation}
+          disabled={!formName.trim() || !formCheckIn || !formCheckOut || formCheckIn >= formCheckOut || formConflicts.length > 0}
+          submitLabel={formEditingId ? "Guardar cambios" : "Guardar reserva"}
+          onClose={() => setShowForm(false)}
+          onSubmit={handleSubmit}
+        >
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="sm:col-span-2">
-                <span className="mb-1.5 block text-xs font-medium text-[var(--ink-3)]">Departamento físico</span>
-                <select disabled={Boolean(formExtensionOfId)} value={formPropertyId} onChange={(e) => setFormPropertyId(Number(e.target.value))} className="h-10 w-full rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] px-3 text-sm text-[var(--ink)] disabled:opacity-70">
+                <span className={reservationFieldLabel}>Departamento físico</span>
+                <select disabled={Boolean(formExtensionOfId)} value={formPropertyId} onChange={(e) => setFormPropertyId(Number(e.target.value))} className={reservationFieldControl + " disabled:opacity-70"}>
                   {properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
                 </select>
               </label>
@@ -2607,13 +2612,11 @@ export function Dashboard({
                   placeholder="Ej. Quiere entrar temprano o pagará en efectivo"
                 />
               </label>
-              <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-[var(--brand-orange)]/25 bg-[var(--brand-orange-soft)] px-4 py-3">
-                <div>
-                  <span className="block text-xs font-semibold text-[var(--ink)]">Monto total a cobrar</span>
-                  <span className="mt-0.5 block text-[10px] text-[var(--ink-4)]">Estadía + garantía</span>
-                </div>
-                <span className="text-right text-sm font-bold tabular-nums text-[var(--brand-orange)]">{formTotals.BOB > 0 && <span className="block">Bs {formatMoneyInput(formTotals.BOB)}</span>}{formTotals.USD > 0 && <span className="block">USD {formatMoneyInput(formTotals.USD)}</span>}{formTotals.BOB === 0 && formTotals.USD === 0 && <span>Bs 0</span>}</span>
-              </div>
+              <ReservationFormTotal description="Estadía + garantía">
+                {formTotals.BOB > 0 && <span className="block">Bs {formatMoneyInput(formTotals.BOB)}</span>}
+                {formTotals.USD > 0 && <span className="block">USD {formatMoneyInput(formTotals.USD)}</span>}
+                {formTotals.BOB === 0 && formTotals.USD === 0 && <span>Bs 0</span>}
+              </ReservationFormTotal>
             </div>
 
             {formConflicts.length > 0 && (
@@ -2622,18 +2625,7 @@ export function Dashboard({
               </div>
             )}
 
-            {reservationSaveError && (
-              <div role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300">
-                {reservationSaveError}
-              </div>
-            )}
-
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" disabled={savingReservation} onClick={() => setShowForm(false)} className="rounded-lg border border-[var(--line-2)] px-4 py-2 text-sm text-[var(--ink-2)] hover:bg-[var(--bg-3)] disabled:opacity-45">Cancelar</button>
-              <button type="submit" disabled={savingReservation || !formName.trim() || !formCheckIn || !formCheckOut || formCheckIn >= formCheckOut || formConflicts.length > 0} className="rounded-lg bg-[var(--brand-orange)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--m-accent-2)] disabled:cursor-not-allowed disabled:opacity-45">{savingReservation ? "Guardando…" : formEditingId ? "Guardar cambios" : "Guardar reserva"}</button>
-            </div>
-          </form>
-        </div>
+        </ReservationFormDialog>
       )}
     </div>
     </div>
