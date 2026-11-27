@@ -1,9 +1,14 @@
 import { priceForGuests } from "@/lib/pricing";
 import { rentHomeBuildingDistance } from "@/lib/renthome-building-locations";
 
-export type RentHomeGroupUnit = { propertyId: number; title: string; building: string; guests: number; totalMinor: number };
-export type RentHomeGroup = { building: string; distanceMeters: number; units: RentHomeGroupUnit[]; totalMinor: number };
-type Candidate = { id: number; building: string; details: { capacity: number; title: string }; totalMinor: number | null };
+export type RentHomeGroupUnit = { propertyId: number; title: string; building: string; guests: number; totalMinor: number; savingsMinor: number };
+export type RentHomeGroup = { building: string; distanceMeters: number; units: RentHomeGroupUnit[]; totalMinor: number; savingsMinor: number };
+type Candidate = { id: number; building: string; details: { capacity: number; title: string }; totalMinor: number | null; savingsMinor?: number };
+
+export function rentHomeStayForGuests(totalMinor: number, savingsMinor: number, guests: number) {
+  const total = priceForGuests(totalMinor, guests);
+  return { totalMinor: total, savingsMinor: priceForGuests(totalMinor + savingsMinor, guests) - total };
+}
 
 const knownBuildings = ["Sky Elite", "Luxe Suites", "Sky Eclipse", "Sky Moon", "Sky Luxia", "UpTown Nuu", "Stanza"];
 
@@ -29,7 +34,7 @@ export function quoteRentHomeGroup(selected: Candidate[], guests: number): RentH
   }
 
   const units = selected.map((item): RentHomeGroupUnit => ({
-    propertyId: item.id, title: item.details.title, building: item.building, guests: 1, totalMinor: item.totalMinor!,
+    propertyId: item.id, title: item.details.title, building: item.building, guests: 1, totalMinor: item.totalMinor!, savingsMinor: item.savingsMinor ?? 0,
   }));
   let remaining = guests - units.length;
   for (let occupancy = 2; remaining > 0; occupancy++) {
@@ -39,12 +44,14 @@ export function quoteRentHomeGroup(selected: Candidate[], guests: number): RentH
       if (--remaining === 0) break;
     }
   }
-  for (const unit of units) {
-    unit.totalMinor = priceForGuests(unit.totalMinor, unit.guests);
-  }
+  const quotedUnits = units.map((unit) => ({
+    ...unit,
+    ...rentHomeStayForGuests(unit.totalMinor, unit.savingsMinor, unit.guests),
+  }));
   return {
-    building: buildings.join(" · "), distanceMeters, units,
-    totalMinor: units.reduce((total, item) => total + item.totalMinor, 0),
+    building: buildings.join(" · "), distanceMeters, units: quotedUnits,
+    totalMinor: quotedUnits.reduce((total, item) => total + item.totalMinor, 0),
+    savingsMinor: quotedUnits.reduce((total, item) => total + item.savingsMinor, 0),
   };
 }
 

@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { rentHomeCatalog, rentHomeDates } from "@/lib/renthome";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { boliviaDateString } from "@/lib/messaging-availability";
-import { quoteRentHomeGroup, rentHomeGroups } from "@/lib/renthome-group";
-import { priceForGuests } from "@/lib/pricing";
+import { quoteRentHomeGroup, rentHomeGroups, rentHomeStayForGuests } from "@/lib/renthome-group";
 import { rentHomePublicMapLocation } from "@/lib/renthome-building-locations";
 
 class RequestConflict extends Error {
@@ -44,8 +43,9 @@ export async function GET(request: NextRequest) {
   const groups = rentHomeGroups(options, guests).map((group) => ({
     ...group, distanceMeters: group.distanceMeters > 0 ? Math.max(10, Math.round(group.distanceMeters / 10) * 10) : 0,
   }));
-  const listings = options.filter((item) => item.details.capacity >= guests).map(({ building, totalMinor, ...listing }) => {
-    return { ...listing, mapLocation: rentHomePublicMapLocation(building), totalMinor: totalMinor == null ? null : priceForGuests(totalMinor, guests) };
+  const listings = options.filter((item) => item.details.capacity >= guests).map(({ building, totalMinor, savingsMinor, ...listing }) => {
+    const quote = totalMinor == null ? { totalMinor, savingsMinor } : rentHomeStayForGuests(totalMinor, savingsMinor, guests);
+    return { ...listing, ...quote, mapLocation: rentHomePublicMapLocation(building) };
   });
   return NextResponse.json({ listings, groups }, { headers: { "Cache-Control": "no-store" } });
 }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const match = options.find((item) => item.id === unit.propertyId);
     return match ? [match] : [];
   }), query.guests ?? 0) : null;
-  const singleTotal = option?.totalMinor == null ? null : priceForGuests(option.totalMinor, query.guests!);
+  const singleTotal = option?.totalMinor == null ? null : rentHomeStayForGuests(option.totalMinor, option.savingsMinor, query.guests!).totalMinor;
   const totalMinor = isGroup ? group?.totalMinor : singleTotal;
   const propertyId = isGroup ? group?.units[0].propertyId : option?.id;
   if (!propertyId || totalMinor == null || totalMinor !== body.totalMinor ||

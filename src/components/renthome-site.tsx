@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Grid2X2, List, Map, MapPin, MessageCircle, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Grid2X2, List, Map, MapPin, MessageCircle, Tag, Users, X } from "lucide-react";
 import heroPhoto from "@/app/renthome/sky-elite-rooftop.webp";
 import styles from "@/app/renthome/storefront.module.css";
 import { rentHomeBookingLink } from "@/lib/renthome-booking-links";
 import type { RentHomeGroup } from "@/lib/renthome-group";
 import { RentHomeAmenities } from "./renthome-amenities";
+import { RentHomeStaySavings } from "./renthome-stay-savings";
 import { RentHomeSearch, rentHomeDateLabel as dateLabel, type RentHomeDates as Dates } from "./renthome-search";
 import { parseReservationDate, reservationNights } from "@/lib/reservation-dates";
 import { rentHomePublicLocation, rentHomeServices, type RentHomeDetails } from "@/lib/renthome-listing-details";
@@ -17,15 +18,64 @@ import { rentHomePublicLocation, rentHomeServices, type RentHomeDetails } from "
 type Listing = {
   id: number; details: RentHomeDetails; photos: string[];
   mapLocation: [number, number] | null;
-  checkInTime: string; checkOutTime: string; totalMinor: number | null;
+  checkInTime: string; checkOutTime: string; totalMinor: number | null; savingsMinor: number;
 };
 const money = (amount: number) => `Bs ${(amount / 100).toLocaleString("es-BO", { maximumFractionDigits: 2 })}`;
 const photoUrl = (id: number, photo: string) => `/api/renthome/photos/${id}/${photo}`;
 const filters = ["Piscina", "Balcón", "Gimnasio", "Cowork", "Sauna"];
+const launchNoticeKey = "renthome-launch-discount-seen";
+const launchDiscount = "10 % de descuento";
+let launchNoticeShown = false;
 const RentHomeResultsMap = dynamic(() => import("./renthome-results-map"), {
   ssr: false,
   loading: () => <div className="h-[330px] rounded-2xl border border-[var(--rh-line)] bg-[var(--rh-tint)] lg:h-[420px]" role="status"><span className="sr-only">Cargando mapa…</span></div>,
 });
+
+function LaunchRibbon() {
+  return <span className={styles.launchRibbon}>{launchDiscount}</span>;
+}
+
+function LaunchNotice() {
+  const dialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const notice = dialog.current;
+    if (!notice || launchNoticeShown) return;
+    try {
+      if (window.localStorage.getItem(launchNoticeKey)) return;
+    } catch {
+      // The notice can still be shown when browser storage is unavailable.
+    }
+
+    notice.showModal();
+    launchNoticeShown = true;
+    try {
+      window.localStorage.setItem(launchNoticeKey, "1");
+    } catch {
+      // Keep the in-page flag for navigation without browser storage.
+    }
+  }, []);
+
+  return (
+    <dialog ref={dialog} aria-labelledby="renthome-launch-title" aria-describedby="renthome-launch-description"
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[min(calc(100%-2rem),34rem)] max-w-none overflow-y-auto rounded-2xl border-0 bg-white p-0 text-[var(--rh-ink)] shadow-2xl backdrop:bg-[#0b233c]/80">
+      <form method="dialog">
+        <div className="relative bg-[var(--rh-promo)] px-6 pb-7 pt-11 text-white sm:px-9 sm:pb-9">
+          <button aria-label="Cerrar promoción" className="absolute right-3 top-3 grid size-11 place-items-center rounded-lg hover:bg-white/15 focus-visible:outline-white">
+            <X size={22} aria-hidden />
+          </button>
+          <h2 id="renthome-launch-title" className="max-w-[16ch] text-balance text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            {launchDiscount} por lanzamiento
+          </h2>
+        </div>
+        <div className="space-y-5 px-6 py-6 sm:px-9">
+          <p id="renthome-launch-description" className="text-pretty text-[var(--rh-muted)]">El descuento ya está incluido en los precios de todos nuestros departamentos.</p>
+          <button className="min-h-12 w-full rounded-lg bg-[var(--rh-brand)] px-5 font-bold text-white hover:bg-[var(--rh-deep)]">Seguir explorando</button>
+        </div>
+      </form>
+    </dialog>
+  );
+}
 
 function ListingCard({ listing, query }: { listing: Listing; query: Dates | null }) {
   const [index, setIndex] = useState(0);
@@ -39,6 +89,7 @@ function ListingCard({ listing, query }: { listing: Listing; query: Dates | null
           {listing.photos[current] && <Image fill unoptimized loading="lazy" sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 32vw" src={photoUrl(listing.id, listing.photos[current])}
             alt={`${listing.details.title}, foto ${current + 1}`} className="object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.025]" />}
         </Link>
+        <LaunchRibbon />
         {listing.photos.length > 1 && <>
           <button type="button" aria-label={`Foto anterior de ${listing.details.title}`} onClick={() => setIndex((current + listing.photos.length - 1) % listing.photos.length)} className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[var(--rh-ink)] shadow-sm hover:bg-white"><ChevronLeft size={19} aria-hidden /></button>
           <button type="button" aria-label={`Foto siguiente de ${listing.details.title}`} onClick={() => setIndex((current + 1) % listing.photos.length)} className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-[var(--rh-ink)] shadow-sm hover:bg-white"><ChevronRight size={19} aria-hidden /></button>
@@ -53,6 +104,7 @@ function ListingCard({ listing, query }: { listing: Listing; query: Dates | null
           <span className="text-sm text-[var(--rh-muted)]">{listing.totalMinor != null ? <><strong className="text-lg tabular-nums text-[var(--rh-ink)]">{money(listing.totalMinor)}</strong> total</> : "Precio según fechas"}</span>
           {query && listing.totalMinor !== null ? <Link href={rentHomeBookingLink(query,[listing.id])} className="inline-flex min-h-10 items-center rounded-lg bg-[var(--rh-brand)] px-3 text-sm font-extrabold text-white hover:bg-[var(--rh-deep)]">Reservar</Link> : <Link href={url} className="inline-flex min-h-10 items-center gap-1.5 text-sm font-extrabold text-[var(--rh-brand)] hover:underline">Ver ficha <ArrowRight size={15} aria-hidden /></Link>}
         </div>
+        <RentHomeStaySavings dates={query} savingsMinor={listing.savingsMinor} />
       </div>
     </article>
   );
@@ -148,6 +200,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
         <h2 className="text-2xl font-extrabold tabular-nums">{hasQuote ? money(quotedTotal) : "Reserva directa"}</h2>
         <p className="mt-1 text-sm text-[var(--rh-muted)]">{hasQuote ? `Total por ${reservationNights(query.checkIn, query.checkOut)} noches` : "Consulta tus fechas para ver el precio total."}</p>
       </div>
+      {hasQuote && <RentHomeStaySavings dates={query} savingsMinor={option.savingsMinor} />}
       {search}
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {!loading && query && !option && !error && <p role="status" className="text-sm text-[var(--rh-muted)]">No hay disponibilidad para las fechas y huéspedes seleccionados.</p>}
@@ -172,6 +225,11 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
           </nav>
         </div>
       </header>
+      <LaunchNotice />
+      <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 bg-[var(--rh-promo)] px-4 py-3 text-center text-white">
+        <strong className="inline-flex items-center gap-2 font-extrabold"><Tag size={17} aria-hidden /> {launchDiscount} por lanzamiento</strong>
+        <span className="text-sm">Incluido en los precios.</span>
+      </p>
       <main id="renthome-main" className="mx-auto max-w-[1400px] px-4 pb-16 pt-4 sm:px-8 sm:pt-6">
         {!propertyId && <>
           <div className="relative isolate flex min-h-[300px] items-end overflow-hidden rounded-2xl bg-[var(--rh-deep)] text-white sm:min-h-[390px] sm:items-center lg:min-h-[445px]">
@@ -207,6 +265,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                   <Image fill unoptimized priority sizes="95vw" src={photoUrl(property.id, property.photos[0])} alt={property.details.title} className="object-cover" />
                 </button>}
               </div>
+              <LaunchRibbon />
               <button type="button" onClick={() => openGallery()}
                 className={`absolute right-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--rh-deep)] px-3 py-2 text-sm font-semibold text-white shadow-lg hover:bg-[var(--rh-brand)] sm:bottom-4 sm:right-4 ${property.photos.length >= 5 ? "bottom-[5.5rem]" : "bottom-3"}`}>
                 <Grid2X2 size={16} aria-hidden /> Ver todas las fotos
@@ -317,6 +376,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                         </li>;
                       })}
                     </ul>
+                    <RentHomeStaySavings dates={query} savingsMinor={group.savingsMinor} />
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[var(--rh-line)] pt-3">
                       <p className="text-sm">Total <strong className="text-lg tabular-nums">{money(group.totalMinor)}</strong></p>
                       {query && <Link className={button} href={rentHomeBookingLink(query,group.units.map((unit) => unit.propertyId))}>Reservar</Link>}

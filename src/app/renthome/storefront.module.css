@@ -7,6 +7,7 @@
   --rh-line: #dbe5ea;
   --rh-bg: #f6f9fb;
   --rh-gold: #ffcc86;
+  --rh-promo: #b91c2c;
   color-scheme: light;
   color: var(--rh-ink);
   background: var(--rh-bg);
@@ -21,6 +22,29 @@
 .storefront :is(a, button, input):focus-visible {
   outline: 2px solid #24739b;
   outline-offset: 3px;
+}
+
+.launchRibbon {
+  pointer-events: none;
+  position: absolute;
+  top: 2.1rem;
+  left: -2rem;
+  z-index: 1;
+  display: grid;
+  width: 10rem;
+  min-height: 1.75rem;
+  place-items: center;
+  transform: rotate(-45deg);
+  background: var(--rh-promo);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgb(36 8 13 / 36%);
+}
+
+.storefront dialog button:focus-visible {
+  outline-offset: 2px;
 }
 
 .heroShade {

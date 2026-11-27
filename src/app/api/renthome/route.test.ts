@@ -32,7 +32,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    catalog.mockResolvedValue([{ id: 5, details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 }]);
+    catalog.mockResolvedValue([{ id: 5, details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000, savingsMinor: 0 }]);
     db.rentHomeRequest.create.mockResolvedValue({ id: 2 });
     db.rentHomeRequest.findMany.mockResolvedValue([]);
     db.reservation.findFirst.mockResolvedValue(null);
@@ -49,6 +49,19 @@ describe("RentHome direct request WhatsApp confirmation", () => {
         phone: { in: ["+59170000001", "59170000001", "0059170000001", "70000001"] },
         OR: [{ state: "pending", checkOut: { gt: "2026-11-25" } }, { state: "confirmed", reservationId: { not: null } }],
       }),
+    }));
+  });
+
+  it("displays and stores the calendar total with the stay discount already included", async () => {
+    catalog.mockResolvedValue([{ id: 5, details: { title: "Departamento A", capacity: 3 }, totalMinor: 174_370, savingsMinor: 11_130 }]);
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-09&guests=3"));
+    expect(await response.json()).toMatchObject({ listings: [{ totalMinor: 209_244, savingsMinor: 13_356 }] });
+
+    const booking = { checkOut: "2026-12-09", guests: "3" };
+    expect((await send({ ...booking, totalMinor: 222_600 })).status).toBe(409);
+    expect((await send({ ...booking, totalMinor: 209_244 })).status).toBe(201);
+    expect(db.rentHomeRequest.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ totalMinor: 209_244 }),
     }));
   });
 
@@ -81,9 +94,9 @@ describe("RentHome direct request WhatsApp confirmation", () => {
 
   it("returns a same-building pair for five guests even when neither listing fits alone", async () => {
     catalog.mockResolvedValue([
-      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 },
-      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 3 }, totalMinor: 60_000 },
-      { id: 7, building: "Sky Moon", details: { title: "Departamento C", capacity: 3 }, totalMinor: 40_000 },
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000, savingsMinor: 0 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 3 }, totalMinor: 60_000, savingsMinor: 0 },
+      { id: 7, building: "Sky Moon", details: { title: "Departamento C", capacity: 3 }, totalMinor: 40_000, savingsMinor: 0 },
     ]);
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=5"));
     expect(await response.json()).toMatchObject({ listings: [], groups: [{
@@ -94,7 +107,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
 
   it("offers three units when two cannot hold the group", async () => {
     catalog.mockResolvedValue([5, 6, 7].map((id) => ({
-      id, building: "Sky Elite", details: { title: "Departamento", capacity: 2 }, totalMinor: 50_000,
+      id, building: "Sky Elite", details: { title: "Departamento", capacity: 2 }, totalMinor: 50_000, savingsMinor: 0,
     })));
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=5"));
     const result = await response.json();
@@ -105,7 +118,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
   it("returns every valid same-building combination before considering other buildings", async () => {
     vi.stubEnv("RENTHOME_BUILDING_LOCATIONS", JSON.stringify({ "Sky Elite": [0, 0], "Sky Moon": [0, 0.01] }));
     catalog.mockResolvedValue([5, 6, 7, 8].map((id) => ({
-      id, building: id === 8 ? "Sky Moon" : "Sky Elite", details: { title: "Departamento", capacity: 2 }, totalMinor: 50_000,
+      id, building: id === 8 ? "Sky Moon" : "Sky Elite", details: { title: "Departamento", capacity: 2 }, totalMinor: 50_000, savingsMinor: 0,
     })));
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=3"));
     const { groups } = await response.json();
@@ -118,7 +131,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
       "Sky Elite": [0, 0], "Sky Luxia": [0, 0.001], "Sky Moon": [0, 0.01],
     }));
     catalog.mockResolvedValue(["Sky Moon", "Sky Elite", "Sky Luxia"].map((building, index) => ({
-      id: index + 5, building, details: { title: building, capacity: 2 }, totalMinor: 50_000,
+      id: index + 5, building, details: { title: building, capacity: 2 }, totalMinor: 50_000, savingsMinor: 0,
     })));
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=4"));
     const { groups } = await response.json();
@@ -139,8 +152,8 @@ describe("RentHome direct request WhatsApp confirmation", () => {
   it("returns the property's approximate map position without exposing the building pin", async () => {
     vi.stubEnv("RENTHOME_BUILDING_LOCATIONS", JSON.stringify({ "Sky Elite": [-17.70041, -63.10062] }));
     catalog.mockResolvedValue([
-      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 },
-      { id: 6, building: "Por ubicar", details: { title: "Departamento B", capacity: 2 }, totalMinor: 55_000 },
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000, savingsMinor: 0 },
+      { id: 6, building: "Por ubicar", details: { title: "Departamento B", capacity: 2 }, totalMinor: 55_000, savingsMinor: 0 },
     ]);
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=2"));
     const { listings } = await response.json();
@@ -151,8 +164,8 @@ describe("RentHome direct request WhatsApp confirmation", () => {
 
   it("quotes and stores two guests per unit when both can hold two", async () => {
     catalog.mockResolvedValue([
-      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 3 }, totalMinor: 50_000 },
-      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 2 }, totalMinor: 60_000 },
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 3 }, totalMinor: 50_000, savingsMinor: 0 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 2 }, totalMinor: 60_000, savingsMinor: 0 },
     ]);
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=4"));
     const result = await response.json();
@@ -169,8 +182,8 @@ describe("RentHome direct request WhatsApp confirmation", () => {
 
   it("charges the third guest only when all three stay in one unit", async () => {
     catalog.mockResolvedValue([
-      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 3 }, totalMinor: 50_000 },
-      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 2 }, totalMinor: 60_000 },
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 3 }, totalMinor: 50_000, savingsMinor: 0 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 2 }, totalMinor: 60_000, savingsMinor: 0 },
     ]);
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=3"));
     expect(await response.json()).toMatchObject({
@@ -188,8 +201,8 @@ describe("RentHome direct request WhatsApp confirmation", () => {
 
   it("stores the price and occupancy of both units and rejects stale per-unit prices", async () => {
     catalog.mockResolvedValue([
-      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000 },
-      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 3 }, totalMinor: 60_000 },
+      { id: 5, building: "Sky Elite", details: { title: "Departamento A", capacity: 2 }, totalMinor: 50_000, savingsMinor: 0 },
+      { id: 6, building: "Sky Elite", details: { title: "Departamento B", capacity: 3 }, totalMinor: 60_000, savingsMinor: 0 },
     ]);
     const units = [{ propertyId: 5, totalMinor: 50_000 }, { propertyId: 6, totalMinor: 72_000 }];
     const response = await send({ guests: "5", units, totalMinor: 122_000 });

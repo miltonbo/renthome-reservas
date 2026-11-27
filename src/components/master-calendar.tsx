@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { calculateStayQuote, type QuotePolicy } from "@/lib/pricing-stay-quote";
+import { calculateCalendarStayQuote, type StayQuoteConfig } from "@/lib/pricing-stay-quote";
 
 export interface MasterCalendarStay {
   start: Date;
@@ -51,13 +51,6 @@ interface QuoteSelection {
   propertyId: number;
   anchor: string;
   focus: string;
-}
-
-interface QuoteConfig {
-  policies: QuotePolicy[];
-  bobPerUsd: number;
-  today: string;
-  gapPremiumBobMinor: number;
 }
 
 // Compact enough that a booking four weeks out is genuinely visible on a
@@ -255,7 +248,7 @@ export function MasterCalendar({
   const [windowStart, setWindowStart] = useState(() => addDays(today, -2));
   const [shadowPrices, setShadowPrices] = useState<ShadowDailyPrice[]>([]);
   const [quoteSelection, setQuoteSelection] = useState<QuoteSelection | null>(null);
-  const [quoteConfig, setQuoteConfig] = useState<QuoteConfig | null>(null);
+  const [quoteConfig, setQuoteConfig] = useState<StayQuoteConfig | null>(null);
   const [quoteDetailsOpen, setQuoteDetailsOpen] = useState(false);
   const dragSelectionRef = useRef<{ propertyId: number; anchor: string } | null>(null);
   const mouseMovedRef = useRef(false);
@@ -345,15 +338,12 @@ export function MasterCalendar({
     const calculate = (channel: string, field: "directBobMinor" | "airbnbUsdMinor" | "bookingUsdMinor") => {
       if (!complete || availableRows.some((row) => row[field] == null)) return null;
       const policy = quoteConfig?.policies.find((p) => p.propertyId === availableRows[0].propertyId && p.channel === channel);
-      if (!quoteConfig || !policy) {
-        if (channel !== "direct") return null;
-        return { totalMinor: availableRows.reduce((total, row) => total + row[field]!, 0), floorBobMinor: null, savingsMinor: 0, durationLimited: false };
-      }
-      return calculateStayQuote({
-        ...quoteConfig,
+      if (!policy && channel !== "direct") return null;
+      return calculateCalendarStayQuote(
+        availableRows.map((row) => ({ date: row.date, priceMinor: row[field]!, reasons: row.reasonSummary })),
         policy,
-        nightly: availableRows.map((row) => ({ date: row.date, priceMinor: row[field]!, reasons: row.reasonSummary })),
-      });
+        quoteConfig,
+      );
     };
     const direct = calculate("direct", "directBobMinor");
     const airbnb = calculate("airbnb", "airbnbUsdMinor");

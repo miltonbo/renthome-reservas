@@ -48,6 +48,36 @@ export type QuotePolicy = {
   promotions: QuotePromotion[];
 };
 
+export type StayQuoteConfig = {
+  policies: QuotePolicy[];
+  today: string;
+  bobPerUsd: number;
+  gapPremiumBobMinor: number;
+};
+
+export function calendarDirectNightlyPrice(priceMinor: number, reasons: string, floorBobMinor: number, gapPremiumBobMinor: number) {
+  const premium = reasons.includes("hueco de una noche") ? gapPremiumBobMinor : 0;
+  return Math.max(priceMinor, floorBobMinor + premium);
+}
+
+export function calculateCalendarStayQuote(
+  nightly: ReadonlyArray<{ date: string; priceMinor: number; reasons: string }>,
+  policy?: QuotePolicy,
+  config?: StayQuoteConfig | null,
+) {
+  if (!policy || !config) {
+    return { totalMinor: nightly.reduce((total, row) => total + row.priceMinor, 0), floorBobMinor: null, savingsMinor: 0, durationLimited: false };
+  }
+  return calculateStayQuote({
+    ...config,
+    policy,
+    nightly: policy.channel === "direct" ? nightly.map((row) => ({
+      ...row,
+      priceMinor: calendarDirectNightlyPrice(row.priceMinor, row.reasons, policy.floorBobMinor, config.gapPremiumBobMinor),
+    })) : nightly,
+  });
+}
+
 export function isDurationPromotion(promotion: Pick<QuotePromotion, "promotionType" | "minNights">) {
   return promotion.minNights > 1 || promotion.promotionType === "weekly" || promotion.promotionType === "monthly";
 }

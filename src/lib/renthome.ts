@@ -3,6 +3,8 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { addDateDays, evaluatePropertyAvailability, parseAvailabilityQuery } from "@/lib/messaging-availability";
 import type { RentHomeDetails } from "@/lib/renthome-listing-details";
+import { calculateCalendarStayQuote } from "@/lib/pricing-stay-quote";
+import { getStayQuoteConfig } from "@/lib/pricing-stay-quote-config";
 import { rentHomeBuilding } from "@/lib/renthome-group";
 
 export function rentHomeOwner() {
@@ -54,22 +56,26 @@ export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>, 
     orderBy: { name: "asc" },
   });
   const byId = new Map(listings.map((item) => [item.propertyId, item]));
+  const quoteConfig = query && properties.length ? await getStayQuoteConfig(properties.map(({ id }) => id), owner, ["direct"]) : null;
+  const policies = new Map(quoteConfig?.policies.map((policy) => [policy.propertyId, policy]));
   return (await Promise.all(properties.map(async ({ name, pricingProfile, ...property }) => {
     const listing = readListing(byId.get(property.id)!);
     const building = rentHomeBuilding(name, pricingProfile?.building);
-    if (!query) return { ...property, ...listing, totalMinor: null, building };
+    if (!query) return { ...property, ...listing, totalMinor: null, savingsMinor: 0, building };
     if ((!includeSmaller && listing.details.capacity < (query.guests ?? 1)) || !(await rentHomeAvailability(prisma, property.id, query))) return null;
     const prices = await prisma.dailyPrice.findMany({
       where: { propertyId: property.id, date: { gte: query.checkIn, lt: query.checkOut } },
-      select: { date: true, directBobMinor: true },
+      select: { date: true, directBobMinor: true, reasonSummary: true },
     });
-    const byDate = new Map(prices.map((price) => [price.date, price.directBobMinor]));
-    let totalMinor = 0;
+    const byDate = new Map(prices.map((price) => [price.date, price]));
+    const nightly = [];
     for (let offset = 0; offset < query.nights; offset++) {
-      const amount = byDate.get(addDateDays(query.checkIn, offset));
-      if (!amount || amount < 1) return null;
-      totalMinor += amount;
+      const date = addDateDays(query.checkIn, offset);
+      const row = byDate.get(date);
+      if (!row?.directBobMinor || row.directBobMinor < 1) return null;
+      nightly.push({ date, priceMinor: row.directBobMinor, reasons: row.reasonSummary });
     }
-    return { ...property, ...listing, totalMinor, building };
+    const { totalMinor, savingsMinor } = calculateCalendarStayQuote(nightly, policies.get(property.id), quoteConfig);
+    return { ...property, ...listing, totalMinor, savingsMinor, building };
   }))).filter((property) => property !== null);
 }

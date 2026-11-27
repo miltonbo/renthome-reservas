@@ -9,6 +9,7 @@ import { rentHomeBackToResults, rentHomeReceiptKey, type RentHomeReceipt } from 
 import type { RentHomeGroupUnit } from "@/lib/renthome-group";
 import { downloadRentHomeReceipt } from "@/lib/reservation-receipt";
 import { rentHomeDateLabel, type RentHomeDates } from "./renthome-search";
+import { RentHomeStaySavings } from "./renthome-stay-savings";
 
 const button = "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--rh-brand)] px-4 font-bold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60";
 const input = "mt-1.5 block min-h-12 w-full rounded-lg border border-[var(--rh-line)] bg-[var(--rh-bg)] px-3 text-base";
@@ -111,6 +112,7 @@ export function RentHomeCheckout({ dates, units, building }: {
           </li>)}
         </ul>
         <p className="flex justify-between gap-3 border-t border-[var(--rh-line)] py-2.5 font-extrabold">Total de la estadía <span className="tabular-nums">{format(totalMinor)}</span></p>
+        <RentHomeStaySavings dates={dates} savingsMinor={units.reduce((sum, unit) => sum + unit.savingsMinor, 0)} />
       </div>
       <form onSubmit={handleSubmit} onInput={() => { setWarning(""); setError(""); }} className="space-y-4">
         <label className="block text-sm font-bold">Nombre completo<input className={input} name="guestName" autoComplete="name" minLength={2} maxLength={120} required disabled={sending} /></label>

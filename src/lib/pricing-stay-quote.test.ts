@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateStayQuote, nightlyFloorBobMinor, type QuotePolicy } from "./pricing-stay-quote";
+import { calculateCalendarStayQuote, calculateStayQuote, nightlyFloorBobMinor, type QuotePolicy } from "./pricing-stay-quote";
 import { netMinorAfterDeductions } from "./pricing";
 
 const direct: QuotePolicy = {
@@ -23,6 +23,17 @@ function quote(nights: number, priceMinor: number, policy = direct, reasons = ""
 }
 
 describe("calendar stay quotes", () => {
+  it.each([
+    [6, 159_000, 0],
+    [7, 174_370, 11_130],
+    [28, 505_006, 236_994],
+  ])("applies the direct calendar floor and length rules to %i nights", (nights, totalMinor, savingsMinor) => {
+    const nightly = Array.from({ length: nights }, () => ({ date: "2026-12-02", priceMinor: 22_000, reasons: "" }));
+    expect(calculateCalendarStayQuote(nightly, direct, {
+      policies: [direct], today: "2026-11-27", bobPerUsd: 11.75, gapPremiumBobMinor: 5_000,
+    })).toMatchObject({ totalMinor, savingsMinor });
+  });
+
   it("raises low nightly floors and keeps higher property floors", () => {
     expect(nightlyFloorBobMinor({ floorCurrency: "BOB", floorMinor: 25_000 }, 11.75, true)).toBe(26_500);
     expect(nightlyFloorBobMinor({ floorCurrency: "USD", floorMinor: 2_500 }, 11.75, true)).toBe(29_375);
