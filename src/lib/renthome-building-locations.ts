@@ -30,7 +30,7 @@ function buildingPoint(building: string) {
 export function rentHomePublicMapLocation(building: string): [number, number] | null {
   const point = buildingPoint(building);
   if (!point) return null;
-  return [Number(point[0].toFixed(3)), Number(point[1].toFixed(3))];
+  return [Number(point[0].toFixed(4)), Number(point[1].toFixed(4))];
 }
 
 export function rentHomeBuildingDistance(first: string, second: string): number | null {

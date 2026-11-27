@@ -145,7 +145,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
     const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=2"));
     const { listings } = await response.json();
     expect(listings.map((listing: { mapLocation: [number, number] | null }) => listing.mapLocation))
-      .toEqual([[-17.7, -63.101], null]);
+      .toEqual([[-17.7004, -63.1006], null]);
     expect(listings[0]).not.toHaveProperty("building");
   });
 
