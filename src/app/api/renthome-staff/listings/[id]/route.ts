@@ -42,10 +42,13 @@ export async function PUT(request: Request, context: Context) {
   const previousPhotos = current ? readListing(current).photos : [];
   const wanted = [...new Set(form.getAll("retain").map(String))];
   const files = form.getAll("photos").filter((item): item is File => typeof item !== "string" && item.size > 0);
+  if (files.length > 30 || files.some((file) => file.size > 8 * 1024 * 1024) ||
+    files.reduce((total, file) => total + file.size, 0) > 25 * 1024 * 1024) {
+    return NextResponse.json({ error: "Agrega hasta 30 fotos por carga, con un máximo de 8 MB por foto y 25 MB en total." }, { status: 400 });
+  }
   if (!Number.isInteger(capacity) || capacity < 1 || capacity > 50 ||
     fields.title.length > 160 || Object.values(fields).some((value) => value.length > 8000) ||
-    wanted.some((name) => !previousPhotos.includes(name)) || wanted.length + files.length > 30 ||
-    files.some((file) => file.size > 8 * 1024 * 1024) || files.reduce((total, file) => total + file.size, 0) > 25 * 1024 * 1024 ||
+    wanted.some((name) => !previousPhotos.includes(name)) ||
     (published && (!fields.title || !fields.description || !wanted.length && !files.length))) {
     return NextResponse.json({ error: "Revisa la capacidad, el contenido y las fotos. Para publicar necesitas título, descripción y al menos una foto." }, { status: 400 });
   }
