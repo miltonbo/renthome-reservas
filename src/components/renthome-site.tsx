@@ -73,8 +73,8 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   const [showMap, setShowMap] = useState(Boolean(query));
-  const [activePhoto, setActivePhoto] = useState(0);
   const gallery = useRef<HTMLDialogElement>(null);
+  const galleryScroll = useRef<HTMLDivElement>(null);
   const resultsHeading = useRef<HTMLHeadingElement>(null);
   const jumpToResults = useRef(false);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -118,6 +118,12 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   }, [loading]);
 
   const property = catalog.find((item) => item.id === propertyId);
+  function openGallery(index = 0) {
+    gallery.current?.showModal();
+    const scroller = galleryScroll.current;
+    const photo = scroller?.querySelector<HTMLElement>(`[data-gallery-photo="${index}"]`);
+    if (scroller) scroller.scrollTop = index > 0 ? Math.max(0, (photo?.offsetTop ?? 0) - 16) : 0;
+  }
   const option = results.find((item) => item.id === propertyId);
   const quotedTotal = option?.totalMinor;
   const hasQuote = !!query && !loading && option && quotedTotal != null &&
@@ -189,42 +195,39 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
           <a href="#reserva-directa" className="mb-5 inline-flex min-h-10 items-center gap-2 font-extrabold text-[var(--rh-brand)] underline lg:hidden"><CalendarDays size={17} aria-hidden /> Consultar disponibilidad</a>
           {property.photos.length > 0 && <>
             <div className="relative mb-7 overflow-hidden rounded-[1.2rem] bg-[var(--rh-tint)]">
-              <div className="grid h-[280px] grid-cols-2 gap-1.5 sm:h-[350px] sm:grid-cols-4 sm:grid-rows-2 lg:h-[430px]">
+              <div className="grid h-[300px] grid-cols-4 grid-rows-[minmax(0,1fr)_4.5rem] gap-1.5 sm:h-[350px] sm:grid-rows-2 lg:h-[430px]">
                 {property.photos.length >= 5 ? property.photos.slice(0, 5).map((photo, index) => (
-                  <button type="button" key={photo} onClick={() => { setActivePhoto(index); gallery.current?.showModal(); }}
+                  <button type="button" key={photo} onClick={() => openGallery(index)}
                     aria-label={`Abrir foto ${index + 1}`}
-                    className={`relative overflow-hidden focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-white ${index === 0 ? "col-span-2 sm:row-span-2" : "hidden sm:block"}`}>
+                    className={`relative overflow-hidden focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-white ${index === 0 ? "col-span-4 sm:col-span-2 sm:row-span-2" : ""}`}>
                     <Image fill unoptimized priority={index === 0} sizes={index === 0 ? "(max-width: 640px) 90vw, 50vw" : "25vw"}
                       src={photoUrl(property.id, photo)} alt={`${property.details.title}, foto ${index + 1}`} className="object-cover transition-transform hover:scale-[1.025]" />
                   </button>
-                )) : <button type="button" aria-label="Abrir galería" onClick={() => { setActivePhoto(0); gallery.current?.showModal(); }} className="relative col-span-full row-span-full">
+                )) : <button type="button" aria-label="Abrir galería" onClick={() => openGallery()} className="relative col-span-full row-span-full">
                   <Image fill unoptimized priority sizes="95vw" src={photoUrl(property.id, property.photos[0])} alt={property.details.title} className="object-cover" />
                 </button>}
               </div>
-              <button type="button" onClick={() => { setActivePhoto(0); gallery.current?.showModal(); }}
-                className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-lg bg-[var(--rh-deep)] px-3 py-2 text-sm font-semibold text-white shadow-lg hover:bg-[var(--rh-brand)] sm:bottom-4 sm:right-4">
-                <Grid2X2 size={16} aria-hidden /> Ver las {property.photos.length} fotos
+              <button type="button" onClick={() => openGallery()}
+                className={`absolute right-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[var(--rh-deep)] px-3 py-2 text-sm font-semibold text-white shadow-lg hover:bg-[var(--rh-brand)] sm:bottom-4 sm:right-4 ${property.photos.length >= 5 ? "bottom-[5.5rem]" : "bottom-3"}`}>
+                <Grid2X2 size={16} aria-hidden /> Ver todas las fotos
               </button>
             </div>
-            <dialog ref={gallery} aria-label="Galería del alojamiento"
-              onKeyDown={(event) => {
-                const direction = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
-                if (direction) setActivePhoto((index) => (index + direction + property.photos.length) % property.photos.length);
-              }}
-              className="m-auto w-[min(94vw,900px)] max-w-none rounded-2xl border-0 bg-[var(--rh-deep)] p-3 text-white backdrop:bg-[#09171c]/85 sm:p-5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="font-semibold">{property.details.title} · {activePhoto + 1} de {property.photos.length}</h2>
-                <button type="button" aria-label="Cerrar galería" onClick={() => gallery.current?.close()} className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/45 hover:bg-white/10"><X size={20} aria-hidden /></button>
+            <dialog ref={gallery} aria-labelledby="renthome-gallery-title"
+              className="m-auto h-dvh max-h-none w-full max-w-none flex-col overflow-hidden border-0 bg-white text-[var(--rh-ink)] backdrop:bg-[#09171c]/75 open:flex sm:h-[92dvh] sm:w-[min(94vw,960px)] sm:rounded-2xl">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rh-line)] px-4 py-3 sm:px-6">
+                <div className="min-w-0">
+                  <h2 id="renthome-gallery-title" className="text-lg font-extrabold">Galería del alojamiento</h2>
+                  <p className="text-sm text-[var(--rh-muted)]">{property.details.title} · {property.photos.length} {property.photos.length === 1 ? "foto" : "fotos"}</p>
+                </div>
+                <button type="button" aria-label="Cerrar galería" onClick={() => gallery.current?.close()} className="grid size-11 shrink-0 place-items-center rounded-lg border border-[var(--rh-line)] hover:bg-[var(--rh-tint)] focus-visible:outline-2 focus-visible:outline-[var(--rh-brand)]"><X size={20} aria-hidden /></button>
               </div>
-              <div className="relative h-[min(65vh,550px)]">
-                <Image fill unoptimized sizes="90vw" src={photoUrl(property.id, property.photos[activePhoto % property.photos.length])}
-                  alt={`${property.details.title}, foto ${activePhoto + 1}`} className="object-contain" />
-                {property.photos.length > 1 && <>
-                  <button type="button" aria-label="Foto anterior" onClick={() => setActivePhoto((activePhoto + property.photos.length - 1) % property.photos.length)}
-                    className="absolute left-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[var(--rh-ink)]"><ChevronLeft aria-hidden /></button>
-                  <button type="button" aria-label="Foto siguiente" onClick={() => setActivePhoto((activePhoto + 1) % property.photos.length)}
-                    className="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white text-[var(--rh-ink)]"><ChevronRight aria-hidden /></button>
-                </>}
+              <div ref={galleryScroll} tabIndex={0} aria-label="Fotos del alojamiento"
+                className="relative min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--rh-brand)] sm:space-y-4 sm:px-6">
+                {property.photos.map((photo, index) => <div key={photo} data-gallery-photo={index}
+                  className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--rh-bg)] sm:aspect-video">
+                  <Image fill unoptimized loading="lazy" sizes="(max-width: 640px) 94vw, 900px" src={photoUrl(property.id, photo)}
+                    alt={`${property.details.title}, foto ${index + 1} de ${property.photos.length}`} className="object-contain" />
+                </div>)}
               </div>
             </dialog>
           </>}
