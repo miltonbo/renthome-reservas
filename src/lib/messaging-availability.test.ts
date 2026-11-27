@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   evaluatePropertyAvailability,
   parseAvailabilityQuery,
+  unblockedPropertyNights,
   type AvailabilityQuery,
 } from "./messaging-availability";
 import { MessagingValidationError } from "./messaging";
@@ -39,6 +40,26 @@ function property(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 }
+
+it("uses the same blocked nights in the public calendar and the stay check", () => {
+  const room = property({
+    reservations: [{ checkIn: "2026-09-15", checkOut: "2026-09-17" }],
+    calendarEvents: [{ startDate: "2026-09-19", endDate: "2026-09-20", summary: "Reserved" }],
+    calendarLinks: [{ bufferBefore: 1, bufferAfter: 1, lastFetchedAt: null, lastError: null }],
+    dateOverrides: [{ date: "2026-09-12", type: "closed" }, { date: "2026-09-18", type: "open" }],
+  });
+  const starts = ["12", "13", "14", "15", "16", "17", "18", "19"];
+  const unblocked = unblockedPropertyNights(room, starts.map((day) => `2026-09-${day}`));
+  expect(unblocked).toEqual(["2026-09-13", "2026-09-17", "2026-09-18"]);
+  const independentlyAvailable = starts.flatMap((day) => {
+    const checkIn = `2026-09-${day}`;
+    const result = evaluatePropertyAvailability(room, {
+      ...query, checkIn, nights: 1, checkOut: `2026-09-${Number(day) + 1}`,
+    }, now);
+    return result.dateStatus === "available" ? [checkIn] : [];
+  });
+  expect(independentlyAvailable).toEqual(unblocked);
+});
 
 describe("parseAvailabilityQuery", () => {
   it("parses a bounded date-only query", () => {

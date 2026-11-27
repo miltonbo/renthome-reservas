@@ -255,7 +255,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   const catalogHref = `/renthome${queryString ? `?${queryString}` : ""}#departamentos`;
 
   const button = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--rh-brand)] px-4 py-3 font-semibold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60";
-  const search = <RentHomeSearch dates={dates} today={today} loading={loading} compact={!!propertyId} hasQuote={hasQuote}
+  const search = <RentHomeSearch dates={dates} today={today} loading={loading} compact={!!propertyId} hasQuote={hasQuote} propertyId={propertyId}
     onChange={setDates} onSearch={() => {
       if (!propertyId) {
         jumpToResults.current = true;

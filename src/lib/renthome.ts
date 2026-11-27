@@ -1,11 +1,13 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { addDateDays, evaluatePropertyAvailability, parseAvailabilityQuery } from "@/lib/messaging-availability";
+import { addDateDays, boliviaDateString, evaluatePropertyAvailability, MAX_STAY_NIGHTS, parseAvailabilityQuery, unblockedPropertyNights } from "@/lib/messaging-availability";
 import type { RentHomeDetails } from "@/lib/renthome-listing-details";
 import { calculateCalendarStayQuote } from "@/lib/pricing-stay-quote";
 import { getStayQuoteConfig } from "@/lib/pricing-stay-quote-config";
 import { rentHomeBuilding } from "@/lib/renthome-group";
+import { reservationNights } from "@/lib/reservation-dates";
+import type { RentHomeAvailabilityCalendar } from "@/lib/renthome-availability-calendar";
 
 export function rentHomeOwner() {
   const id = Number(process.env.RENTHOME_OWNER_ID);
@@ -43,6 +45,35 @@ export async function rentHomeAvailability(db: Prisma.TransactionClient, propert
   if (!owner) return false;
   const property = await db.property.findFirst({ where: { id: propertyId, userId: owner }, select: availabilityFields });
   return !!property && evaluatePropertyAvailability(property, query).dateStatus === "available";
+}
+
+export async function rentHomeAvailabilityCalendar(propertyId: number): Promise<RentHomeAvailabilityCalendar | null> {
+  const owner = rentHomeOwner();
+  if (!owner) return null;
+  const [listing, property] = await Promise.all([
+    prisma.rentHomeListing.findUnique({ where: { propertyId }, select: { published: true } }),
+    prisma.property.findFirst({ where: { id: propertyId, userId: owner, isPaused: false }, select: availabilityFields }),
+  ]);
+  if (!property || !listing?.published) return null;
+
+  const today = boliviaDateString();
+  const cutoff = addDateDays(today, property.bookingWindow);
+  const prices = await prisma.dailyPrice.findMany({
+    where: { propertyId, date: { gte: today, lt: cutoff }, directBobMinor: { gt: 0 } },
+    select: { date: true },
+    orderBy: { date: "asc" },
+  });
+  const minNights = Math.max(2, property.minNights);
+  const ranges: RentHomeAvailabilityCalendar["ranges"] = [];
+  for (const date of unblockedPropertyNights(property, prices.map(({ date }) => date))) {
+    const end = addDateDays(date, 1);
+    const previous = ranges.at(-1);
+    if (previous?.end === date) previous.end = end;
+    else ranges.push({ start: date, end });
+  }
+  return { minNights, maxNights: MAX_STAY_NIGHTS, ranges: minNights <= MAX_STAY_NIGHTS
+    ? ranges.filter(({ start, end }) => reservationNights(start, end) >= minNights)
+    : [] };
 }
 
 export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>, includeSmaller = false) {

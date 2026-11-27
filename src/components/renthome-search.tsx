@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Minus, Plus, Search, Users } from "lucide-react";
 import { reservationNights } from "@/lib/reservation-dates";
+import { rentHomeCanCheckIn, rentHomeCanCheckOut, type RentHomeAvailabilityCalendar } from "@/lib/renthome-availability-calendar";
 
 export type RentHomeDates = { checkIn: string; checkOut: string; guests: string };
 const dateForMonth = (month: string, offset: number) => {
@@ -13,14 +14,19 @@ const calendarMonth = new Intl.DateTimeFormat("es-BO", { month: "long", year: "n
 const fullDate = new Intl.DateTimeFormat("es-BO", { dateStyle: "full", timeZone: "UTC" });
 export const rentHomeDateLabel = (value: string) => new Intl.DateTimeFormat("es-BO", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(value + "T12:00:00Z"));
 
-export function RentHomeSearch({ dates, today, loading, compact, hasQuote, onChange, onSearch }: {
+export function RentHomeSearch({ dates, today, loading, compact, hasQuote, propertyId, onChange, onSearch }: {
   dates: RentHomeDates; today: string; loading: boolean; compact?: boolean; hasQuote?: boolean;
+  propertyId?: number;
   onChange: (dates: RentHomeDates) => void; onSearch: () => void;
 }) {
   const [open, setOpen] = useState<"dates" | "guests" | null>(null);
   const [month, setMonth] = useState(dates.checkIn.slice(0, 7) || today.slice(0, 7));
   const [children, setChildren] = useState(0);
   const [feedback, setFeedback] = useState("");
+  const [availability, setAvailability] = useState<{
+    propertyId: number; calendar: RentHomeAvailabilityCalendar | null;
+  }>();
+  const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
   const container = useRef<HTMLFormElement>(null);
   const datesButton = useRef<HTMLButtonElement>(null);
   const guestsButton = useRef<HTMLButtonElement>(null);
@@ -30,6 +36,27 @@ export function RentHomeSearch({ dates, today, loading, compact, hasQuote, onCha
   const adults = total - children;
   const pickingEnd = !!dates.checkIn && !dates.checkOut;
   const nights = reservationNights(dates.checkIn, dates.checkOut);
+  const propertyAvailability = availability?.propertyId === propertyId ? availability : undefined;
+  const calendar = propertyAvailability?.calendar;
+  const minNights = calendar?.minNights ?? 2;
+  const lastMonth = (calendar?.ranges.at(-1)?.end ?? today).slice(0, 7);
+
+  useEffect(() => {
+    if (!propertyId) return;
+    const controller = new AbortController();
+    async function fetchCalendar(id: number) {
+      try {
+        const response = await fetch(`/api/renthome/availability/${id}`, { signal: controller.signal });
+        if (!response.ok) throw new Error("Availability calendar unavailable");
+        const calendar: RentHomeAvailabilityCalendar = await response.json();
+        if (!controller.signal.aborted) setAvailability({ propertyId: id, calendar });
+      } catch {
+        if (!controller.signal.aborted) setAvailability({ propertyId: id, calendar: null });
+      }
+    }
+    void fetchCalendar(propertyId);
+    return () => controller.abort();
+  }, [propertyId, availabilityAttempt]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,8 +79,8 @@ export function RentHomeSearch({ dates, today, loading, compact, hasQuote, onCha
 
   function selectDate(day: string) {
     if (pickingEnd && day > dates.checkIn) {
-      if (reservationNights(dates.checkIn, day) < 2) {
-        setFeedback("Selecciona una salida al menos dos noches después del ingreso.");
+      if (reservationNights(dates.checkIn, day) < minNights) {
+        setFeedback(`Selecciona una salida al menos ${minNights} noches después del ingreso.`);
         return;
       }
       onChange({ ...dates, checkOut: day });
@@ -78,7 +105,10 @@ export function RentHomeSearch({ dates, today, loading, compact, hasQuote, onCha
           const day = `${value}-${String(index + 1).padStart(2, "0")}`;
           const endpoint = day === dates.checkIn || day === dates.checkOut;
           const inRange = day > dates.checkIn && day < dates.checkOut;
-          return <button key={day} type="button" disabled={day < today} aria-pressed={endpoint}
+          const enabled = day >= today && (!propertyId || (calendar && (pickingEnd
+            ? rentHomeCanCheckOut(calendar, dates.checkIn, day)
+            : rentHomeCanCheckIn(calendar, day))));
+          return <button key={day} type="button" disabled={!enabled} aria-pressed={endpoint}
             aria-label={fullDate.format(new Date(day + "T12:00:00Z"))} onClick={() => selectDate(day)}
             className={`mx-auto grid h-9 w-full max-w-10 place-items-center rounded-lg text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[var(--rh-brand)] disabled:line-through disabled:opacity-35 ${endpoint ? "bg-[var(--rh-brand)] text-white" : inRange ? "bg-[#d5e9f3] text-[var(--rh-ink)]" : "text-[var(--rh-ink)] hover:bg-[var(--rh-tint)]"}`}>{index + 1}</button>;
         })}
@@ -90,10 +120,16 @@ export function RentHomeSearch({ dates, today, loading, compact, hasQuote, onCha
   const round = "grid size-10 shrink-0 place-items-center rounded-lg border border-[var(--rh-line)] hover:bg-[var(--rh-tint)] disabled:opacity-35";
   return <form ref={container} className="relative" onSubmit={(event) => {
     event.preventDefault();
-    if (!dates.checkIn || !dates.checkOut || nights < 2) {
+    if (!dates.checkIn || !dates.checkOut || nights < minNights) {
       setMonth(dates.checkIn.slice(0, 7) || today.slice(0, 7));
       setOpen("dates");
-      setFeedback("Selecciona el ingreso y la salida para una estadía de al menos dos noches.");
+      setFeedback(`Selecciona el ingreso y la salida para una estadía de al menos ${minNights} noches.`);
+      return;
+    }
+    if (propertyId && (!calendar || !rentHomeCanCheckOut(calendar, dates.checkIn, dates.checkOut))) {
+      setMonth(dates.checkIn.slice(0, 7));
+      setOpen("dates");
+      setFeedback(calendar ? "Selecciona otras fechas disponibles para este departamento." : "");
       return;
     }
     setOpen(null); setFeedback(""); onSearch();
@@ -111,14 +147,22 @@ export function RentHomeSearch({ dates, today, loading, compact, hasQuote, onCha
       </button>
       {!hasQuote && <button disabled={loading} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--rh-brand)] px-5 py-3 font-extrabold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60 ${compact ? "" : "col-span-2 sm:col-span-1 sm:px-7"}`}><Search size={18} aria-hidden /> {compact ? "Consultar disponibilidad" : "Buscar alojamiento"}</button>}
     </div>
-    {!hasQuote && <p className="mt-2 text-sm text-[var(--rh-muted)]">{nights >= 2 ? `${nights} noches seleccionadas` : "Estadía mínima de 2 noches."}</p>}
+    {!hasQuote && <p className="mt-2 text-sm text-[var(--rh-muted)]">{nights >= minNights ? `${nights} noches seleccionadas` : `Estadía mínima de ${minNights} noches.`}</p>}
     {open === "dates" && <div id={dateId} className={`z-30 mt-2 w-full rounded-2xl border border-[var(--rh-line)] bg-white p-3 shadow-xl sm:p-4 ${compact ? "relative" : "absolute left-0 top-[3.65rem] max-w-[620px]"}`}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <button type="button" className={round} aria-label="Mes anterior" disabled={month <= today.slice(0, 7)} onClick={() => setMonth(dateForMonth(month, -1))}><ChevronLeft size={18} aria-hidden /></button>
         <p className="text-center text-sm font-semibold">{pickingEnd ? "Selecciona la salida" : "Selecciona el ingreso"}</p>
-        <button type="button" className={round} aria-label="Mes siguiente" onClick={() => setMonth(dateForMonth(month, 1))}><ChevronRight size={18} aria-hidden /></button>
+        <button type="button" className={round} aria-label="Mes siguiente" disabled={Boolean(propertyId) && (!calendar || month >= lastMonth)} onClick={() => setMonth(dateForMonth(month, 1))}><ChevronRight size={18} aria-hidden /></button>
       </div>
       <div className={`grid gap-4 ${compact ? "" : "sm:grid-cols-2"}`}>{monthGrid(month)}{!compact && monthGrid(dateForMonth(month, 1), true)}</div>
+      {propertyId && !propertyAvailability && <p role="status" className="mt-2 text-sm text-[var(--rh-muted)]">Buscando fechas disponibles…</p>}
+      {propertyAvailability && !calendar && <p role="alert" className="mt-2 text-sm text-red-800">
+        No se pudo cargar la disponibilidad. <button type="button" className="font-semibold underline" onClick={() => {
+          setAvailability(undefined);
+          setAvailabilityAttempt((attempt) => attempt + 1);
+        }}>Reintentar</button>
+      </p>}
+      {calendar && calendar.ranges.length === 0 && <p role="status" className="mt-2 text-sm text-[var(--rh-muted)]">Por el momento no hay fechas disponibles.</p>}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--rh-line)] pt-3 text-sm">
         <button type="button" className="font-semibold underline" onClick={() => { onChange({ ...dates, checkIn: "", checkOut: "" }); setFeedback(""); }}>Limpiar fechas</button>
         <button type="button" className="font-semibold" onClick={() => { setOpen(null); datesButton.current?.focus(); }}>Cerrar</button>

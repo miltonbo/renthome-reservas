@@ -7,7 +7,7 @@ import {
 import { isAvailabilityBlockSummary } from "@/lib/calendar-event-kind";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const MAX_STAY_NIGHTS = 365;
+export const MAX_STAY_NIGHTS = 365;
 export const CALENDAR_FRESHNESS_MINUTES = 120;
 
 export type AvailabilityQuery = {
@@ -186,13 +186,7 @@ function requestedNights(query: AvailabilityQuery): string[] {
   return dates;
 }
 
-export function evaluatePropertyAvailability(
-  property: AvailabilityProperty,
-  query: AvailabilityQuery,
-  now: Date = new Date(),
-): PropertyAvailability {
-  const reasons = new Set<AvailabilityReason>();
-  const requestDates = requestedNights(query);
+function propertyNightBlocks(property: AvailabilityProperty) {
   const openDates = new Set(
     property.dateOverrides
       .filter((override) => override.type === "open")
@@ -204,49 +198,18 @@ export function evaluatePropertyAvailability(
       .map((override) => override.date),
   );
 
-  if (property.isPaused) reasons.add("property_paused");
-  if (query.nights < property.minNights) reasons.add("minimum_stay");
-  const bookingCutoff = addDateDays(
-    boliviaDateString(now),
-    property.bookingWindow,
-  );
-  if (query.checkIn >= bookingCutoff || query.checkOut > bookingCutoff) {
-    reasons.add("outside_booking_window");
-  }
-  if (requestDates.some((date) => manuallyBlocked.has(date))) {
-    reasons.add("manual_block");
-  }
-
-  for (const reservation of property.reservations) {
-    const start = storedDateKey(reservation.checkIn);
-    const end = storedDateKey(reservation.checkOut);
-    if (rangeOverlaps(query.checkIn, query.checkOut, start, end)) {
-      reasons.add("confirmed_reservation");
-    }
-  }
-
-  for (const event of property.calendarEvents) {
-    if (!rangeOverlaps(query.checkIn, query.checkOut, event.startDate, event.endDate)) {
-      continue;
-    }
-    reasons.add(
-      isAvailabilityBlockSummary(event.summary)
-        ? "calendar_block"
-        : "calendar_booking",
-    );
-  }
-
+  const reservations = property.reservations.map((reservation) => ({
+    start: storedDateKey(reservation.checkIn),
+    end: storedDateKey(reservation.checkOut),
+  }));
+  const bufferDates = new Set<string>();
   if (property.cleaningEnabled) {
-    const bufferDates = new Set<string>();
     const maxBefore = Math.max(
       0,
       ...property.calendarLinks.map((link) => link.bufferBefore),
     );
     const bufferSources = [
-      ...property.reservations.map((reservation) => ({
-        start: storedDateKey(reservation.checkIn),
-        end: storedDateKey(reservation.checkOut),
-      })),
+      ...reservations,
       ...property.calendarEvents
         .filter((event) => !isAvailabilityBlockSummary(event.summary))
         .map((event) => ({ start: event.startDate, end: event.endDate })),
@@ -272,10 +235,56 @@ export function evaluatePropertyAvailability(
     // Pre-arrival buffers remain hard because they protect the next guest's
     // check-in and match planStay's buffer-required turnover rule.
     for (const date of openDates) bufferDates.delete(date);
-    if (requestDates.some((date) => bufferDates.has(date))) {
-      reasons.add("cleaning_buffer");
+  }
+  return { manuallyBlocked, reservations, bufferDates };
+}
+
+export function unblockedPropertyNights(property: AvailabilityProperty, nights: string[]) {
+  const { manuallyBlocked, reservations, bufferDates } = propertyNightBlocks(property);
+  return nights.filter((night) => !manuallyBlocked.has(night) && !bufferDates.has(night) &&
+    !reservations.some(({ start, end }) => start <= night && night < end) &&
+    !property.calendarEvents.some(({ startDate, endDate }) => startDate <= night && night < endDate));
+}
+
+export function evaluatePropertyAvailability(
+  property: AvailabilityProperty,
+  query: AvailabilityQuery,
+  now: Date = new Date(),
+): PropertyAvailability {
+  const reasons = new Set<AvailabilityReason>();
+  const requestDates = requestedNights(query);
+  const { manuallyBlocked, reservations, bufferDates } = propertyNightBlocks(property);
+  if (property.isPaused) reasons.add("property_paused");
+  if (query.nights < property.minNights) reasons.add("minimum_stay");
+  const bookingCutoff = addDateDays(
+    boliviaDateString(now),
+    property.bookingWindow,
+  );
+  if (query.checkIn >= bookingCutoff || query.checkOut > bookingCutoff) {
+    reasons.add("outside_booking_window");
+  }
+  if (requestDates.some((date) => manuallyBlocked.has(date))) {
+    reasons.add("manual_block");
+  }
+
+  for (const { start, end } of reservations) {
+    if (rangeOverlaps(query.checkIn, query.checkOut, start, end)) {
+      reasons.add("confirmed_reservation");
     }
   }
+
+  for (const event of property.calendarEvents) {
+    if (!rangeOverlaps(query.checkIn, query.checkOut, event.startDate, event.endDate)) {
+      continue;
+    }
+    reasons.add(
+      isAvailabilityBlockSummary(event.summary)
+        ? "calendar_block"
+        : "calendar_booking",
+    );
+  }
+
+  if (requestDates.some((date) => bufferDates.has(date))) reasons.add("cleaning_buffer");
 
   const freshness = calendarFreshness(property.calendarLinks, now);
   return {
