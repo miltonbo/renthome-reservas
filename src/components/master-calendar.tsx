@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { calculateStayQuote, type QuotePolicy } from "@/lib/pricing-stay-quote";
 
 export interface MasterCalendarStay {
   start: Date;
@@ -50,6 +51,13 @@ interface QuoteSelection {
   propertyId: number;
   anchor: string;
   focus: string;
+}
+
+interface QuoteConfig {
+  policies: QuotePolicy[];
+  bobPerUsd: number;
+  today: string;
+  gapPremiumBobMinor: number;
 }
 
 // Compact enough that a booking four weeks out is genuinely visible on a
@@ -247,6 +255,7 @@ export function MasterCalendar({
   const [windowStart, setWindowStart] = useState(() => addDays(today, -2));
   const [shadowPrices, setShadowPrices] = useState<ShadowDailyPrice[]>([]);
   const [quoteSelection, setQuoteSelection] = useState<QuoteSelection | null>(null);
+  const [quoteConfig, setQuoteConfig] = useState<QuoteConfig | null>(null);
   const [quoteDetailsOpen, setQuoteDetailsOpen] = useState(false);
   const dragSelectionRef = useRef<{ propertyId: number; anchor: string } | null>(null);
   const mouseMovedRef = useRef(false);
@@ -260,8 +269,16 @@ export function MasterCalendar({
     let cancelled = false;
     fetch(`/api/pricing/recommendations?start=${localDateKey(windowStart)}&days=${VISIBLE_DAYS}`, { cache: "no-store" })
       .then((response) => response.ok ? response.json() : { prices: [] })
-      .then((body) => { if (!cancelled) setShadowPrices(Array.isArray(body.prices) ? body.prices : []); })
-      .catch(() => { if (!cancelled) setShadowPrices([]); });
+      .then((body) => {
+        if (cancelled) return;
+        setShadowPrices(Array.isArray(body.prices) ? body.prices : []);
+        setQuoteConfig(body.quoteConfig ?? null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setShadowPrices([]);
+        setQuoteConfig(null);
+      });
     return () => { cancelled = true; };
   }, [windowStart]);
   const shadowPriceMap = useMemo(
@@ -325,21 +342,38 @@ export function MasterCalendar({
   const quoteTotals = useMemo(() => {
     const availableRows = quoteRows.filter((row): row is ShadowDailyPrice => row != null);
     const complete = availableRows.length === quoteRows.length && quoteRows.length > 0;
-    const sum = (field: "directBobMinor" | "airbnbUsdMinor" | "bookingUsdMinor") => {
+    const calculate = (channel: string, field: "directBobMinor" | "airbnbUsdMinor" | "bookingUsdMinor") => {
       if (!complete || availableRows.some((row) => row[field] == null)) return null;
-      return availableRows.reduce((total, row) => total + (row[field] || 0), 0);
+      const policy = quoteConfig?.policies.find((p) => p.propertyId === availableRows[0].propertyId && p.channel === channel);
+      if (!quoteConfig || !policy) {
+        if (channel !== "direct") return null;
+        return { totalMinor: availableRows.reduce((total, row) => total + row[field]!, 0), floorBobMinor: null, savingsMinor: 0, durationLimited: false };
+      }
+      return calculateStayQuote({
+        ...quoteConfig,
+        policy,
+        nightly: availableRows.map((row) => ({ date: row.date, priceMinor: row[field]!, reasons: row.reasonSummary })),
+      });
     };
+    const direct = calculate("direct", "directBobMinor");
+    const airbnb = calculate("airbnb", "airbnbUsdMinor");
+    const booking = calculate("booking", "bookingUsdMinor");
+    const floors = [direct?.floorBobMinor, airbnb?.floorBobMinor, booking?.floorBobMinor].filter((floor): floor is number => floor != null);
     const criteria = Array.from(new Set(availableRows.flatMap((row) => row.reasonSummary.split(";").map((reason) => reason.trim()).filter(Boolean))));
     return {
-      directBobMinor: sum("directBobMinor"),
-      airbnbUsdMinor: sum("airbnbUsdMinor"),
-      bookingUsdMinor: sum("bookingUsdMinor"),
-      floorBobMinor: complete ? availableRows.reduce((total, row) => total + row.floorBobMinor, 0) : null,
+      directBobMinor: direct?.totalMinor ?? null,
+      airbnbUsdMinor: airbnb?.totalMinor ?? null,
+      bookingUsdMinor: booking?.totalMinor ?? null,
+      directSavings: direct?.savingsMinor ?? 0,
+      airbnbSavings: airbnb?.savingsMinor ?? 0,
+      bookingSavings: booking?.savingsMinor ?? 0,
+      durationLimited: [direct, airbnb, booking].some((quote) => quote?.durationLimited),
+      floorBobMinor: floors.length > 0 ? Math.max(...floors) : null,
       criteria,
       needsReview: availableRows.some((row) => row.status === "needs_review"),
       missingNights: quoteRows.length - availableRows.length,
     };
-  }, [quoteRows]);
+  }, [quoteRows, quoteConfig]);
 
   const monthFormatter = new Intl.DateTimeFormat("es-BO", { month: "short", year: "numeric" });
   const lastVisibleDay = addDays(windowEnd, -1);
@@ -350,20 +384,23 @@ export function MasterCalendar({
     {
       label: "Directa",
       note: "Total final en Bs",
+      savings: quoteTotals.directSavings ? formatBolivianos(quoteTotals.directSavings / 100) : null,
       color: "text-emerald-700 dark:text-emerald-300",
       total: quoteTotals.directBobMinor == null ? null : formatBolivianos(quoteTotals.directBobMinor / 100),
       average: quoteTotals.directBobMinor == null || quoteNights === 0 ? null : `${formatBolivianos(quoteTotals.directBobMinor / quoteNights / 100)} / noche`,
     },
     {
       label: "Airbnb",
-      note: "Bruto sugerido",
+      note: "Total estimado",
+      savings: quoteTotals.airbnbSavings ? formatUsdMinor(quoteTotals.airbnbSavings) : null,
       color: "text-rose-600 dark:text-rose-300",
       total: quoteTotals.airbnbUsdMinor == null ? null : formatUsdMinor(quoteTotals.airbnbUsdMinor),
       average: quoteTotals.airbnbUsdMinor == null || quoteNights === 0 ? null : `${formatUsdMinor(quoteTotals.airbnbUsdMinor / quoteNights)} / noche`,
     },
     {
       label: "Booking",
-      note: "Bruto sugerido",
+      note: "Total estimado",
+      savings: quoteTotals.bookingSavings ? formatUsdMinor(quoteTotals.bookingSavings) : null,
       color: "text-sky-700 dark:text-sky-300",
       total: quoteTotals.bookingUsdMinor == null ? null : formatUsdMinor(quoteTotals.bookingUsdMinor),
       average: quoteTotals.bookingUsdMinor == null || quoteNights === 0 ? null : `${formatUsdMinor(quoteTotals.bookingUsdMinor / quoteNights)} / noche`,
@@ -695,6 +732,11 @@ export function MasterCalendar({
                 </div>
                 <p className="mt-1 truncate text-sm font-bold text-[var(--ink)] sm:text-lg">{card.total || "Sin cálculo"}</p>
                 <p className="mt-0.5 truncate text-[9px] text-[var(--ink-4)] sm:text-[11px]">{card.average || card.note}</p>
+                {card.savings && (
+                  <p className="mt-1 text-[9px] font-medium text-emerald-700 dark:text-emerald-300 sm:text-[11px]">
+                    {quoteNights >= 28 ? "Ahorro mensual" : quoteNights >= 7 ? "Ahorro por estancia" : "Ahorro"} · {card.savings}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -728,9 +770,9 @@ export function MasterCalendar({
               Faltan recomendaciones para {quoteTotals.missingNights} {quoteTotals.missingNights === 1 ? "noche" : "noches"}; el total se mostrará al recalcular precios.
             </p>
           )}
-          {quoteNights >= 7 && (
+          {quoteTotals.durationLimited && (
             <p className="mt-2 rounded-lg bg-sky-500/10 px-2.5 py-2 text-[10px] text-sky-800 dark:text-sky-200">
-              Cotización preliminar: suma las tarifas diarias. El descuento semanal o mensual todavía no se aplica automáticamente al total.
+              En algún canal, estas fechas ya alcanzan el mínimo protegido y el descuento por duración no reduce el total.
             </p>
           )}
           {quoteNights === 1 && (

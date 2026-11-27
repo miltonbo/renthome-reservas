@@ -17,6 +17,8 @@ import {
   type PricingStrategyConfig,
 } from "@/lib/pricing-strategy";
 import { getPricingStrategyConfig } from "@/lib/pricing-strategy-store";
+import { rentHomeOwner } from "@/lib/renthome";
+import { isDurationPromotion, nightlyFloorBobMinor } from "@/lib/pricing-stay-quote";
 
 function dateKey(value: Date): string {
   return value.toISOString().slice(0, 10);
@@ -177,13 +179,15 @@ export async function generateShadowPrices(options: {
     getPricingHistoricalCalibration(),
     prisma.property.findMany({
       where: { id: { in: options.propertyIds }, isPaused: false },
-      select: { id: true, name: true, pricingProfile: true },
+      select: { id: true, name: true, userId: true, pricingProfile: true },
     }),
     getPricingStrategyConfig(),
     getPricingLearningAdjustments(options.propertyIds),
   ]);
 
   const policyPropertyIds = Array.from(new Set(policies.map((policy) => policy.propertyId)));
+  const rentHomeId = rentHomeOwner();
+  const rentHomePropertyIds = new Set(properties.filter((property) => property.userId === rentHomeId).map((property) => property.id));
   const policyMap = new Map<number, typeof policies>();
   const promotionMap = new Map<string, typeof promotions>();
   const knowledgeMap = new Map(properties.map((property) => [
@@ -265,7 +269,8 @@ export async function generateShadowPrices(options: {
           ? channelAvailabilityRatio(peerIds, policy.channel)
           : null;
         const channelPromotions = (promotionMap.get(`${propertyId}:${policy.channel}`) || [])
-          .filter((promotion) => promotionAppliesOnDate(promotion, date, calculationToday));
+          .filter((promotion) => promotionAppliesOnDate(promotion, date, calculationToday) &&
+            (policy.channel !== "direct" || !isDurationPromotion(promotion)));
         const eventImpactBps = marketEventImpactBps(marketEvents, date, policy.channel, eventCalibrations, strategy);
         const knowledgeAdjustment = knowledge
           ? pricingKnowledgeAdjustmentBps(knowledge, policy.channel, strategy)
@@ -274,7 +279,7 @@ export async function generateShadowPrices(options: {
         const learningReasons = learning.adjustmentBps === 0
           ? []
           : [learning.adjustmentBps > 0 ? "desempeño histórico superior al canal" : "ritmo histórico inferior a comparables"];
-        const baseFloorBobMinor = toBobMinor(policy.floorMinor, policy.floorCurrency, exchangeRate.bobPerUsd);
+        const baseFloorBobMinor = nightlyFloorBobMinor(policy, exchangeRate.bobPerUsd, rentHomePropertyIds.has(propertyId));
         const effectiveFloorBobMinor = baseFloorBobMinor + (oneNightGap ? strategy.oneNightGapPremiumBobMinor : 0);
         const floorInChannelMinor = convertMinor(effectiveFloorBobMinor, "BOB", policy.currency, exchangeRate.bobPerUsd);
         const result = calculateShadowPrice({
@@ -297,7 +302,7 @@ export async function generateShadowPrices(options: {
         if (!occupiedIds.has(propertyId)) decisionCandidates.push({
           propertyId, channel: policy.channel, stayDate: date, previousMinor: null,
           recommendedMinor: result.recommendedMinor, currency: policy.currency,
-          floorMinor: policy.floorMinor, floorCurrency: policy.floorCurrency,
+          floorMinor: effectiveFloorBobMinor, floorCurrency: "BOB",
           promotionBps: result.appliedPromotionBps, commissionBps: policy.commissionBps,
           minNights: oneNightGap ? policy.gapMinNights : policy.defaultMinNights,
           availableRatioBps: Math.round(availableRatio * 10_000), leadDays: daysBetween(calculationToday, date),
@@ -318,7 +323,7 @@ export async function generateShadowPrices(options: {
         ? toBobMinor(directResult.recommendedMinor, directPolicy.currency, exchangeRate.bobPerUsd)
         : toBobMinor(firstResult.recommendedMinor, firstPolicy.currency, exchangeRate.bobPerUsd);
       const floorsBob = propertyPolicies.map((policy) =>
-        toBobMinor(policy.floorMinor, policy.floorCurrency, exchangeRate.bobPerUsd) +
+        nightlyFloorBobMinor(policy, exchangeRate.bobPerUsd, rentHomePropertyIds.has(propertyId)) +
         (oneNightGap ? strategy.oneNightGapPremiumBobMinor : 0),
       );
       const results = Array.from(channelResults.values());
