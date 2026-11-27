@@ -30,19 +30,18 @@ export function rentHomeDates(input: { checkIn?: unknown; checkOut?: unknown; gu
   return query;
 }
 
+const availabilityFields = {
+  id: true, name: true, minNights: true, bookingWindow: true, checkInTime: true, checkOutTime: true, cleaningEnabled: true, isPaused: true,
+  reservations: { where: { status: "confirmed" }, select: { checkIn: true, checkOut: true } },
+  calendarEvents: { where: { platform: { not: "booking" } }, select: { startDate: true, endDate: true, summary: true } },
+  calendarLinks: { select: { bufferBefore: true, bufferAfter: true, lastFetchedAt: true, lastError: true } },
+  dateOverrides: { select: { date: true, type: true } },
+} satisfies Prisma.PropertySelect;
+
 export async function rentHomeAvailability(db: Prisma.TransactionClient, propertyId: number, query: ReturnType<typeof rentHomeDates>) {
   const owner = rentHomeOwner();
   if (!owner) return false;
-  const property = await db.property.findFirst({
-    where: { id: propertyId, userId: owner },
-    select: {
-      id: true, name: true, minNights: true, bookingWindow: true, checkInTime: true, checkOutTime: true, cleaningEnabled: true, isPaused: true,
-      reservations: { where: { status: "confirmed" }, select: { checkIn: true, checkOut: true } },
-      calendarEvents: { where: { platform: { not: "booking" } }, select: { startDate: true, endDate: true, summary: true } },
-      calendarLinks: { select: { bufferBefore: true, bufferAfter: true, lastFetchedAt: true, lastError: true } },
-      dateOverrides: { select: { date: true, type: true } },
-    },
-  });
+  const property = await db.property.findFirst({ where: { id: propertyId, userId: owner }, select: availabilityFields });
   return !!property && evaluatePropertyAvailability(property, query).dateStatus === "available";
 }
 
@@ -56,26 +55,47 @@ export async function rentHomeCatalog(query?: ReturnType<typeof rentHomeDates>, 
     orderBy: { name: "asc" },
   });
   const byId = new Map(listings.map((item) => [item.propertyId, item]));
-  const quoteConfig = query && properties.length ? await getStayQuoteConfig(properties.map(({ id }) => id), owner, ["direct"]) : null;
-  const policies = new Map(quoteConfig?.policies.map((policy) => [policy.propertyId, policy]));
-  return (await Promise.all(properties.map(async ({ name, pricingProfile, ...property }) => {
+  const catalog = properties.map(({ name, pricingProfile, ...property }) => {
     const listing = readListing(byId.get(property.id)!);
-    const building = rentHomeBuilding(name, pricingProfile?.building);
-    if (!query) return { ...property, ...listing, totalMinor: null, savingsMinor: 0, building };
-    if ((!includeSmaller && listing.details.capacity < (query.guests ?? 1)) || !(await rentHomeAvailability(prisma, property.id, query))) return null;
-    const prices = await prisma.dailyPrice.findMany({
-      where: { propertyId: property.id, date: { gte: query.checkIn, lt: query.checkOut } },
-      select: { date: true, directBobMinor: true, reasonSummary: true },
-    });
-    const byDate = new Map(prices.map((price) => [price.date, price]));
+    return { ...property, ...listing, building: rentHomeBuilding(name, pricingProfile?.building) };
+  });
+  if (!query) return catalog.map((property) => ({ ...property, totalMinor: null, savingsMinor: 0 }));
+  const candidates = catalog.filter((property) => includeSmaller || property.details.capacity >= (query.guests ?? 1));
+  if (!candidates.length) return [];
+  const availability = await prisma.property.findMany({
+    where: { id: { in: candidates.map(({ id }) => id) }, userId: owner, isPaused: false },
+    select: availabilityFields,
+  });
+  const now = new Date();
+  const availableIds = new Set(availability.filter((property) => evaluatePropertyAvailability(property, query, now).dateStatus === "available").map(({ id }) => id));
+  if (!availableIds.size) return [];
+
+  const propertyIds = [...availableIds];
+  const [quoteConfig, prices] = await Promise.all([
+    getStayQuoteConfig(propertyIds, owner, ["direct"]),
+    prisma.dailyPrice.findMany({
+      where: { propertyId: { in: propertyIds }, date: { gte: query.checkIn, lt: query.checkOut } },
+      select: { propertyId: true, date: true, directBobMinor: true, reasonSummary: true },
+    }),
+  ]);
+  const pricesByProperty = new Map<number, Map<string, (typeof prices)[number]>>();
+  for (const price of prices) {
+    const byDate = pricesByProperty.get(price.propertyId) ?? new Map();
+    byDate.set(price.date, price);
+    pricesByProperty.set(price.propertyId, byDate);
+  }
+  const dates = Array.from({ length: query.nights }, (_, offset) => addDateDays(query.checkIn, offset));
+  const policies = new Map(quoteConfig.policies.map((policy) => [policy.propertyId, policy]));
+  return candidates.flatMap((property) => {
+    const byDate = pricesByProperty.get(property.id);
+    if (!byDate) return [];
     const nightly = [];
-    for (let offset = 0; offset < query.nights; offset++) {
-      const date = addDateDays(query.checkIn, offset);
+    for (const date of dates) {
       const row = byDate.get(date);
-      if (!row?.directBobMinor || row.directBobMinor < 1) return null;
+      if (!row?.directBobMinor || row.directBobMinor < 1) return [];
       nightly.push({ date, priceMinor: row.directBobMinor, reasons: row.reasonSummary });
     }
     const { totalMinor, savingsMinor } = calculateCalendarStayQuote(nightly, policies.get(property.id), quoteConfig);
-    return { ...property, ...listing, totalMinor, savingsMinor, building };
-  }))).filter((property) => property !== null);
+    return [{ ...property, totalMinor, savingsMinor }];
+  });
 }

@@ -10,6 +10,7 @@ import styles from "@/app/renthome/storefront.module.css";
 import { rentHomeBookingLink } from "@/lib/renthome-booking-links";
 import type { RentHomeGroup } from "@/lib/renthome-group";
 import { RentHomeAmenities } from "./renthome-amenities";
+import { RentHomePhoto } from "./renthome-photo";
 import { RentHomeStaySavings } from "./renthome-stay-savings";
 import { RentHomeSearch, rentHomeDateLabel as dateLabel, type RentHomeDates as Dates } from "./renthome-search";
 import { parseReservationDate, reservationNights } from "@/lib/reservation-dates";
@@ -86,7 +87,7 @@ function ListingCard({ listing, query }: { listing: Listing; query: Dates | null
     <article className="group min-w-0 overflow-hidden rounded-2xl border border-[var(--rh-line)] bg-white">
       <div className="relative aspect-[16/11] bg-[var(--rh-tint)]">
         <Link href={url} className="absolute inset-0" aria-label={`Ver ${listing.details.title}`}>
-          {listing.photos[current] && <Image fill unoptimized loading="lazy" sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 32vw" src={photoUrl(listing.id, listing.photos[current])}
+          {listing.photos[current] && <RentHomePhoto fill loading="lazy" sizes="(max-width: 639px) 92vw, (max-width: 1279px) 45vw, 33vw" src={photoUrl(listing.id, listing.photos[current])}
             alt={`${listing.details.title}, foto ${current + 1}`} className="object-cover motion-safe:transition-transform motion-safe:duration-500 group-hover:scale-[1.025]" />}
         </Link>
         <LaunchRibbon />
@@ -102,7 +103,7 @@ function ListingCard({ listing, query }: { listing: Listing; query: Dates | null
         <p className="flex items-start gap-2 text-sm text-[var(--rh-muted)]"><Users size={16} aria-hidden className="mt-0.5 shrink-0" /> <span>Hasta {listing.details.capacity} huéspedes{firstService && ` · ${firstService}`}</span></p>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--rh-line)] pt-3">
           <span className="text-sm text-[var(--rh-muted)]">{listing.totalMinor != null ? <><strong className="text-lg tabular-nums text-[var(--rh-ink)]">{money(listing.totalMinor)}</strong> total</> : "Precio según fechas"}</span>
-          {query && listing.totalMinor !== null ? <Link href={rentHomeBookingLink(query,[listing.id])} className="inline-flex min-h-10 items-center rounded-lg bg-[var(--rh-brand)] px-3 text-sm font-extrabold text-white hover:bg-[var(--rh-deep)]">Reservar</Link> : <Link href={url} className="inline-flex min-h-10 items-center gap-1.5 text-sm font-extrabold text-[var(--rh-brand)] hover:underline">Ver ficha <ArrowRight size={15} aria-hidden /></Link>}
+          {query && listing.totalMinor !== null ? <Link href={rentHomeBookingLink(query,[listing.id])} className="inline-flex min-h-10 items-center rounded-lg bg-[var(--rh-brand)] px-3 text-sm font-extrabold text-white hover:bg-[var(--rh-deep)]">Reservar</Link> : <Link href={url} aria-label={`Ver ficha de ${listing.details.title}`} className="inline-flex min-h-10 items-center gap-1.5 text-sm font-extrabold text-[var(--rh-brand)] hover:underline">Ver <ArrowRight size={15} aria-hidden /></Link>}
         </div>
         <RentHomeStaySavings dates={query} savingsMinor={listing.savingsMinor} />
       </div>
@@ -120,8 +121,15 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
   const [catalog, setCatalog] = useState<Listing[]>([]);
   const [results, setResults] = useState<Listing[]>([]);
   const [groups, setGroups] = useState<RentHomeGroup[]>([]);
+  const [groupCount, setGroupCount] = useState(0);
   const [groupLimit, setGroupLimit] = useState(3);
-  const [loading, setLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [quoteLoading, setQuoteLoading] = useState(Boolean(query));
+  const [catalogError, setCatalogError] = useState("");
+  const [groupsError, setGroupsError] = useState("");
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const groupsRequest = useRef<AbortController | null>(null);
+  const loading = query ? quoteLoading || (Boolean(propertyId) && catalogLoading) : catalogLoading;
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   const [showMap, setShowMap] = useState(Boolean(query));
@@ -135,33 +143,74 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
     const controller = new AbortController();
     async function load() {
       try {
-        const responses = await Promise.all([
-          fetch("/api/renthome", { signal: controller.signal }),
-          query ? fetch(`/api/renthome?${new URLSearchParams(query)}`, { signal: controller.signal }) : null,
-        ]);
-        const base = await responses[0].json();
-        if (!responses[0].ok) throw new Error("No se pudo cargar el catálogo.");
-        setCatalog(base.listings);
-        if (responses[1]) {
-          const options = await responses[1].json();
-          if (!responses[1].ok) throw new Error(options.error ?? "No se pudo consultar la disponibilidad.");
-          const listings: Listing[] = [...options.listings];
-          for (let index = listings.length - 1; index > 0; index--) {
-            const swap = Math.floor(Math.random() * (index + 1));
-            [listings[index], listings[swap]] = [listings[swap], listings[index]];
-          }
-          setResults(listings);
-          setGroups(options.groups ?? []);
-        }
-      } catch (err) {
-        if (!controller.signal.aborted) { setResults([]); setGroups([]); setError((err as Error).message); }
+        const response = await fetch("/api/renthome", { signal: controller.signal });
+        if (!response.ok) throw new Error("No se pudo cargar el catálogo.");
+        const base = await response.json();
+        if (!controller.signal.aborted) setCatalog(base.listings);
+      } catch {
+        if (!controller.signal.aborted) setCatalogError("No se pudo cargar el catálogo.");
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) setCatalogLoading(false);
       }
     }
     void load();
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!query) return;
+    const controller = new AbortController();
+    async function load(dates: Dates) {
+      try {
+        const response = await fetch(`/api/renthome?${new URLSearchParams(dates)}`, { signal: controller.signal });
+        const options = await response.json();
+        if (!response.ok) throw new Error(options.error ?? "No se pudo consultar la disponibilidad.");
+        if (controller.signal.aborted) return;
+        const listings: Listing[] = [...options.listings];
+        for (let index = listings.length - 1; index > 0; index--) {
+          const swap = Math.floor(Math.random() * (index + 1));
+          [listings[index], listings[swap]] = [listings[swap], listings[index]];
+        }
+        setResults(listings);
+        setGroups(options.groups);
+        setGroupCount(options.groupCount);
+      } catch (err) {
+        if (!controller.signal.aborted) { setResults([]); setGroups([]); setGroupCount(0); setError((err as Error).message); }
+      } finally {
+        if (!controller.signal.aborted) setQuoteLoading(false);
+      }
+    }
+    void load(query);
+    return () => { controller.abort(); groupsRequest.current?.abort(); };
   }, [query]);
+
+  async function showMoreGroups() {
+    if (!query || groupsRequest.current) return;
+    if (groups.length === groupCount) {
+      setGroupLimit((limit) => limit + 12);
+      return;
+    }
+    const controller = new AbortController();
+    groupsRequest.current = controller;
+    setGroupsError("");
+    setGroupsLoading(true);
+    try {
+      const response = await fetch(`/api/renthome?${new URLSearchParams({ ...query, groups: "all" })}`, { signal: controller.signal });
+      if (!response.ok) throw new Error("No se pudieron cargar más alternativas.");
+      const options = await response.json();
+      if (controller.signal.aborted) return;
+      setGroups(options.groups);
+      setGroupCount(options.groupCount);
+      setGroupLimit((limit) => limit + 12);
+    } catch {
+      if (!controller.signal.aborted) setGroupsError("No se pudieron cargar más alternativas. Intenta de nuevo.");
+    } finally {
+      if (groupsRequest.current === controller) {
+        groupsRequest.current = null;
+        setGroupsLoading(false);
+      }
+    }
+  }
 
   useEffect(() => {
     if (loading || !jumpToResults.current) return;
@@ -193,7 +242,8 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
         setShowMap(true);
       }
       window.history.replaceState(null, "", `${window.location.pathname}?${new URLSearchParams(dates)}`);
-      setError(""); setFilter(""); setGroupLimit(3); setLoading(true); setQuery({ ...dates });
+      groupsRequest.current?.abort();
+      setGroupsError(""); setError(""); setFilter(""); setGroupLimit(3); setQuoteLoading(true); setQuery({ ...dates });
     }} />;
   const reservationCard = property && <aside id="reserva-directa" aria-label="Reserva directa" className="min-w-0 scroll-mt-4 space-y-4 rounded-2xl border border-[var(--rh-line)] bg-white p-5 shadow-[0_12px_28px_#1027290e] lg:sticky lg:top-5">
       <div>
@@ -258,11 +308,11 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                   <button type="button" key={photo} onClick={() => openGallery(index)}
                     aria-label={`Abrir foto ${index + 1}`}
                     className={`relative overflow-hidden focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-white ${index === 0 ? "col-span-4 sm:col-span-2 sm:row-span-2" : ""}`}>
-                    <Image fill unoptimized priority={index === 0} sizes={index === 0 ? "(max-width: 640px) 90vw, 50vw" : "25vw"}
+                    <RentHomePhoto fill preload={index === 0} sizes={index === 0 ? "(max-width: 639px) 92vw, (max-width: 1400px) 48vw, 670px" : "(max-width: 1400px) 24vw, 330px"}
                       src={photoUrl(property.id, photo)} alt={`${property.details.title}, foto ${index + 1}`} className="object-cover transition-transform hover:scale-[1.025]" />
                   </button>
                 )) : <button type="button" aria-label="Abrir galería" onClick={() => openGallery()} className="relative col-span-full row-span-full">
-                  <Image fill unoptimized priority sizes="95vw" src={photoUrl(property.id, property.photos[0])} alt={property.details.title} className="object-cover" />
+                  <RentHomePhoto fill preload sizes="(max-width: 1400px) 95vw, 1336px" src={photoUrl(property.id, property.photos[0])} alt={property.details.title} className="object-cover" />
                 </button>}
               </div>
               <LaunchRibbon />
@@ -284,7 +334,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                 className="relative min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--rh-brand)] sm:space-y-4 sm:px-6">
                 {property.photos.map((photo, index) => <div key={photo} data-gallery-photo={index}
                   className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[var(--rh-bg)] sm:aspect-video">
-                  <Image fill unoptimized loading="lazy" sizes="(max-width: 640px) 94vw, 900px" src={photoUrl(property.id, photo)}
+                  <RentHomePhoto fill loading="lazy" sizes="(max-width: 639px) 94vw, (max-width: 1023px) 90vw, 900px" src={photoUrl(property.id, photo)}
                     alt={`${property.details.title}, foto ${index + 1} de ${property.photos.length}`} className="object-contain" />
                 </div>)}
               </div>
@@ -315,7 +365,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
             {reservationCard}
           </div>
         </>}
-        {!propertyId && error && <p role="alert" className="my-4 rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
+        {((!propertyId && error) || ((!query || propertyId) && catalogError)) && <p role="alert" className="my-4 rounded-lg bg-red-50 p-3 text-red-800">{error || catalogError}</p>}
         {loading && <p className="mt-8 text-sm font-semibold text-[var(--rh-muted)]" role="status">Consultando alojamientos…</p>}
         {!loading && propertyId && !property && <p>Este departamento no está publicado.</p>}
         {!propertyId && !loading && <section id="departamentos" className="mt-9 scroll-mt-5 sm:mt-10">
@@ -324,7 +374,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
               <h2 ref={resultsHeading} tabIndex={-1} className="scroll-mt-5 text-balance text-3xl font-extrabold tracking-[-.035em] sm:text-4xl">{query ? "Departamentos disponibles" : "Encuentra tu departamento"}</h2>
               <p className="mt-1.5 text-sm text-[var(--rh-muted)]">{query && !error ? `${dateLabel(query.checkIn)} a ${dateLabel(query.checkOut)} · ${query.guests} ${query.guests === "1" ? "huésped" : "huéspedes"}` : "Alojamientos amoblados en Santa Cruz de la Sierra"}</p>
             </div>
-            <span role="status" className="text-sm font-bold text-[var(--rh-muted)]">{cards.length} {cards.length === 1 ? "alojamiento individual" : "alojamientos individuales"}{groups.length > 0 && ` · ${groups.length} ${groups.length === 1 ? "opción grupal" : "opciones grupales"}`}</span>
+            <span role="status" className="text-sm font-bold text-[var(--rh-muted)]">{cards.length} {cards.length === 1 ? "alojamiento individual" : "alojamientos individuales"}{groupCount > 0 && ` · ${groupCount} ${groupCount === 1 ? "opción grupal" : "opciones grupales"}`}</span>
           </div>
           {allCards.length > 0 && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-y border-[var(--rh-line)] py-3">
             <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por servicios">
@@ -366,7 +416,7 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                       {group.units.map((unit) => {
                         const photo = catalog.find((listing) => listing.id === unit.propertyId)?.photos[0];
                         return <li key={unit.propertyId} className="flex items-center gap-3 py-2.5">
-                          {photo && <Image width={112} height={75} unoptimized loading="lazy" src={photoUrl(unit.propertyId, photo)} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover sm:h-[75px] sm:w-28" />}
+                          {photo && <RentHomePhoto width={112} height={75} loading="lazy" src={photoUrl(unit.propertyId, photo)} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover sm:h-[75px] sm:w-28" />}
                           <span className="min-w-0 flex-1">
                             <Link href={`/renthome/${unit.propertyId}`} className="font-semibold hover:underline">{unit.title}</Link>
                             {group.distanceMeters > 0 && <span className="block text-[var(--rh-muted)]">{unit.building}</span>}
@@ -384,11 +434,12 @@ export function RentHomeSite({ propertyId, initialDates }: { propertyId?: number
                   </article>
                 ))}
               </div>
-              {groups.length > 3 && <div className="flex flex-wrap items-center gap-3">
-                <span role="status" className="text-sm text-[var(--rh-muted)]">{Math.min(groupLimit, groups.length)} de {groups.length} alternativas</span>
-                {groupLimit < groups.length && <button type="button" className="min-h-11 rounded-lg border border-[var(--rh-line)] bg-white px-4 text-sm font-bold text-[var(--rh-brand)] hover:bg-[var(--rh-tint)]"
-                  onClick={() => setGroupLimit((limit) => limit + 12)}>{groupLimit === 3 ? "Ver todas las alternativas" : "Ver más alternativas"}</button>}
+              {groupCount > 3 && <div className="flex flex-wrap items-center gap-3">
+                <span role="status" className="text-sm text-[var(--rh-muted)]">{Math.min(groupLimit, groups.length)} de {groupCount} alternativas</span>
+                {groupLimit < groupCount && <button type="button" disabled={groupsLoading} className="min-h-11 rounded-lg border border-[var(--rh-line)] bg-white px-4 text-sm font-bold text-[var(--rh-brand)] hover:bg-[var(--rh-tint)] disabled:opacity-60"
+                  onClick={showMoreGroups}>{groupsLoading ? "Cargando alternativas…" : groupLimit === 3 ? "Ver todas las alternativas" : "Ver más alternativas"}</button>}
               </div>}
+              {groupsError && <p role="alert" className="text-sm text-red-800">{groupsError}</p>}
           </section>}
         </section>}
       </main>

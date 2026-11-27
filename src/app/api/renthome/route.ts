@@ -40,14 +40,16 @@ export async function GET(request: NextRequest) {
   }
   const guests = query?.guests ?? 0;
   const options = await rentHomeCatalog(query, guests >= 3);
-  const groups = rentHomeGroups(options, guests).map((group) => ({
+  const alternatives = rentHomeGroups(options, guests);
+  const allGroups = params.get("groups") === "all";
+  const groups = (allGroups ? alternatives : alternatives.slice(0, 3)).map((group) => ({
     ...group, distanceMeters: group.distanceMeters > 0 ? Math.max(10, Math.round(group.distanceMeters / 10) * 10) : 0,
   }));
-  const listings = options.filter((item) => item.details.capacity >= guests).map(({ building, totalMinor, savingsMinor, ...listing }) => {
+  const listings = (allGroups ? [] : options.filter((item) => item.details.capacity >= guests)).map(({ building, totalMinor, savingsMinor, ...listing }) => {
     const quote = totalMinor == null ? { totalMinor, savingsMinor } : rentHomeStayForGuests(totalMinor, savingsMinor, guests);
     return { ...listing, ...quote, mapLocation: rentHomePublicMapLocation(building) };
   });
-  return NextResponse.json({ listings, groups }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ listings, groups, groupCount: alternatives.length }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: NextRequest) {

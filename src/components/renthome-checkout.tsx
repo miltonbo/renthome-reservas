@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowLeft, CircleCheck, Download, MessageCircle } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
@@ -10,6 +9,7 @@ import type { RentHomeGroupUnit } from "@/lib/renthome-group";
 import { downloadRentHomeReceipt } from "@/lib/reservation-receipt";
 import { rentHomeDateLabel, type RentHomeDates } from "./renthome-search";
 import { RentHomeStaySavings } from "./renthome-stay-savings";
+import { RentHomePhoto } from "./renthome-photo";
 
 const button = "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--rh-brand)] px-4 font-bold text-white hover:bg-[var(--rh-deep)] disabled:opacity-60";
 const input = "mt-1.5 block min-h-12 w-full rounded-lg border border-[var(--rh-line)] bg-[var(--rh-bg)] px-3 text-base";
@@ -105,7 +105,7 @@ export function RentHomeCheckout({ dates, units, building }: {
               <span>{unit.title}</span><strong className="shrink-0 tabular-nums">{format(unit.totalMinor)}</strong>
             </div>
             {unit.photos.length > 0 && <div className="grid grid-cols-3 gap-2">
-              {unit.photos.map((photo, index) => <Image key={photo} unoptimized
+              {unit.photos.map((photo, index) => <RentHomePhoto key={photo} sizes="(max-width: 639px) 28vw, 176px"
                 src={`/api/renthome/photos/${unit.propertyId}/${photo}`} alt={`${unit.title}, foto ${index + 1}`} width={240} height={160}
                 className="aspect-[3/2] w-full rounded-lg object-cover" />)}
             </div>}

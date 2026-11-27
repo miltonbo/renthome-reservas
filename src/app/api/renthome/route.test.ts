@@ -120,8 +120,13 @@ describe("RentHome direct request WhatsApp confirmation", () => {
     catalog.mockResolvedValue([5, 6, 7, 8].map((id) => ({
       id, building: id === 8 ? "Sky Moon" : "Sky Elite", details: { title: "Departamento", capacity: 2 }, totalMinor: 50_000, savingsMinor: 0,
     })));
-    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=3"));
-    const { groups } = await response.json();
+    const url = "http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=3";
+    const preview = await (await GET(new NextRequest(url))).json();
+    const { groups, listings, groupCount } = await (await GET(new NextRequest(`${url}&groups=all`))).json();
+    expect(preview.groupCount).toBe(4);
+    expect(preview.groups).toEqual(groups.slice(0, 3));
+    expect(groupCount).toBe(4);
+    expect(listings).toEqual([]);
     expect(groups).toHaveLength(4);
     expect(groups.every((group: { building: string; distanceMeters: number }) => group.building === "Sky Elite" && group.distanceMeters === 0)).toBe(true);
   });
@@ -133,7 +138,7 @@ describe("RentHome direct request WhatsApp confirmation", () => {
     catalog.mockResolvedValue(["Sky Moon", "Sky Elite", "Sky Luxia"].map((building, index) => ({
       id: index + 5, building, details: { title: building, capacity: 2 }, totalMinor: 50_000, savingsMinor: 0,
     })));
-    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=4"));
+    const response = await GET(new NextRequest("http://localhost/api/renthome?checkIn=2026-12-02&checkOut=2026-12-04&guests=4&groups=all"));
     const { groups } = await response.json();
     expect(groups).toHaveLength(4);
     const distances = groups.map((group: { distanceMeters: number }) => group.distanceMeters);
